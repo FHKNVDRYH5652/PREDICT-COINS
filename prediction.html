@@ -10,9 +10,9 @@
   :root{--panel:rgba(255,255,255,0.04);--neon:#00ff9d;--accent:#1dd3ff;--muted:#9fb0d6}
   body{margin:0;padding:24px;background:url('anime2.png') center/cover fixed;color:#eaf6ff;font-family:Inter,Arial}
   #tsparticles{position:fixed;inset:0;z-index:0}
-  .wrap{position:relative;z-index:2;max-width:960px;margin:auto}
+  .wrap{position:relative;z-index:2;max-width:800px;margin:auto}
   .card{background:var(--panel);padding:18px;border-radius:14px;box-shadow:0 10px 25px rgba(0,0,0,0.6)}
-  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:10px 12px;border:none;border-radius:8px;color:#001;font-weight:700;cursor:pointer}
+  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:10px 14px;border:none;border-radius:8px;color:#001;font-weight:700;cursor:pointer}
   .ghost{background:transparent;border:1px solid rgba(255,255,255,0.1);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
   .wallet{background:rgba(0,0,0,0.2);padding:6px 10px;border-radius:10px;margin-bottom:12px}
   .small{font-size:13px;color:var(--muted)}
@@ -23,50 +23,90 @@
 <div class="wrap">
   <div class="wallet">Wallet: <b id="walletTop">0</b> coins</div>
   <div class="card">
-    <h2>Prediction System</h2>
-    <div class="small">Each prediction costs <b>10 coins</b></div>
+    <h2>Coin Predictions</h2>
+
     <div style="margin-top:12px">
-      <button id="genBtn" class="btn">Generate Prediction</button>
-      <button id="backBtn" class="ghost">Back</button>
+      <div>Live period: <b id="periodNum"></b></div>
+      <div>Next period in: <b id="countdown"></b>s</div>
+      <div style="margin-top:6px">
+        <span style="padding:6px 12px;background:gray;border-radius:8px">Server Connected</span>
+      </div>
     </div>
-    <div id="result" style="margin-top:16px;font-weight:700"></div>
+
+    <div style="margin-top:14px;display:flex;gap:10px">
+      <button id="genBtn" class="btn">Generate Prediction (10 coins)</button>
+      <button id="refreshBtn" class="ghost">Refresh</button>
+    </div>
+
+    <h3 style="margin-top:18px">History:</h3>
+    <div id="history" class="small">No predictions yet</div>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 
+// ✅ FIXED FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
   authDomain: "terminal-xxrr.firebaseapp.com",
+  databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "terminal-xxrr",
-  storageBucket: "terminal-xxrr.appspot.com",   // ✅ fixed
+  storageBucket: "terminal-xxrr.appspot.com",
   messagingSenderId: "722753278120",
   appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
 };
 initializeApp(firebaseConfig);
 
-// update wallet display
+// wallet display
 function updateWallet(){
   document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins')||'0';
 }
 updateWallet();
 
+// === PERIOD NUMBER SYSTEM ===
+function updatePeriod(){
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const MM = String(now.getMonth()+1).padStart(2,'0');
+  const dd = String(now.getDate()).padStart(2,'0');
+
+  // total minutes from midnight
+  const minutesOfDay = now.getHours()*60 + now.getMinutes();
+  const baseIncrement = 10500 + minutesOfDay;
+
+  const period = `${yyyy}${MM}${dd}000${baseIncrement}`;
+  document.getElementById("periodNum").innerText = period;
+
+  // countdown
+  const sec = now.getSeconds();
+  document.getElementById("countdown").innerText = 60-sec;
+}
+setInterval(updatePeriod,1000);
+updatePeriod();
+
+// prediction generator
 genBtn.onclick=()=>{
   let coins=parseInt(localStorage.getItem('wallet_coins')||'0',10);
   if(coins<10){ alert("Not enough coins. Please recharge."); return; }
   coins-=10;
   localStorage.setItem('wallet_coins',coins);
   updateWallet();
-  // dummy prediction
+
   const predictions=["Team A will win","Team B will win","High scoring match","Low scoring match","Draw expected"];
   const pick=predictions[Math.floor(Math.random()*predictions.length)];
-  document.getElementById('result').innerText="Prediction: "+pick;
+
+  const hist=document.getElementById('history');
+  const entry=document.createElement('div');
+  entry.innerText=`[${new Date().toLocaleTimeString()}] ${pick}`;
+  if(hist.innerText==="No predictions yet") hist.innerText="";
+  hist.prepend(entry);
 };
 
-backBtn.onclick=()=>location.href="index.html";
+// refresh
+refreshBtn.onclick=updatePeriod;
 
-// particles
+// particles bg
 tsParticles.load("tsparticles",{fpsLimit:60,particles:{number:{value:30},color:{value:"#00ff9d"},links:{enable:true,distance:120,color:"#00ff9d",opacity:0.1},move:{enable:true,speed:0.7}}});
 </script>
 </body>
