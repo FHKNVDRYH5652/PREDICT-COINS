@@ -501,23 +501,51 @@ function updateCountdownUI(){
   const elapsed = Math.floor((now.getTime() - periodTs.getTime())/1000);
   const rem = 60 - (elapsed % 60);
   cdEl.innerText = rem + 's';
+  document.getElementById('periodDisplay').innerText = currentPeriodStr || '--';
+
+  // 🔥 auto increment when new minute starts
+  if(rem === 60){
+    autoIncrementPeriod();
+  }
+}
+  const now = new Date();
+  const elapsed = Math.floor((now.getTime() - periodTs.getTime())/1000);
+  const rem = 60 - (elapsed % 60);
+  cdEl.innerText = rem + 's';
   // also update displayed period (in case changed)
   document.getElementById('periodDisplay').innerText = currentPeriodStr || '--';
 }
 setInterval(updateCountdownUI, 1000);
 
+
+/* helper: auto increment period every 60s */
+async function autoIncrementPeriod(){
+  try{
+    const snap = await getDoc(periodRef);
+    if(!snap.exists()) return;
+    const curr = snap.data().number;
+    if(!curr) return;
+    const prefix = curr.slice(0,curr.length-3);
+    let last = parseInt(curr.slice(-3),10) || 0;
+    last = last >= 999 ? 1 : last + 1;
+    const next = prefix + String(last).padStart(3,'0');
+    await setDoc(periodRef,{ number: next, ts: serverTimestamp() });
+  }catch(e){ console.warn('autoIncrementPeriod error', e); }
+}
+
 /* =========================
-   Generate prediction logic (30s & 60s)
+   Generate prediction logic
    ========================= */
-// helper to generate prediction for a given periodRef and period string (typeTag '30' or '60')
-async function generatePredictionFor(periodType){
+document.getElementById('genPredBtn').addEventListener('click', async ()=>{
   playClick();
   if(!currentUser){ alert('Not signed in — reload'); return; }
+  // check wallet
   const uRef = doc(db,'users',currentUser.uid);
   const uSnap = await getDoc(uRef);
   const curWallet = uSnap.exists() ? (uSnap.data().wallet || 0) : 0;
   if(curWallet < 10){ alert('Not enough coins'); return; }
 
+  // run transaction: deduct 10 coins and create prediction doc atomically
   try{
     await runTransaction(db, async tx=>{
       const userSnap = await tx.get(uRef);
@@ -528,27 +556,24 @@ async function generatePredictionFor(periodType){
       // create prediction doc
       const predRef = doc(collection(db,'predictions'));
       const signal = Math.random() > 0.5 ? 'BIG' : 'SMALL';
-      const periodStr = (periodType === '30') ? (currentPeriod30 || 'unknown') : (currentPeriod60 || 'unknown');
       tx.set(predRef, {
         userId: currentUser.uid,
-        period: periodStr,
+        period: currentPeriodStr || ('unknown'),
         signal,
         result: '',
-        type: periodType,
         ts: serverTimestamp()
       });
       // call popup function
       showPredictionPopup(signal);
+
     });
     document.getElementById('lastPred').innerText = 'Prediction generated — check history below';
   }catch(e){
     alert('Generate failed: ' + (e.message || e));
   }
-}
+});
 
-// attach buttons
-document.getElementById('genPred30Btn').addEventListener('click', async ()=>{ await generatePredictionFor('30'); });
-document.getElementById('genPred60Btn').addEventListener('click', async ()=>{ await generatePredictionFor('60'); });/* =========================
+/* =========================
    User predictions subscription & history UI
    ========================= */
 import { onSnapshot as onSnapCollection, orderBy as orderByFn } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
@@ -677,24 +702,6 @@ document.getElementById('adminStartAuto').addEventListener('click', ()=>{
 document.getElementById('adminStopAuto').addEventListener('click', ()=>{
   if(adminAutoId){ clearInterval(adminAutoId); adminAutoId = null; alert('Auto stopped'); } else alert('Auto not running');
 });
-
-
-/* =========================
-   Auto increment period (always running)
-   ========================= */
-setInterval(async ()=>{
-  try{
-    const snap = await getDoc(periodRef);
-    if(!snap.exists()) return;
-    const curr = snap.data().number;
-    if(!curr) return;
-    const prefix = curr.slice(0,curr.length-3);
-    let last = parseInt(curr.slice(-3),10) || 0;
-    last = last >= 999 ? 1 : last + 1;
-    const next = prefix + String(last).padStart(3,'0');
-    await setDoc(periodRef,{ number: next, ts: serverTimestamp() });
-  }catch(e){ console.warn('auto increment err', e); }
-}, 60000);
 
 /* =========================
    Init & small helpers
