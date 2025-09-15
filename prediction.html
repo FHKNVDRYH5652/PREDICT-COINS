@@ -12,85 +12,62 @@
   #tsparticles{position:fixed;inset:0;z-index:0}
   .wrap{position:relative;z-index:2;max-width:960px;margin:auto}
   .card{background:var(--panel);padding:18px;border-radius:14px;box-shadow:0 10px 25px rgba(0,0,0,0.6)}
-  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:10px 14px;border:none;border-radius:8px;color:#001;font-weight:700;cursor:pointer}
+  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:10px 12px;border:none;border-radius:8px;color:#001;font-weight:700;cursor:pointer}
   .ghost{background:transparent;border:1px solid rgba(255,255,255,0.1);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
+  .wallet{background:rgba(0,0,0,0.2);padding:6px 10px;border-radius:10px;margin-bottom:12px}
   .small{font-size:13px;color:var(--muted)}
-  #resultBox{margin-top:16px;padding:14px;background:rgba(0,0,0,0.4);border-radius:10px}
 </style>
 </head>
 <body>
 <div id="tsparticles"></div>
 <div class="wrap">
+  <div class="wallet">Wallet: <b id="walletTop">0</b> coins</div>
   <div class="card">
-    <h2 style="margin:0 0 10px 0">Generate Prediction</h2>
-    <div class="small">Each prediction costs <b>10 coins</b>. Your current wallet: <span id="walletTop">0</span> coins.</div>
-    <div style="margin-top:12px;display:flex;gap:10px">
-      <button id="genBtn" class="btn">Generate</button>
-      <button id="backBtn" class="ghost">Back to Plans</button>
+    <h2>Prediction System</h2>
+    <div class="small">Each prediction costs <b>10 coins</b></div>
+    <div style="margin-top:12px">
+      <button id="genBtn" class="btn">Generate Prediction</button>
+      <button id="backBtn" class="ghost">Back</button>
     </div>
-    <div id="resultBox" class="small">No prediction yet.</div>
+    <div id="result" style="margin-top:16px;font-weight:700"></div>
   </div>
 </div>
 
-<audio id="sndClick" src="click.mp3"></audio>
-<audio id="sndHover" src="hover.mp3"></audio>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getFirestore,doc,onSnapshot,runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
   authDomain: "terminal-xxrr.firebaseapp.com",
   projectId: "terminal-xxrr",
-  storageBucket: "terminal-xxrr.appspot.com",   // ✅ FIXED
+  storageBucket: "terminal-xxrr.appspot.com",   // ✅ fixed
   messagingSenderId: "722753278120",
   appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
 };
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-const db=getFirestore(app);
+initializeApp(firebaseConfig);
 
-// particles
-tsParticles.load("tsparticles",{fpsLimit:60,particles:{number:{value:30},color:{value:"#00ff9d"},links:{enable:true,distance:120,color:"#00ff9d",opacity:0.1},move:{enable:true,speed:0.9}}});
+// update wallet display
+function updateWallet(){
+  document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins')||'0';
+}
+updateWallet();
 
-const walletEl=document.getElementById('walletTop');
-const resultBox=document.getElementById('resultBox');
-
-onAuthStateChanged(auth,user=>{
-  if(user){
-    onSnapshot(doc(db,"users",user.uid),s=>{
-      walletEl.innerText=s.exists()?s.data().wallet:0;
-    });
-  }else{
-    alert("Login required");location.href="index.html";
-  }
-});
-
-document.getElementById('genBtn').onclick=async()=>{
-  const user=auth.currentUser;
-  if(!user){alert("Login required");return;}
-  try{
-    await runTransaction(db,async(t)=>{
-      const ref=doc(db,"users",user.uid);
-      const snap=await t.get(ref);
-      if(!snap.exists())throw "No wallet doc";
-      let bal=snap.data().wallet||0;
-      if(bal<10)throw "Not enough coins";
-      t.update(ref,{wallet:bal-10});
-      return bal-10;
-    });
-    // generate dummy prediction
-    const outcomes=["BUY","SELL","HOLD"];
-    const pick=outcomes[Math.floor(Math.random()*outcomes.length)];
-    resultBox.innerHTML=`<b>Prediction:</b> ${pick}`;
-  }catch(e){
-    resultBox.innerText="Error: "+e;
-  }
+genBtn.onclick=()=>{
+  let coins=parseInt(localStorage.getItem('wallet_coins')||'0',10);
+  if(coins<10){ alert("Not enough coins. Please recharge."); return; }
+  coins-=10;
+  localStorage.setItem('wallet_coins',coins);
+  updateWallet();
+  // dummy prediction
+  const predictions=["Team A will win","Team B will win","High scoring match","Low scoring match","Draw expected"];
+  const pick=predictions[Math.floor(Math.random()*predictions.length)];
+  document.getElementById('result').innerText="Prediction: "+pick;
 };
 
-document.getElementById('backBtn').onclick=()=>location.href="index.html";
+backBtn.onclick=()=>location.href="index.html";
+
+// particles
+tsParticles.load("tsparticles",{fpsLimit:60,particles:{number:{value:30},color:{value:"#00ff9d"},links:{enable:true,distance:120,color:"#00ff9d",opacity:0.1},move:{enable:true,speed:0.7}}});
 </script>
 </body>
 </html>
