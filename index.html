@@ -515,7 +515,7 @@ document.getElementById('genPredBtn').addEventListener('click', async ()=>{
         ts: serverTimestamp()
       });
     });
-    document.getElementById('lastPred').innerText = 'Prediction generated — check history below';
+    document.getElementById('lastPred').innerText = 'Your Prediction: ' + signal;
   }catch(e){
     alert('Generate failed: ' + (e.message || e));
   }
