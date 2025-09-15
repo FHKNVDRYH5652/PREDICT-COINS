@@ -30,34 +30,36 @@
   </div>
 
   <div id="panelBox" class="card" style="display:none;margin-top:18px">
-    <h3 style="margin:0 0 10px 0">Pending Approvals</h3>
+    <h3>Pending Approvals</h3>
     <div id="pendingList" class="small">Loading…</div>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
   authDomain: "terminal-xxrr.firebaseapp.com",
   projectId: "terminal-xxrr",
-  storageBucket: "terminal-xxrr.appspot.com",   // ✅ FIXED
+  storageBucket: "terminal-xxrr.appspot.com",   // ✅ fixed
   messagingSenderId: "722753278120",
   appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
 };
 const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
-// particles bg
+// particles
 tsParticles.load("tsparticles",{fpsLimit:60,particles:{number:{value:25},color:{value:"#00ff9d"},links:{enable:true,distance:130,color:"#00ff9d",opacity:0.1},move:{enable:true,speed:0.7}}});
 
 const loginBox=document.getElementById('loginBox');
 const panelBox=document.getElementById('panelBox');
 document.getElementById('adminLogin').onclick=()=>{
   if(document.getElementById('adminPass').value==="456"){
-    loginBox.style.display="none";panelBox.style.display="block";subscribePending();
+    loginBox.style.display="none";
+    panelBox.style.display="block";
+    subscribePending();
   }else{document.getElementById('msg').innerText="Wrong password";}
 };
 
@@ -72,9 +74,9 @@ function subscribePending(){
       const row=document.createElement('div');
       row.className="row";
       row.innerHTML=`<b>${d.coins||0} coins</b> — ₹${Number(d.amount||0).toFixed(2)}
-        <div class="small">UTR: ${d.utr||'-'} • ${d.userEmail||'-'}</div>
+        <div class="small">UTR: ${d.utr||'-'}</div>
         <div style="margin-top:6px">
-          <button class="btn" onclick="approve('${docSnap.id}')">Approve</button>
+          <button class="btn" onclick="approve('${docSnap.id}',${d.coins||0})">Approve</button>
           <button class="ghost" onclick="reject('${docSnap.id}')">Reject</button>
         </div>`;
       node.appendChild(row);
@@ -82,15 +84,14 @@ function subscribePending(){
   });
 }
 
-window.approve=async(id)=>{
+// Approve = add coins to localStorage wallet
+window.approve=async(id,coins)=>{
   const ref=doc(db,"pending",id);
   const snap=await getDoc(ref);
   if(!snap.exists())return;
   const data=snap.data();
-  const uRef=doc(db,"users",data.userId);
-  const uSnap=await getDoc(uRef);
-  let cur=uSnap.exists()?(uSnap.data().wallet||0):0;
-  await updateDoc(uRef,{wallet:cur+Number(data.coins||0)});
+  let cur=parseInt(localStorage.getItem('wallet_coins')||'0',10);
+  localStorage.setItem('wallet_coins',cur+coins);
   await setDoc(doc(db,"approved",id),data);
   await deleteDoc(ref);
 };
