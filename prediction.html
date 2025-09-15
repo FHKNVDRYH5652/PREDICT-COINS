@@ -1,130 +1,143 @@
 <!doctype html>
-<html lang="hi">
+<html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Prediction — Coin Predictions</title>
-  <style>
-    :root{--card:rgba(255,255,255,0.03);--accent:#00a6ff}
-    *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
-    body{margin:0;padding:20px;background:url('anime3.png') center/cover no-repeat fixed;color:#eaf6ff}
-    .wrap{max-width:980px;margin:0 auto}
-    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-    .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.7)}
-    .btn{background:linear-gradient(90deg,#00d2a8,#00a6ff);color:#001;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:800}
-    .small{font-size:13px;color:#9fb0d6}
-    .period{font-weight:800;font-size:18px}
-    .history{max-height:220px;overflow:auto;border-radius:8px;padding:8px;background:rgba(0,0,0,0.25);margin-top:12px}
-    @media (max-width:880px){ .top{flex-direction:column;gap:12px} }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Prediction — Coin Predictions</title>
+<link rel="icon" href="favicon.ico"/>
+<script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
+<style>
+  :root{--panel:rgba(255,255,255,0.03);--neon:#00ff9d;--accent:#1dd3ff;--muted:#9fb0d6}
+  *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
+  body{margin:0;padding:20px;background:url('anime3.png') center/cover fixed;color:#eaf6ff}
+  #tsparticles{position:fixed;inset:0;z-index:0}
+  .wrap{position:relative;z-index:2;max-width:980px;margin:0 auto}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+  .card{background:var(--panel);padding:18px;border-radius:14px}
+  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:10px 14px;border-radius:10px;border:none;color:#001;font-weight:800;cursor:pointer}
+  .small{font-size:13px;color:var(--muted)}
+  .period{font-weight:800;font-size:18px}
+  .serverTag{display:inline-block;padding:6px 10px;border-radius:20px;background:rgba(0,0,0,0.25);font-weight:700;color:#bff}
+</style>
 </head>
 <body>
-  <audio src="music.m4a" autoplay loop></audio>
+<div id="tsparticles"></div>
+<audio id="bgMusic" src="music.m4a" autoplay loop></audio>
+<audio id="sndClick" src="click.mp3"></audio>
 
-  <div class="wrap">
-    <div class="top">
-      <div style="font-weight:900">Coin Predictions — Play</div>
-      <div class="small">Wallet: <strong id="wallet">0</strong> coins</div>
-    </div>
-
-    <div class="card">
-      <div><span class="small">Live period:</span> <span class="period" id="livePeriod">—</span></div>
-      <div style="margin-top:8px" class="small" id="countdown">Next period in: --s</div>
-
-      <div style="margin-top:12px;display:flex;gap:12px;align-items:center">
-        <button class="btn" id="genBtn">Generate Prediction (10 coins)</button>
-        <button class="btn" id="refreshBtn" style="background:transparent;border:1px solid rgba(255,255,255,0.06);color:#9fb0d6;font-weight:700">Refresh Wallet</button>
-      </div>
-
-      <div id="resultArea" style="margin-top:14px;display:none">
-        <div class="card" style="padding:12px">
-          <div><b>Period:</b> <span id="predPeriod">—</span></div>
-          <div style="margin-top:8px"><b>Signal:</b> <span id="predSignal">—</span></div>
-          <div style="margin-top:8px"><b>Numbers:</b> <span id="predNums">—</span></div>
-        </div>
-      </div>
-
-      <div style="margin-top:12px" class="small">History (latest first):</div>
-      <div id="hist" class="history"></div>
-    </div>
-
-    <div style="margin-top:12px" class="small">If wallet is empty, go to <a href="index.html" style="color:#bfe">Plans</a> to buy coins.</div>
+<div class="wrap">
+  <div class="top">
+    <div style="font-weight:900">Coin Predictions</div>
+    <div class="small">Wallet: <strong id="wallet">0</strong> coins</div>
   </div>
 
-<script>
-  const BASE_PERIOD = 20250914100011164n;
-  const BASE_DATE = new Date('2025-09-14T12:53:00+05:30'); // IST base the user provided
-  const PRED_COST = 10;
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><span class="small">Live period:</span> <span class="period" id="livePeriod">—</span></div>
+      <div><span class="serverTag" id="serverTag">Server Connected</span></div>
+    </div>
 
+    <div style="margin-top:10px" class="small" id="countdown">Next period in: --s</div>
+
+    <div style="margin-top:14px;display:flex;gap:12px;align-items:center">
+      <button id="genBtn" class="btn">Generate Prediction (10 coins)</button>
+      <button id="refreshBtn" class="btn" style="background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)">Refresh</button>
+    </div>
+
+    <div id="resultCard" style="display:none;margin-top:14px">
+      <div class="card">
+        <div><b>Period:</b> <span id="predPeriod">—</span></div>
+        <div style="margin-top:8px"><b>Signal:</b> <span id="predSignal">—</span></div>
+        <div style="margin-top:8px"><b>Numbers:</b> <span id="predNums">—</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px" class="small">History:</div>
+    <div id="hist" style="margin-top:8px;max-height:260px;overflow:auto;border-radius:8px;padding:8px;background:rgba(0,0,0,0.18)"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  import { getFirestore, doc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+    authDomain: "terminal-xxrr.firebaseapp.com",
+    databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
+    projectId: "terminal-xxrr",
+    storageBucket: "terminal-xxrr.appspot.com",
+    messagingSenderId: "722753278120",
+    appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // particles
+  tsParticles.load("tsparticles", { fpsLimit:60, particles:{ number:{value:40}, color:{value:"#00ff9d"}, links:{enable:true,distance:120,color:"#00ff9d",opacity:0.12,width:1}, move:{enable:true,speed:0.9} } });
+
+  // sounds
+  const sndClick = document.getElementById('sndClick');
+  function playClick(){ try{ sndClick.currentTime=0; sndClick.play(); }catch(e){} }
+
+  // period logic (user-provided base)
+  const BASE_PERIOD = 20250914100011164n;
+  const BASE_DATE = new Date('2025-09-14T12:53:00+05:30'); // IST
   function currentPeriod(){
     const now = new Date();
     const diffMin = Math.floor((now - BASE_DATE) / 60000);
     return String(BASE_PERIOD + BigInt(diffMin));
   }
+  function secToNext(){ const now = Date.now(); return Math.max(0, Math.round((Math.ceil(now/60000)*60000 - now)/1000)); }
+  function updatePeriodUI(){ document.getElementById('livePeriod').innerText = currentPeriod(); document.getElementById('countdown').innerText = 'Next period in: ' + secToNext() + 's'; }
+  setInterval(updatePeriodUI,1000); updatePeriodUI();
 
-  function secondsToNextMinute(){
-    const now = Date.now();
-    return Math.max(0, Math.round((Math.ceil(now/60000)*60000 - now)/1000));
-  }
-
-  function updatePeriodUI(){
-    document.getElementById('livePeriod').innerText = currentPeriod();
-    document.getElementById('countdown').innerText = 'Next period in: ' + secondsToNextMinute() + 's';
-  }
-  setInterval(updatePeriodUI, 1000);
-  updatePeriodUI();
-
-  // wallet
-  function getWallet(){ return parseInt(localStorage.getItem('wallet_coins')||'0',10); }
-  function setWallet(n){ localStorage.setItem('wallet_coins', String(n)); renderWallet(); }
-  function renderWallet(){ document.getElementById('wallet').innerText = getWallet(); }
-
-  // predictions storage (private)
-  function loadPreds(){ return JSON.parse(localStorage.getItem('__preds__')||'[]'); }
-  function savePreds(a){ localStorage.setItem('__preds__', JSON.stringify(a)); }
-
-  function renderHistory(){
-    const arr = loadPreds();
-    const el = document.getElementById('hist');
-    el.innerHTML = '';
-    if(arr.length===0){ el.innerHTML = '<div class="small">No predictions yet</div>'; return; }
-    arr.slice(0,50).forEach(p=>{
-      const d = document.createElement('div');
-      d.style.padding='8px'; d.style.borderBottom='1px solid rgba(255,255,255,0.04)';
-      d.innerHTML = `<div style="display:flex;justify-content:space-between"><div><b>${p.period}</b><div class="small">${p.signal} • ${p.nums}</div></div><div class="small">${new Date(p.ts).toLocaleTimeString()}</div></div>`;
-      el.appendChild(d);
-    });
-  }
-
-  document.getElementById('genBtn').addEventListener('click', ()=>{
-    let w = getWallet();
-    if(w < PRED_COST){ alert('Not enough coins. Buy coins first.'); return; }
-    // Deduct coins
-    setWallet(w - PRED_COST);
-    // generate random BIG/SMALL
-    const signal = Math.random() < 0.5 ? 'SMALL' : 'BIG';
-    let a,b;
-    if(signal === 'SMALL'){ a = Math.floor(Math.random()*5); b = Math.floor(Math.random()*5); }
-    else { a = 5 + Math.floor(Math.random()*5); b = 5 + Math.floor(Math.random()*5); }
-    const period = currentPeriod();
-    const nums = `${a} / ${b}`;
-    // show
-    document.getElementById('resultArea').style.display = 'block';
-    document.getElementById('predPeriod').innerText = period;
-    document.getElementById('predSignal').innerText = signal;
-    document.getElementById('predNums').innerText = nums;
-    // save
-    const arr = loadPreds();
-    arr.unshift({ period, signal, nums, ts: Date.now() });
-    savePreds(arr.slice(0,200));
-    renderHistory();
+  // wallet handling (realtime)
+  let userUid = null;
+  onAuthStateChanged(auth,user=>{
+    if(user){ userUid = user.uid; const uref = doc(db,'users',userUid); onSnapshot(uref,snap=>{ const d=snap.exists()?snap.data():null; document.getElementById('wallet').innerText = d? (d.wallet||0):0; }); }
+    else { userUid = null; document.getElementById('wallet').innerText = localStorage.getItem('wallet_coins')||0; }
   });
 
-  document.getElementById('refreshBtn').addEventListener('click', ()=> { renderWallet(); renderHistory(); });
+  // local history
+  function loadHist(){ const arr = JSON.parse(localStorage.getItem('__preds__')||'[]'); const el = document.getElementById('hist'); el.innerHTML = ''; if(!arr.length){ el.innerHTML = '<div class="small">No predictions yet</div>'; return; } arr.slice(0,200).forEach(p=>{ const div=document.createElement('div'); div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.04)'; div.innerHTML = `<div style="display:flex;justify-content:space-between"><div><b>${p.period}</b><div class="small">${p.signal} • ${p.nums}</div></div><div class="small">${new Date(p.ts).toLocaleTimeString()}</div></div>`; el.appendChild(div); }); }
+  loadHist();
 
-  // If admin approved a pending UTR, credit happens in admin; but for convenience: if user lands here and localStorage has approved key for their UTR, admin would have created '__approved__UTR' - we won't auto-scan here for privacy.
-  renderWallet();
-  renderHistory();
+  // generate prediction: transaction to deduct 10 coins
+  document.getElementById('genBtn').addEventListener('click', async ()=>{
+    playClick();
+    const COST = 10;
+    if(!userUid){ if(confirm('Login required. Go to home?')) location.href='index.html'; return; }
+    const userRef = doc(db,'users',userUid);
+    try{
+      await runTransaction(db, async (tx)=>{
+        const snap = await tx.get(userRef);
+        if(!snap.exists()) throw new Error('User doc not found');
+        const cur = snap.data().wallet || 0;
+        if(cur < COST) throw new Error('Not enough coins');
+        tx.update(userRef, { wallet: cur - COST });
+      });
+      // generate local prediction
+      const signal = Math.random() < 0.5 ? 'SMALL' : 'BIG';
+      let a,b;
+      if(signal === 'SMALL'){ a = Math.floor(Math.random()*5); b = Math.floor(Math.random()*5); } else { a = 5 + Math.floor(Math.random()*5); b = 5 + Math.floor(Math.random()*5); }
+      const period = currentPeriod();
+      const nums = `${a} / ${b}`;
+      document.getElementById('resultCard').style.display='block';
+      document.getElementById('predPeriod').innerText = period;
+      document.getElementById('predSignal').innerText = signal;
+      document.getElementById('predNums').innerText = nums;
+      const arr = JSON.parse(localStorage.getItem('__preds__')||'[]');
+      arr.unshift({ period, signal, nums, ts: Date.now() });
+      localStorage.setItem('__preds__', JSON.stringify(arr.slice(0,200)));
+      loadHist();
+    }catch(e){ alert(e.message || 'Failed'); }
+  });
+
+  document.getElementById('refreshBtn').addEventListener('click', ()=>{ loadHist(); });
+
 </script>
 </body>
 </html>
