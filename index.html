@@ -1,231 +1,666 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sureshot — Dashboard</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: url("anime1.png") no-repeat center center fixed;
-      background-size: cover;
-      color: white;
-    }
-    header {
-      padding: 15px;
-      text-align: center;
-      background: rgba(0,0,0,0.5);
-      font-size: 20px;
-    }
-    .page { display: none; padding: 20px; }
-    .active { display: block; }
-    button {
-      padding: 10px 20px;
-      margin: 5px;
-      border: none;
-      border-radius: 8px;
-      background: #00c4ff;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .wallet { font-size: 18px; margin-bottom: 10px; }
-    .signal-box { margin-top: 20px; font-size: 22px; font-weight: bold; }
-    table { width: 100%; margin-top: 15px; border-collapse: collapse; }
-    table, th, td { border: 1px solid white; }
-    th, td { padding: 8px; text-align: center; }
-    .admin-box { background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Coin Predictions — App</title>
+
+<!-- particles -->
+<script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
+
+<style>
+  :root{
+    --neon:#00ff9d; --accent:#1dd3ff; --muted:#9fb0d6; --panel:rgba(255,255,255,0.03);
+  }
+  *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
+  body{margin:0;color:#eaf6ff;min-height:100vh;background:#07121a}
+  #tsparticles{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .page{display:none;min-height:100vh;padding:28px;background-position:center;background-size:cover;background-repeat:no-repeat}
+  .show{display:block}
+  .wrap{max-width:1100px;margin:0 auto;position:relative;z-index:2}
+  .card{background:var(--panel);backdrop-filter:blur(6px);padding:18px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.6);margin-bottom:16px}
+  .top{display:flex;justify-content:space-between;align-items:center}
+  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));color:#001;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
+  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px;border-radius:8px}
+  .small{font-size:13px;color:var(--muted)}
+  .plan{padding:12px;border-radius:10px;background:linear-gradient(180deg,#071425,#08172b);cursor:pointer;border:1px solid rgba(255,255,255,0.03)}
+  .grid{display:grid;grid-template-columns:1fr 340px;gap:18px}
+  input,select,textarea{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;width:100%}
+  table{width:100%;border-collapse:collapse;margin-top:12px}
+  th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.06);text-align:center}
+  .tag{padding:4px 8px;border-radius:6px;font-weight:700}
+  .big{background:#1dd3ff22;color:#1dd3ff}
+  .smalltag{background:#00ff9d22;color:#00ff9d}
+  .win{background:#00ff9d33;color:#002}
+  .loss{background:#ff4d4d33;color:#7a0000}
+  footer{color:var(--muted);text-align:center;margin-top:12px;font-size:13px}
+  audio{display:none}
+  @media (max-width:920px){ .grid{grid-template-columns:1fr} }
+</style>
 </head>
 <body>
-  <header>Sureshot — All in One</header>
 
-  <!-- Page 1: Home -->
-  <div id="page1" class="page active">
-    <div class="wallet">Wallet Balance: <span id="walletBalance">0</span> Coins</div>
-    <button onclick="goToPage('page2')">Go to Payment</button>
-    <button onclick="goToPage('page3')">Go to Prediction</button>
-    <button onclick="goToPage('adminLogin')">Admin</button>
+<!-- particles -->
+<div id="tsparticles"></div>
+
+<!-- Page 1: Plans (anime1.png) -->
+<section id="page1" class="page show" style="background-image:url('anime1.png')">
+  <div class="wrap">
+    <div class="top card">
+      <div style="font-weight:900;font-size:18px">Coin Predictions</div>
+      <div class="small">Wallet: <strong id="walletTop1">0</strong> coins</div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 8px 0">Choose a Plan</h2>
+      <div class="small">Min 100 — Max 4000. Rate: <b>2 coins = ₹1</b> (₹0.5 / coin).</div>
+
+      <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap" id="plansList">
+        <!-- injected -->
+      </div>
+
+      <div style="margin-top:12px" class="grid">
+        <div>
+          <label class="small">Or custom (100–4000)</label>
+          <input id="customQty" type="number" min="100" max="4000" value="100">
+          <div style="margin-top:12px">
+            <button id="toPaymentBtn" class="btn">Proceed to Payment</button>
+            <button id="toPredictionBtn" class="ghost">Go to Prediction</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="card" style="padding:14px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:64px;height:64px;border-radius:50%;background:#000;display:flex;align-items:center;justify-content:center;font-weight:800;color:#00ff9d">BT</div>
+              <div>
+                <div style="font-weight:700">@BABA_TILLU</div>
+                <div class="small">Premium + secure</div>
+              </div>
+            </div>
+
+            <div style="margin-top:12px">
+              <div class="small">Customer Service</div>
+              <div style="margin-top:8px">
+                <button id="csBtn1" class="btn">Contact on Telegram</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px;padding:14px">
+            <div class="small">Quick Links</div>
+            <div style="margin-top:8px;display:flex;gap:8px">
+              <button id="linkPayment" class="ghost">Payment</button>
+              <button id="linkAdmin" class="ghost">Admin</button>
+              <button id="linkPrediction" class="ghost">Prediction</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>Files: <code>anime1.png, anime2.png, anime3.png, music.m4a, qr.png, click.mp3, hover.mp3</code></footer>
   </div>
+</section>
 
-  <!-- Page 2: Payment -->
-  <div id="page2" class="page" style="background:url('anime2.png') no-repeat center center fixed; background-size:cover;">
-    <h2>Scan & Pay</h2>
-    <img src="qr.png" alt="QR Code" width="200"/>
-    <p id="paymentPlanText">Pay here</p>
-    <input type="text" id="utr" placeholder="Enter 12 digit UTR"/>
-    <button onclick="confirmPayment()">Confirm</button>
-    <p id="paymentStatus"></p>
-    <button onclick="goToPage('page1')">Back</button>
+<!-- Page 2: Payment (anime2.png) -->
+<section id="page2" class="page" style="background-image:url('anime2.png')">
+  <div class="wrap">
+    <div class="top card">
+      <div style="font-weight:900;font-size:18px">Payment</div>
+      <div class="small">Wallet: <strong id="walletTop2">0</strong> coins</div>
+    </div>
+
+    <div class="card grid">
+      <div>
+        <h2 style="margin:0 0 8px 0">Confirm Payment</h2>
+        <div class="small">Scan QR, pay the shown amount. After paying, enter 12-digit UTR and Confirm.</div>
+
+        <div style="margin-top:12px">
+          <label class="small">Selected Coins</label>
+          <input id="payCoins" readonly>
+          <label class="small" style="margin-top:8px">Amount (₹)</label>
+          <input id="payAmount" readonly>
+          <label class="small" style="margin-top:8px">Enter 12-digit UTR</label>
+          <input id="payUTR" maxlength="12" placeholder="123456789012">
+          <div style="margin-top:12px;display:flex;gap:10px">
+            <button id="submitPayBtn" class="btn">Confirm Payment</button>
+            <button id="cancelPayBtn" class="ghost">Cancel</button>
+          </div>
+          <div id="payMsg" class="small" style="margin-top:10px"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="padding:14px">
+          <div class="center">
+            <img id="qrImg" src="qr.png" alt="QR" style="max-width:260px;border-radius:10px">
+            <div class="small" style="margin-top:10px">Scan to pay (UPI)</div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Customer Service</div>
+            <div style="margin-top:8px">
+              <button id="csBtn2" class="btn">Contact on Telegram</button>
+            </div>
+            <div style="margin-top:10px" class="small">After processing, coins will be credited automatically (10s).</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
+</section>
 
-  <!-- Page 3: Prediction -->
-  <div id="page3" class="page" style="background:url('anime3.png') no-repeat center center fixed; background-size:cover;">
-    <h2>Prediction</h2>
-    <p>Current Period: <span id="periodNumber">Loading...</span></p>
-    <p>Countdown: <span id="countdown">60</span>s</p>
-    <button onclick="generatePrediction()">Generate Prediction (-10 Coins)</button>
-    <div id="signalResult" class="signal-box"></div>
-    <h3>Prediction History</h3>
-    <table>
-      <thead>
-        <tr><th>Period</th><th>Signal</th><th>Result</th><th>Action</th></tr>
-      </thead>
-      <tbody id="historyTable"></tbody>
-    </table>
-    <p>Accuracy: <span id="accuracy">0%</span></p>
-    <button onclick="goToPage('page1')">Back</button>
-    <audio id="bgMusic" src="music.m4a" autoplay loop></audio>
-  </div>
+<!-- Page 3: Prediction (anime3.png) -->
+<section id="page3" class="page" style="background-image:url('anime3.png')">
+  <div class="wrap">
+    <div class="top card">
+      <div style="font-weight:900;font-size:18px">Live Prediction</div>
+      <div class="small">Wallet: <strong id="walletTop3">0</strong> coins</div>
+    </div>
 
-  <!-- Admin Login -->
-  <div id="adminLogin" class="page">
-    <h2>Admin Access</h2>
-    <input type="password" id="adminPass" placeholder="Enter Password"/>
-    <button onclick="checkAdmin()">Login</button>
-    <button onclick="goToPage('page1')">Back</button>
-    <p id="adminMsg"></p>
-  </div>
+    <div class="card center">
+      <div style="font-weight:800;font-size:20px">Server Connected ✅</div>
+      <div class="small">Real-time period (admin-controlled)</div>
+    </div>
 
-  <!-- Admin Panel -->
-  <div id="adminPanel" class="page">
-    <div class="admin-box">
-      <h2>Admin Panel</h2>
-      <p>Set Current Period:</p>
-      <input type="text" id="setPeriod" placeholder="Enter Period Number"/>
-      <button onclick="updatePeriod()">Update Period</button>
-      <p id="adminStatus"></p>
-      <button onclick="goToPage('page1')">Back</button>
+    <div class="card center">
+      <div style="margin-bottom:8px"><strong>Period:</strong> <span id="periodDisplay">--</span></div>
+      <div><strong>Countdown:</strong> <span id="countdownDisplay">--</span></div>
+      <div style="margin-top:12px">
+        <button id="genPredBtn" class="btn">Generate Prediction (10 coins)</button>
+      </div>
+      <div id="lastPred" style="margin-top:12px" class="small"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Your Predictions & History</h3>
+      <div class="small">Mark Win / Loss to calculate accuracy</div>
+      <table>
+        <thead><tr><th>Period</th><th>Signal</th><th>Result</th><th>Action</th></tr></thead>
+        <tbody id="predHistory"></tbody>
+      </table>
+      <div id="accuracy" class="small" style="margin-top:10px">Accuracy: 0%</div>
     </div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  <!-- background music -->
+  <audio id="bgMusic" src="music.m4a" loop></audio>
+</section>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
-      authDomain: "terminal-xxrr.firebaseapp.com",
-      databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "terminal-xxrr",
-      storageBucket: "terminal-xxrr.firebasestorage.app",
-      messagingSenderId: "722753278120",
-      appId: "1:722753278120:web:bfa37aab39635a4e57f29d",
-      measurementId: "G-E3MZH3E1K5"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+<!-- Page Admin (anime3.png) -->
+<section id="pageAdmin" class="page" style="background-image:url('anime3.png')">
+  <div class="wrap">
+    <div class="top card">
+      <div style="font-weight:900;font-size:18px">Admin Panel</div>
+      <div class="small">Control current period</div>
+    </div>
 
-    // Wallet
-    let balance = localStorage.getItem("wallet") ? parseInt(localStorage.getItem("wallet")) : 0;
-    document.getElementById("walletBalance").innerText = balance;
+    <div class="card center">
+      <div id="adminLoginBox">
+        <div class="small">Enter admin password to unlock</div>
+        <input id="adminPass" placeholder="Password" style="margin-top:8px">
+        <div style="margin-top:8px">
+          <button id="adminUnlockBtn" class="btn">Unlock</button>
+        </div>
+        <div id="adminErr" class="small" style="color:#ff7b7b;margin-top:8px;display:none">Wrong password</div>
+      </div>
 
-    function updateWallet(val) {
-      balance += val;
-      if(balance<0) balance=0;
-      localStorage.setItem("wallet", balance);
-      document.getElementById("walletBalance").innerText = balance;
-    }
+      <div id="adminPanelBox" style="display:none;margin-top:12px;text-align:left">
+        <div>Current Period: <strong id="adminCurPeriod">--</strong></div>
+        <div style="margin-top:10px">
+          <label class="small">Set last 3 digits (1–999)</label>
+          <input id="adminLast3" type="number" min="1" max="999" placeholder="e.g. 256">
+          <div style="margin-top:8px">
+            <button id="adminSetBtn" class="btn">Set Period</button>
+            <button id="adminStartAuto" class="ghost">Start Auto-Increment</button>
+            <button id="adminStopAuto" class="ghost">Stop Auto-Increment</button>
+          </div>
+        </div>
+        <div class="small" style="margin-top:12px">Auto increment increases last 3 digits every 60s (999 → 001).</div>
+      </div>
+    </div>
 
-    // Page navigation
-    function goToPage(id) {
-      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
-    }
+  </div>
+</section>
 
-    // Payment
-    function confirmPayment() {
-      const utr = document.getElementById("utr").value;
-      if(utr.length !== 12) { document.getElementById("paymentStatus").innerText="Invalid UTR"; return; }
-      document.getElementById("paymentStatus").innerText="Processing... Wait 10s";
-      setTimeout(()=>{
-        updateWallet(100); // fixed 100 coin credit for demo
-        document.getElementById("paymentStatus").innerText="Coins Credited!";
-      },10000);
-    }
+<!-- UI audio -->
+<audio id="sndClick" src="click.mp3"></audio>
+<audio id="sndHover" src="hover.mp3"></audio>
 
-    // Prediction
-    let currentPeriod = 20250915100010000;
-    let countdown=60, timer;
-    const periodEl=document.getElementById("periodNumber");
-    const cdEl=document.getElementById("countdown");
+<script type="module">
+/* =========================
+   Firebase imports & init
+   ========================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import {
+  getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc,
+  serverTimestamp, updateDoc, runTransaction, query, where, orderBy
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-    function startCountdown() {
-      clearInterval(timer);
-      timer=setInterval(()=>{
-        countdown--;
-        cdEl.innerText=countdown;
-        if(countdown<=0){
-          countdown=60;
-          incrementPeriod();
-        }
-      },1000);
-    }
+const firebaseConfig = {
+  apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+  authDomain: "terminal-xxrr.firebaseapp.com",
+  databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "terminal-xxrr",
+  storageBucket: "terminal-xxrr.appspot.com",
+  messagingSenderId: "722753278120",
+  appId: "1:722753278120:web:bfa37aab39635a4e57f29d",
+  measurementId: "G-E3MZH3E1K5"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-    function incrementPeriod(){
-      let num=parseInt(currentPeriod.toString().slice(-3));
-      num=(num%999)+1;
-      let prefix=currentPeriod.toString().slice(0,-3);
-      currentPeriod=parseInt(prefix+num.toString().padStart(3,"0"));
-      set(ref(db,"period"),currentPeriod);
-    }
+/* =========================
+   Particles + sounds init
+   ========================= */
+tsParticles.load("tsparticles", {
+  fpsLimit: 60,
+  particles: {
+    number: { value: 40 },
+    color: { value: "#00ff9d" },
+    shape: { type: "circle" },
+    opacity: { value: 0.8, random: true },
+    size: { value: { min: 1, max: 4 } },
+    links: { enable: true, distance: 140, color: "#00ff9d", opacity: 0.12, width: 1 },
+    move: { enable: true, speed: 0.9 }
+  },
+  detectRetina: true
+});
+const sndClick = document.getElementById('sndClick');
+function playClick(){ try{ sndClick.currentTime=0; sndClick.play(); }catch(e){} }
 
-    onValue(ref(db,"period"),snap=>{
-      if(snap.exists()){
-        currentPeriod=snap.val();
-        periodEl.innerText=currentPeriod;
-        countdown=60;
-        startCountdown();
-      }
+/* =========================
+   Pages & Navigation
+   ========================= */
+const pages = {
+  page1: document.getElementById('page1'),
+  page2: document.getElementById('page2'),
+  page3: document.getElementById('page3'),
+  pageAdmin: document.getElementById('pageAdmin')
+};
+function show(id){
+  Object.values(pages).forEach(p=>p.classList.remove('show'));
+  if(pages[id]) pages[id].classList.add('show');
+  // music control
+  if(id==='page3'){ try{ document.getElementById('bgMusic').play(); }catch(e){} }
+  else { try{ document.getElementById('bgMusic').pause(); document.getElementById('bgMusic').currentTime = 0 }catch(e){} }
+}
+
+/* attach nav buttons (safe) */
+document.getElementById('toPaymentBtn').addEventListener('click', ()=>{
+  const q = parseInt(document.getElementById('customQty').value||'0',10);
+  if(isNaN(q) || q < 100){ alert('Minimum 100 coins'); return; }
+  if(q > 4000){ alert('Maximum 4000 coins'); return; }
+  localStorage.setItem('pendingPlan', String(q));
+  populatePaymentFromPlan(q);
+  playClick();
+  show('page2');
+});
+document.getElementById('toPredictionBtn').addEventListener('click', ()=>{ playClick(); show('page3'); });
+document.getElementById('linkPayment').addEventListener('click', ()=>{ playClick(); show('page2'); });
+document.getElementById('linkAdmin').addEventListener('click', ()=>{ playClick(); show('pageAdmin'); });
+document.getElementById('linkPrediction').addEventListener('click', ()=>{ playClick(); show('page3'); });
+document.getElementById('csBtn1').addEventListener('click', ()=>{ playClick(); window.open('https://t.me/Nskskssiwi','_blank'); });
+document.getElementById('csBtn2').addEventListener('click', ()=>{ playClick(); window.open('https://t.me/Nskskssiwi','_blank'); });
+
+/* Plans render */
+const presets = [100,200,500,1000,2000,4000];
+const plansEl = document.getElementById('plansList');
+presets.forEach(p=>{
+  const d = document.createElement('div');
+  d.className='plan';
+  d.style.minWidth='160px';
+  d.innerHTML = `<div style="font-weight:800">${p} coins</div><div class="small">₹${(p/2).toFixed(0)}</div>`;
+  d.onclick = ()=>{
+    document.getElementById('customQty').value = p;
+    // visual
+    Array.from(plansEl.children).forEach(c=>c.style.boxShadow='none');
+    d.style.boxShadow = '0 8px 30px rgba(0,255,157,0.07)';
+    playClick();
+  };
+  d.addEventListener('mouseenter', ()=>{});
+  plansEl.appendChild(d);
+});
+
+/* =========================
+   Auth & user doc
+   ========================= */
+let currentUser = null;
+signInAnonymously(auth).catch(()=>{/* ignore errors */});
+onAuthStateChanged(auth, async user=>{
+  if(user){
+    currentUser = user;
+    await ensureUserDoc(user.uid);
+    subscribeUserDoc(user.uid);
+    subscribeUserPredictions(user.uid);
+  } else {
+    currentUser = null;
+  }
+});
+
+async function ensureUserDoc(uid){
+  const uRef = doc(db,'users',uid);
+  const snap = await getDoc(uRef);
+  if(!snap.exists()){
+    await setDoc(uRef,{ wallet: 0, createdAt: serverTimestamp() }, { merge:true });
+  }
+}
+
+/* subscribe user doc to update wallet UI */
+let unsubUser = null;
+function subscribeUserDoc(uid){
+  const uRef = doc(db,'users',uid);
+  if(unsubUser) unsubUser(); // not a function in modular; onSnapshot returns unsubscribe function
+  unsubUser = onSnapshot(uRef, snap=>{
+    const data = snap.exists()? snap.data() : null;
+    const w = data ? (data.wallet || 0) : 0;
+    // set wallet on all pages
+    document.getElementById('walletTop1').innerText = w;
+    document.getElementById('walletTop2').innerText = w;
+    document.getElementById('walletTop3').innerText = w;
+  });
+}
+
+/* =========================
+   Payment flow
+   ========================= */
+function populatePaymentFromPlan(coins){
+  const c = Number(coins);
+  document.getElementById('payCoins').value = c;
+  document.getElementById('payAmount').value = (c * 0.5).toFixed(2); // ₹0.5/coin
+  document.getElementById('payMsg').innerText = '';
+}
+const stored = localStorage.getItem('pendingPlan');
+if(stored) populatePaymentFromPlan(Number(stored));
+
+document.getElementById('cancelPayBtn').addEventListener('click', ()=> { playClick(); show('page1'); });
+
+document.getElementById('submitPayBtn').addEventListener('click', async ()=>{
+  playClick();
+  const utr = (document.getElementById('payUTR').value||'').trim();
+  if(!/^[0-9]{12}$/.test(utr)){ document.getElementById('payMsg').innerText = 'Enter valid 12-digit UTR'; return; }
+  const coins = Number(document.getElementById('payCoins').value||0);
+  const amount = Number(document.getElementById('payAmount').value||0);
+  if(!currentUser){ alert('Not signed in — reload page'); return; }
+
+  document.getElementById('payMsg').innerText = 'Admin Approval Processing… Wait';
+
+  // store a payment record (processing)
+  let payDocRef = null;
+  try{
+    payDocRef = await addDoc(collection(db,'payments'), {
+      utr, coins, amount, userId: currentUser.uid, status: 'processing', ts: serverTimestamp()
     });
+  }catch(e){
+    console.warn('payments write failed', e);
+  }
 
-    function generatePrediction(){
-      if(balance<10){ alert("Not enough coins!"); return; }
-      updateWallet(-10);
-      const signal=Math.random()>0.5?"Big":"Small";
-      document.getElementById("signalResult").innerText="Signal: "+signal;
-      addHistory(currentPeriod,signal);
-    }
-
-    function addHistory(period,signal){
-      const table=document.getElementById("historyTable");
-      const row=document.createElement("tr");
-      row.innerHTML=`<td>${period}</td><td>${signal}</td><td id="res-${period}">Pending</td>
-      <td><button onclick="setResult(${period},'Win')">Win</button>
-      <button onclick="setResult(${period},'Loss')">Loss</button></td>`;
-      table.prepend(row);
-    }
-
-    window.setResult=function(period,res){
-      document.getElementById("res-"+period).innerText=res;
-      updateAccuracy();
-    }
-
-    function updateAccuracy(){
-      let total=0,win=0;
-      document.querySelectorAll("#historyTable tr").forEach(r=>{
-        const t=r.querySelector("td:nth-child(3)").innerText;
-        if(t==="Win"||t==="Loss"){ total++; if(t==="Win") win++; }
+  // after 10s, credit user's wallet via transaction
+  setTimeout( async ()=>{
+    try{
+      // credit wallet in transaction
+      const uRef = doc(db,'users',currentUser.uid);
+      await runTransaction(db, async tx=>{
+        const uSnap = await tx.get(uRef);
+        let cur = 0;
+        if(uSnap.exists()) cur = uSnap.data().wallet || 0;
+        tx.update(uRef, { wallet: cur + Number(coins) });
       });
-      let acc=total?((win/total)*100).toFixed(1):0;
-      document.getElementById("accuracy").innerText=acc+"%";
-    }
-
-    // Admin
-    function checkAdmin(){
-      const pass=document.getElementById("adminPass").value;
-      if(pass==="457"){ goToPage("adminPanel"); }
-      else { document.getElementById("adminMsg").innerText="Wrong Password"; }
-    }
-
-    function updatePeriod(){
-      const val=document.getElementById("setPeriod").value;
-      if(val){
-        set(ref(db,"period"),parseInt(val));
-        document.getElementById("adminStatus").innerText="Updated!";
+      // update payment doc to approved (if we have ref)
+      if(payDocRef){
+        await updateDoc(payDocRef, { status:'approved', approvedAt: serverTimestamp(), autoApproved: true });
+      } else {
+        // fallback: create approved record
+        await addDoc(collection(db,'payments'), { utr, coins, amount, userId: currentUser.uid, status:'approved', approvedAt: serverTimestamp(), autoApproved:true });
       }
+      document.getElementById('payMsg').innerText = coins + ' coins credited to your wallet ✅';
+      localStorage.removeItem('pendingPlan');
+      // small wait then redirect to prediction page
+      setTimeout(()=> show('page3'), 1200);
+    }catch(e){
+      console.error('credit failed', e);
+      document.getElementById('payMsg').innerText = 'Credit failed: ' + (e.message || e);
     }
-  </script>
+  }, 10000);
+});
+
+/* =========================
+   Wallet credit helper (used elsewhere if needed)
+   ========================= */
+async function creditWallet(uid, coins){
+  const uRef = doc(db,'users',uid);
+  await runTransaction(db, async tx=>{
+    const s = await tx.get(uRef);
+    if(!s.exists()) tx.set(uRef, { wallet: coins }, { merge:true });
+    else {
+      const cur = s.data().wallet || 0;
+      tx.update(uRef, { wallet: cur + Number(coins) });
+    }
+  });
+}
+
+/* =========================
+   System period (admin-controlled) subscribe
+   ========================= */
+const periodRef = doc(db,'system','period');
+let currentPeriodStr = null;
+let periodTs = null;
+
+onSnapshot(periodRef, snap=>{
+  if(snap.exists()){
+    const d = snap.data();
+    currentPeriodStr = d.number || null;
+    periodTs = d.ts ? d.ts.toDate() : new Date();
+    document.getElementById('periodDisplay').innerText = currentPeriodStr || '--';
+    document.getElementById('adminCurPeriod').innerText = currentPeriodStr || '--';
+  } else {
+    // if not exists, initialize with today's prefix and 001
+    (async ()=>{
+      const now = new Date();
+      const YYYY = now.getFullYear().toString();
+      const MM = String(now.getMonth()+1).padStart(2,'0');
+      const DD = String(now.getDate()).padStart(2,'0');
+      const prefix = `${YYYY}${MM}${DD}1000`;
+      const defaultNum = prefix + '001';
+      try{ await setDoc(periodRef, { number: defaultNum, ts: serverTimestamp() }); }catch(e){}
+    })();
+  }
+});
+
+/* countdown calculation using periodTs */
+function updateCountdownUI(){
+  const cdEl = document.getElementById('countdownDisplay');
+  if(!periodTs || !currentPeriodStr){ cdEl.innerText = '--'; return; }
+  const now = new Date();
+  const elapsed = Math.floor((now.getTime() - periodTs.getTime())/1000);
+  const rem = 60 - (elapsed % 60);
+  cdEl.innerText = rem + 's';
+  // also update displayed period (in case changed)
+  document.getElementById('periodDisplay').innerText = currentPeriodStr || '--';
+}
+setInterval(updateCountdownUI, 1000);
+
+/* =========================
+   Generate prediction logic
+   ========================= */
+document.getElementById('genPredBtn').addEventListener('click', async ()=>{
+  playClick();
+  if(!currentUser){ alert('Not signed in — reload'); return; }
+  // check wallet
+  const uRef = doc(db,'users',currentUser.uid);
+  const uSnap = await getDoc(uRef);
+  const curWallet = uSnap.exists() ? (uSnap.data().wallet || 0) : 0;
+  if(curWallet < 10){ alert('Not enough coins'); return; }
+
+  // run transaction: deduct 10 coins and create prediction doc atomically
+  try{
+    await runTransaction(db, async tx=>{
+      const userSnap = await tx.get(uRef);
+      const cur = userSnap.exists() ? (userSnap.data().wallet || 0) : 0;
+      if(cur < 10) throw new Error('Insufficient coins');
+      tx.update(uRef, { wallet: cur - 10 });
+
+      // create prediction doc
+      const predRef = doc(collection(db,'predictions'));
+      const signal = Math.random() > 0.5 ? 'BIG' : 'SMALL';
+      tx.set(predRef, {
+        userId: currentUser.uid,
+        period: currentPeriodStr || ('unknown'),
+        signal,
+        result: '',
+        ts: serverTimestamp()
+      });
+    });
+    document.getElementById('lastPred').innerText = 'Prediction generated — check history below';
+  }catch(e){
+    alert('Generate failed: ' + (e.message || e));
+  }
+});
+
+/* =========================
+   User predictions subscription & history UI
+   ========================= */
+import { onSnapshot as onSnapCollection, orderBy as orderByFn } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+let unsubPreds = null;
+function subscribeUserPredictions(uid){
+  if(!uid) return;
+  const q = query(collection(db,'predictions'), where('userId','==',uid), orderBy('ts','desc'));
+  if(unsubPreds) unsubPreds();
+  unsubPreds = onSnapshot(q, snap=>{
+    const rows = [];
+    snap.forEach(docSnap=>{
+      rows.push({ id: docSnap.id, ...docSnap.data() });
+    });
+    renderHistory(rows);
+  });
+}
+
+function renderHistory(rows){
+  const tbody = document.getElementById('predHistory');
+  tbody.innerHTML = '';
+  let wins = 0, total = 0;
+  rows.forEach(r=>{
+    total += (r.result ? 1 : 0) ? 0 : 0; // we'll count wins/loss below
+    const tr = document.createElement('tr');
+    const signalClass = (r.signal === 'BIG') ? 'big' : 'smalltag';
+    const resultLabel = r.result ? (r.result==='win' ? `<span class="tag win">WIN</span>` : `<span class="tag loss">LOSS</span>`) : '-';
+    tr.innerHTML = `<td>${r.period}</td>
+      <td><span class="tag ${signalClass}">${r.signal}</span></td>
+      <td id="res-${r.id}">${resultLabel}</td>
+      <td>
+        <button class="ghost" onclick="markResult('${r.id}','win')">Win</button>
+        <button class="ghost" onclick="markResult('${r.id}','loss')">Loss</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  // compute accuracy by counting docs with result
+  let done = 0, winCount = 0;
+  rows.forEach(r=>{
+    if(r.result === 'win'){ done++; winCount++; }
+    else if(r.result === 'loss'){ done++; }
+  });
+  const acc = done ? ((winCount/done)*100).toFixed(1) : 0;
+  document.getElementById('accuracy').innerText = `Accuracy: ${acc}% (Wins: ${winCount}/${done})`;
+}
+
+/* global function to mark result (used by buttons) */
+window.markResult = async (id, res) => {
+  try{
+    await updateDoc(doc(db,'predictions',id), { result: res, resolvedAt: serverTimestamp() });
+  }catch(e){ alert('Mark failed: '+ (e.message || e)); }
+};
+
+/* =========================
+   Admin actions
+   ========================= */
+const encodedPass = "NDU3"; // base64('457')
+function getAdminPass(){ try{ return atob(encodedPass); }catch(e){ return '457'; } }
+
+document.getElementById('adminUnlockBtn').addEventListener('click', ()=>{
+  const v = (document.getElementById('adminPass').value||'').trim();
+  if(v === getAdminPass()){
+    document.getElementById('adminLoginBox').style.display = 'none';
+    document.getElementById('adminPanelBox').style.display = 'block';
+    // show current period
+    onSnapshot(periodRef, snap=>{
+      if(snap.exists()) document.getElementById('adminCurPeriod').innerText = snap.data().number || '--';
+    });
+  } else {
+    document.getElementById('adminErr').style.display = 'block';
+    setTimeout(()=> document.getElementById('adminErr').style.display = 'none', 2400);
+  }
+});
+
+let adminAutoId = null;
+document.getElementById('adminSetBtn').addEventListener('click', async ()=>{
+  const last3 = Number(document.getElementById('adminLast3').value||0);
+  if(isNaN(last3) || last3 < 1 || last3 > 999){ alert('Enter 1–999'); return; }
+  // compute prefix: prefer existing prefix if set
+  let prefix = null;
+  if(currentPeriodStr && currentPeriodStr.length > 3) prefix = currentPeriodStr.slice(0,-3);
+  else {
+    const now = new Date();
+    const YYYY = now.getFullYear().toString();
+    const MM = String(now.getMonth()+1).padStart(2,'0');
+    const DD = String(now.getDate()).padStart(2,'0');
+    prefix = `${YYYY}${MM}${DD}1000`;
+  }
+  const newNum = prefix + String(last3).padStart(3,'0');
+  try{
+    await setDoc(periodRef, { number: newNum, ts: serverTimestamp() });
+    document.getElementById('adminCurPeriod').innerText = newNum;
+    alert('Period set: ' + newNum);
+  }catch(e){ alert('Set failed: '+ (e.message||e)); }
+});
+
+document.getElementById('adminStartAuto').addEventListener('click', ()=>{
+  if(adminAutoId) return alert('Auto already running');
+  adminAutoId = setInterval(async ()=>{
+    try{
+      const snap = await getDoc(periodRef);
+      if(!snap.exists()) return;
+      const curr = snap.data().number;
+      const prefix = curr.slice(0,curr.length-3);
+      let last = parseInt(curr.slice(-3),10) || 0;
+      last = last >= 999 ? 1 : last + 1;
+      const next = prefix + String(last).padStart(3,'0');
+      await setDoc(periodRef,{ number: next, ts: serverTimestamp() });
+    }catch(e){ console.warn('auto increment err', e); }
+  }, 60000);
+  alert('Auto-increment started');
+});
+
+document.getElementById('adminStopAuto').addEventListener('click', ()=>{
+  if(adminAutoId){ clearInterval(adminAutoId); adminAutoId = null; alert('Auto stopped'); } else alert('Auto not running');
+});
+
+/* =========================
+   Init & small helpers
+   ========================= */
+function init(){
+  const p = localStorage.getItem('pendingPlan');
+  if(p) populatePaymentFromPlan(Number(p));
+  // attach plan click behavior: when page loads, ensure payment button uses pendingPlan
+  document.querySelectorAll('.plan').forEach(el=>{
+    el.addEventListener('click', ()=> {
+      localStorage.setItem('pendingPlan', el.querySelector('div').innerText.replace(/\D/g,'') || el.getAttribute('data-coins'));
+      // update payment fields
+      populatePaymentFromPlan(Number(document.getElementById('customQty').value||100));
+    });
+  });
+}
+init();
+
+/* play sound on interactive controls */
+document.querySelectorAll('.btn, .ghost, .plan').forEach(el=>{
+  el.addEventListener('mousedown', playClick);
+});
+
+</script>
 </body>
 </html>
