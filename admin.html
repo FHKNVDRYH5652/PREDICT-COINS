@@ -1,159 +1,226 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: "Segoe UI", sans-serif;
-      background: linear-gradient(135deg, #0f172a, #1e293b, #0f172a);
-      color: white;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .login-box, .dashboard {
-      background: rgba(255, 255, 255, 0.05);
-      padding: 20px;
-      border-radius: 12px;
-      width: 350px;
-      text-align: center;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
-      display: none;
-    }
-    .login-box.active, .dashboard.active {
-      display: block;
-    }
-    input[type="password"] {
-      padding: 10px;
-      width: 80%;
-      border: none;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      font-size: 16px;
-    }
-    button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 15px;
-      font-weight: bold;
-      margin: 5px;
-    }
-    button.approve {
-      background: #22c55e;
-      color: white;
-    }
-    button.reject {
-      background: #ef4444;
-      color: white;
-    }
-    .request {
-      background: rgba(255, 255, 255, 0.08);
-      margin: 10px 0;
-      padding: 15px;
-      border-radius: 8px;
-      text-align: left;
-    }
-    h2 {
-      margin-bottom: 10px;
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin — Approvals</title>
+<style>
+  :root{--bg:#071427;--panel:rgba(255,255,255,0.03);--accent:#00ff9d;--muted:#9fb0d6}
+  *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
+  body{margin:0;min-height:100vh;background:linear-gradient(180deg,#04101a,#0b1a2a);color:#eaf6ff;display:flex;align-items:center;justify-content:center;padding:28px}
+  .card{background:var(--panel);backdrop-filter:blur(6px);padding:18px;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,0.6);width:980px;max-width:100%}
+  .center{text-align:center}
+  .row{display:flex;gap:12px;align-items:center}
+  .small{font-size:13px;color:var(--muted)}
+  .requests{max-height:520px;overflow:auto;margin-top:12px;border-radius:8px;padding:8px;background:rgba(0,0,0,0.18)}
+  .req{padding:10px;border-radius:8px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;gap:12px;align-items:center}
+  .req .info{flex:1}
+  .btn{background:linear-gradient(90deg,var(--accent),#1dd3ff);color:#001;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
+  .approve{background:#22c55e;color:#012}
+  .reject{background:#ef4444;color:#fff}
+  input{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+  .hidden{display:none}
+</style>
 </head>
 <body>
-  <!-- Login Box -->
-  <div class="login-box active" id="loginBox">
-    <h2>Admin Access</h2>
-    <p>Enter Passcode</p>
-    <input type="password" id="adminPass" placeholder="Enter Passcode">
-    <br>
-    <button onclick="checkPass()">Login</button>
-    <p id="error" style="color: red; display: none;">Wrong Passcode</p>
+
+<div class="card">
+  <div id="loginArea" class="center">
+    <h2 style="margin:0 0 8px 0">Admin Access</h2>
+    <div class="small">Enter passcode to unlock admin dashboard</div>
+    <div style="margin-top:12px">
+      <input id="passInput" type="password" placeholder="Enter passcode" />
+      <button id="loginBtn" class="btn" style="margin-left:8px">Unlock</button>
+    </div>
+    <div id="loginErr" class="small" style="color:#ff7b7b;margin-top:8px;display:none">Wrong passcode</div>
   </div>
 
-  <!-- Dashboard -->
-  <div class="dashboard" id="dashboard">
-    <h2>Payment Approval Requests</h2>
-    <div id="requests"></div>
+  <div id="dashArea" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h2 style="margin:0">Payment Approvals</h2>
+        <div class="small">Pending requests from `pending` collection</div>
+      </div>
+      <div class="row">
+        <button id="logoutBtn" class="btn">Lock</button>
+      </div>
+    </div>
+
+    <div style="margin-top:12px" class="small">Click Approve to credit user wallet (will increment `users/{uid}.wallet`), or Reject to mark rejected.</div>
+
+    <div id="requests" class="requests"></div>
+
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button id="refreshBtn" class="btn">Refresh</button>
+    </div>
   </div>
+</div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+<!-- Firestore (modular) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, runTransaction, updateDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-  <script>
-    // ✅ Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
-      authDomain: "terminal-xxrr.firebaseapp.com",
-      databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
-      projectId: "terminal-xxrr",
-      storageBucket: "terminal-xxrr.appspot.com",
-      messagingSenderId: "722753278120",
-      appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  // ---------- FIREBASE CONFIG ----------
+  const firebaseConfig = {
+    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+    authDomain: "terminal-xxrr.firebaseapp.com",
+    databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
+    projectId: "terminal-xxrr",
+    storageBucket: "terminal-xxrr.appspot.com",
+    messagingSenderId: "722753278120",
+    appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  // -------------------------------------
 
-    // ✅ Hidden Passcode (change here if needed)
-    const correctPass = "457";
+  // pass obfuscated (base64) — so code doesn't show "457" plainly
+  const encoded = "NDU3"; // base64 of "457"
+  function getPass(){ try{ return atob(encoded); }catch(e){ return "457"; } }
 
-    function checkPass() {
-      const input = document.getElementById("adminPass").value;
-      if (input === correctPass) {
-        document.getElementById("loginBox").classList.remove("active");
-        document.getElementById("dashboard").classList.add("active");
-        loadRequests();
-      } else {
-        document.getElementById("error").style.display = "block";
-      }
+  // UI
+  const loginArea = document.getElementById('loginArea');
+  const dashArea = document.getElementById('dashArea');
+  const passInput = document.getElementById('passInput');
+  const loginBtn = document.getElementById('loginBtn');
+  const loginErr = document.getElementById('loginErr');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const requestsEl = document.getElementById('requests');
+  const refreshBtn = document.getElementById('refreshBtn');
+
+  let unsubPending = null;
+
+  loginBtn.addEventListener('click', ()=>{
+    const v = (passInput.value||'').trim();
+    if(v === getPass()){
+      loginErr.style.display = 'none';
+      loginArea.classList.add('hidden');
+      dashArea.classList.remove('hidden');
+      passInput.value = '';
+      subscribePending();
+    } else {
+      loginErr.style.display = 'block';
+      setTimeout(()=> loginErr.style.display='none', 2500);
     }
+  });
 
-    // ✅ Load Payment Requests
-    function loadRequests() {
-      const ref = db.ref("payments");
-      ref.on("value", snapshot => {
-        const data = snapshot.val();
-        const container = document.getElementById("requests");
-        container.innerHTML = "";
+  logoutBtn.addEventListener('click', ()=> {
+    if(unsubPending) unsubPending(); unsubPending = null;
+    dashArea.classList.add('hidden');
+    loginArea.classList.remove('hidden');
+  });
 
-        if (data) {
-          Object.keys(data).forEach(key => {
-            const req = data[key];
-            if (!req.approved) {
-              const div = document.createElement("div");
-              div.classList.add("request");
-              div.innerHTML = `
-                <p><strong>User:</strong> ${req.user || "Unknown"}</p>
-                <p><strong>UTR:</strong> ${req.utr}</p>
-                <p><strong>Coins:</strong> ${req.coins}</p>
-                <button class="approve" onclick="approveRequest('${key}')">Approve</button>
-                <button class="reject" onclick="rejectRequest('${key}')">Reject</button>
-              `;
-              container.appendChild(div);
-            }
-          });
-        } else {
-          container.innerHTML = "<p>No requests pending.</p>";
+  refreshBtn.addEventListener('click', ()=> { // manual refresh
+    subscribePending(true);
+  });
+
+  // subscribe to pending collection
+  function subscribePending(force=false){
+    // if already subscribed, unsubscribe first
+    if(unsubPending && !force) return;
+    if(unsubPending){ unsubPending(); unsubPending = null; }
+
+    const q = query(collection(db,'pending'), orderBy('ts','desc'));
+    unsubPending = onSnapshot(q, snap => {
+      requestsEl.innerHTML = "";
+      let any = false;
+      snap.forEach(docSnap=>{
+        const data = docSnap.data();
+        const id = docSnap.id;
+        // show only pending (some old docs may have status)
+        if(!data.status || data.status === 'pending'){
+          any = true;
+          const wrapper = document.createElement('div');
+          wrapper.className = 'req';
+          wrapper.innerHTML = `
+            <div class="info">
+              <div><strong>Coins:</strong> ${data.coins || '-'} • <strong>₹</strong> ${(data.amount||0).toFixed(2)}</div>
+              <div class="small"><strong>UTR:</strong> ${data.utr || '-'} • <strong>User:</strong> ${data.userEmail || data.user || data.userId || 'guest'}</div>
+            </div>
+            <div class="actions row">
+              <button class="btn approve" data-id="${id}">Approve</button>
+              <button class="btn reject" data-id="${id}">Reject</button>
+            </div>
+          `;
+          requestsEl.appendChild(wrapper);
         }
       });
-    }
 
-    // ✅ Approve Request
-    function approveRequest(key) {
-      db.ref("payments/" + key).update({ approved: true });
-      alert("Approved successfully!");
-    }
+      if(!any) requestsEl.innerHTML = '<div class="small">No pending requests</div>';
 
-    // ✅ Reject Request
-    function rejectRequest(key) {
-      db.ref("payments/" + key).remove();
-      alert("Request rejected!");
+      // attach handlers
+      Array.from(requestsEl.querySelectorAll('.approve')).forEach(b=>{
+        b.onclick = ()=> approveRequest(b.dataset.id);
+      });
+      Array.from(requestsEl.querySelectorAll('.reject')).forEach(b=>{
+        b.onclick = ()=> rejectRequest(b.dataset.id);
+      });
+    }, err=>{
+      requestsEl.innerHTML = `<div class="small" style="color:#ff9b9b">Failed to load: ${err.message}</div>`;
+    });
+  }
+
+  // Approve -> use transaction to credit user's wallet and update pending doc
+  async function approveRequest(id){
+    try{
+      const pRef = doc(db,'pending',id);
+      const pSnap = await getDoc(pRef);
+      if(!pSnap.exists()){
+        alert('Request not found');
+        return;
+      }
+      const p = pSnap.data();
+      // require userId to credit — if missing, set approved but cannot credit
+      if(!p.userId){
+        // simply mark approved
+        await updateDoc(pRef, { status:'approved', approvedAt: serverTimestamp() });
+        await addDoc(collection(db,'approved'), { ...p, approvedAt: serverTimestamp(), approvedBy: 'admin-pass' });
+        alert('Approved (no userId to credit).');
+        return;
+      }
+
+      const userRef = doc(db,'users', p.userId);
+      // transaction to increment wallet safely
+      await runTransaction(db, async (tx)=>{
+        const userSnap = await tx.get(userRef);
+        let cur = 0;
+        if(userSnap.exists()){
+          cur = userSnap.data().wallet || 0;
+          tx.update(userRef, { wallet: cur + Number(p.coins || 0) });
+        } else {
+          // create user doc
+          tx.set(userRef, { wallet: Number(p.coins || 0) }, { merge: true });
+        }
+        // update pending doc status
+        tx.update(pRef, { status:'approved', approvedAt: serverTimestamp() });
+      });
+
+      // copy to approved collection for history
+      await addDoc(collection(db,'approved'), { ...p, approvedAt: serverTimestamp(), approvedBy: 'admin-pass' });
+
+      alert('Approved & wallet credited.');
+    }catch(e){
+      console.error(e);
+      alert('Approve failed: ' + (e.message || e));
     }
-  </script>
+  }
+
+  async function rejectRequest(id){
+    try{
+      const pRef = doc(db,'pending',id);
+      const pSnap = await getDoc(pRef);
+      if(!pSnap.exists()){ alert('Not found'); return; }
+      const p = pSnap.data();
+      await updateDoc(pRef, { status:'rejected', rejectedAt: serverTimestamp() });
+      await addDoc(collection(db,'rejected'), { ...p, rejectedAt: serverTimestamp(), rejectedBy: 'admin-pass' });
+      alert('Request rejected.');
+    }catch(e){
+      console.error(e);
+      alert('Reject failed: ' + (e.message || e));
+    }
+  }
+
+</script>
 </body>
 </html>
