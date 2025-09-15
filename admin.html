@@ -22,7 +22,7 @@
 <div id="tsparticles"></div>
 <div class="wrap">
   <h2>Admin Panel</h2>
-  <div id="loginBox" class="card">
+  <div class="card" id="loginBox">
     <label class="small">Enter Admin Password</label>
     <input type="password" id="adminPass" style="width:100%;padding:8px;border-radius:8px;margin-top:6px">
     <button id="adminLogin" class="btn" style="margin-top:10px">Login</button>
@@ -39,11 +39,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
+// ✅ FIXED FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
   authDomain: "terminal-xxrr.firebaseapp.com",
+  databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "terminal-xxrr",
-  storageBucket: "terminal-xxrr.appspot.com",   // ✅ fixed
+  storageBucket: "terminal-xxrr.appspot.com",
   messagingSenderId: "722753278120",
   appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
 };
@@ -84,14 +86,12 @@ function subscribePending(){
   });
 }
 
-// Approve = add coins to localStorage wallet
+// Approve = move to approved collection
 window.approve=async(id,coins)=>{
   const ref=doc(db,"pending",id);
   const snap=await getDoc(ref);
   if(!snap.exists())return;
   const data=snap.data();
-  let cur=parseInt(localStorage.getItem('wallet_coins')||'0',10);
-  localStorage.setItem('wallet_coins',cur+coins);
   await setDoc(doc(db,"approved",id),data);
   await deleteDoc(ref);
 };
