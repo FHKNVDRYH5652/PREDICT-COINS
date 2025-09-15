@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Admin — Coin Predictions (Secure-ish password)</title>
+<title>Admin — Coin Predictions</title>
 <link rel="icon" href="favicon.ico"/>
 <style>
   :root{--panel:rgba(255,255,255,0.03);--muted:#9fb0d6;--btn:#00ff9d}
@@ -65,11 +65,9 @@
 </div>
 
 <script type="module">
-  // Firestore only (no Firebase Auth used)
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+  import { getFirestore, collection, query, onSnapshot, doc, getDoc, updateDoc, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-  // === FIREBASE CONFIG - keep as your current config ===
   const firebaseConfig = {
     apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
     authDomain: "terminal-xxrr.firebaseapp.com",
@@ -82,58 +80,44 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // ===== Obfuscated admin password (Base64 of "456") =====
-  const ENCODED_PASS = "NDU2";
+  const ENCODED_PASS = "NDU2"; // Base64 of "456"
   function checkPassword(input){
-    try{
-      const decoded = atob(ENCODED_PASS);
-      return input === decoded;
-    }catch(e){
-      return false;
-    }
+    try{ return input === atob(ENCODED_PASS); }catch{ return false; }
   }
-
-  // local admin id used when adding approved/rejected logs
   const LOCAL_ADMIN_ID = 'local-admin';
 
   document.getElementById('loginBtn').addEventListener('click', async ()=>{
-    const pass = document.getElementById('adminPass').value || '';
+    const pass = document.getElementById('adminPass').value.trim();
     const msg = document.getElementById('loginMsg');
     msg.innerText = '';
-    if(!pass.trim()){ msg.innerText = 'Enter password'; return; }
-    if(!checkPassword(pass.trim())){ msg.innerText = 'Incorrect password'; return; }
-    // success
+    if(!pass){ msg.innerText = 'Enter password'; return; }
+    if(!checkPassword(pass)){ msg.innerText = 'Incorrect password'; return; }
     document.getElementById('loginCard').style.display='none';
     document.getElementById('dash').style.display='block';
     subscribePending();
     await renderApprovedRejected();
   });
 
-  document.getElementById('logoutBtn').addEventListener('click', ()=>{ 
-    // simply hide dashboard and show login
+  document.getElementById('logoutBtn').addEventListener('click', ()=>{
     document.getElementById('dash').style.display='none'; 
     document.getElementById('loginCard').style.display='block';
     document.getElementById('adminPass').value = '';
   });
 
-  // pending realtime
   let unsub = null;
   function subscribePending(){
-    const q = query(collection(db,'pending'), orderBy('ts','desc'));
-    if(unsub) unsub(); // detach old
+    const q = query(collection(db,'pending')); // ❌ orderBy removed
+    if(unsub) unsub();
     unsub = onSnapshot(q, snap => {
       const node = document.getElementById('pendingList'); node.innerHTML='';
       if(snap.empty){ node.innerHTML='<div class="small">No pending</div>'; return; }
       snap.forEach(snapDoc=>{
         const d = snapDoc.data(); const id = snapDoc.id;
         const row = document.createElement('div'); row.style.padding='8px'; row.style.borderBottom='1px solid rgba(255,255,255,0.04)';
-        const amount = (d.amount||0);
-        const coins = (d.coins||0);
-        const userEmail = d.userEmail || '-';
         row.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <b>${coins} coins</b> — ₹${Number(amount).toFixed(2)}
-            <div class="small">UTR: ${d.utr || '-'} • ${userEmail}</div>
+            <b>${d.coins||0} coins</b> — ₹${Number(d.amount||0).toFixed(2)}
+            <div class="small">UTR: ${d.utr || '-'} • ${d.userEmail||'-'}</div>
           </div>
           <div>
             <button data-id="${id}" class="approveBtn">Approve</button>
@@ -142,9 +126,8 @@
         </div>`;
         node.appendChild(row);
       });
-      // attach handlers
-      Array.from(node.querySelectorAll('.approveBtn')).forEach(b=> b.onclick = ()=> approvePayment(b.dataset.id));
-      Array.from(node.querySelectorAll('.rejectBtn')).forEach(b=> b.onclick = ()=> rejectPayment(b.dataset.id));
+      node.querySelectorAll('.approveBtn').forEach(b=> b.onclick = ()=> approvePayment(b.dataset.id));
+      node.querySelectorAll('.rejectBtn').forEach(b=> b.onclick = ()=> rejectPayment(b.dataset.id));
     }, err=>{
       document.getElementById('pendingList').innerHTML = '<div class="small">Error loading pending: ' + err.message + '</div>';
     });
@@ -156,20 +139,15 @@
       const pSnap = await getDoc(pRef);
       if(!pSnap.exists()){ alert('Not found'); return; }
       const data = pSnap.data();
-      // credit user's wallet
       const uRef = doc(db,'users',data.userId);
       const uSnap = await getDoc(uRef);
       const cur = uSnap.exists() ? (uSnap.data().wallet||0) : 0;
-      // update wallet (may fail if rules block unauthenticated writes)
-      await updateDoc(uRef, { wallet: cur + Number(data.coins || 0) });
-      // mark pending
+      await updateDoc(uRef, { wallet: cur + Number(data.coins||0) });
       await updateDoc(pRef, { status:'approved', approvedAt: new Date() });
       await addDoc(collection(db,'approved'), { ...data, approvedAt: new Date(), approvedBy: LOCAL_ADMIN_ID });
       alert('Approved and credited.');
       await renderApprovedRejected();
-    }catch(e){
-      alert('Failed: ' + (e.message||e));
-    }
+    }catch(e){ alert('Failed: ' + e.message); }
   }
 
   async function rejectPayment(id){
@@ -182,19 +160,17 @@
       await addDoc(collection(db,'rejected'), { ...data, rejectedAt: new Date(), rejectedBy: LOCAL_ADMIN_ID });
       alert('Rejected.');
       await renderApprovedRejected();
-    }catch(e){
-      alert('Failed: ' + (e.message||e));
-    }
+    }catch(e){ alert('Failed: ' + e.message); }
   }
 
   async function renderApprovedRejected(){
     const aNode = document.getElementById('approvedList'); aNode.innerHTML='';
     const rNode = document.getElementById('rejectedList'); rNode.innerHTML='';
     try{
-      const aSnap = await getDocs(query(collection(db,'approved'), orderBy('approvedAt','desc')));
+      const aSnap = await getDocs(collection(db,'approved'));
       if(aSnap.empty) aNode.innerHTML = '<div class="small">No approved</div>';
       aSnap.forEach(d=>{ const data=d.data(); const div=document.createElement('div'); div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.03)'; div.innerHTML=`<b>${data.coins||0} coins</b> • UTR:${data.utr||'-'} • ${new Date(data.approvedAt||Date.now()).toLocaleString()}`; aNode.appendChild(div); });
-      const rSnap = await getDocs(query(collection(db,'rejected'), orderBy('rejectedAt','desc')));
+      const rSnap = await getDocs(collection(db,'rejected'));
       if(rSnap.empty) rNode.innerHTML = '<div class="small">No rejected</div>';
       rSnap.forEach(d=>{ const data=d.data(); const div=document.createElement('div'); div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.03)'; div.innerHTML=`<b>${data.coins||0} coins</b> • UTR:${data.utr||'-'} • ${new Date(data.rejectedAt||Date.now()).toLocaleString()}`; rNode.appendChild(div); });
     }catch(e){
@@ -203,10 +179,7 @@
     }
   }
 
-  // cleanup when leaving page
-  window.addEventListener('beforeunload', ()=>{
-    if(unsub) unsub();
-  });
+  window.addEventListener('beforeunload', ()=>{ if(unsub) unsub(); });
 </script>
 </body>
 </html>
