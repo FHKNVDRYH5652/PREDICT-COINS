@@ -479,6 +479,8 @@ onSnapshot(periodRef, snap=>{
     periodTs = d.ts ? d.ts.toDate() : new Date();
     document.getElementById('periodDisplay').innerText = currentPeriodStr || '--';
     document.getElementById('adminCurPeriod').innerText = currentPeriodStr || '--';
+    // schedule auto-increment aligned to periodTs / server timestamp
+    scheduleAutoIncrement();
   } else {
     // if not exists, initialize with today's prefix and 001
     (async ()=>{
@@ -493,6 +495,44 @@ onSnapshot(periodRef, snap=>{
   }
 });
 
+// Auto-increment scheduler (auto-starts and aligns with periodTs)
+let adminAutoTimeout = null;
+
+function scheduleAutoIncrement(){
+  try{
+    // clear any existing timers
+    if(adminAutoTimeout){ clearTimeout(adminAutoTimeout); adminAutoTimeout = null; }
+    if(adminAutoId){ clearInterval(adminAutoId); adminAutoId = null; }
+    if(!periodTs || !currentPeriodStr) return;
+    const now = new Date();
+    const elapsed = Math.floor((now.getTime() - periodTs.getTime())/1000);
+    const waitSec = 60 - (elapsed % 60);
+    // trigger first increment after waitSec seconds, then every 60s
+    adminAutoTimeout = setTimeout(async ()=>{
+      try{
+        await doAutoIncrement();
+      }catch(e){ console.warn('first auto increment failed', e); }
+      adminAutoId = setInterval(async ()=>{
+        try{ await doAutoIncrement(); }catch(e){ console.warn('auto increment failed', e); }
+      }, 60000);
+    }, waitSec * 1000);
+  }catch(e){ console.warn('scheduleAutoIncrement err', e); }
+}
+
+async function doAutoIncrement(){
+  try{
+    const snap = await getDoc(periodRef);
+    if(!snap.exists()) return;
+    const curr = snap.data().number;
+    const prefix = curr.slice(0, curr.length - 3);
+    let last = parseInt(curr.slice(-3),10) || 0;
+    last = last >= 999 ? 1 : last + 1;
+    const next = prefix + String(last).padStart(3,'0');
+    await setDoc(periodRef, { number: next, ts: serverTimestamp() });
+  }catch(e){ console.warn('doAutoIncrement err', e); }
+}
+
+
 /* countdown calculation using periodTs */
 function updateCountdownUI(){
   const cdEl = document.getElementById('countdownDisplay');
@@ -501,37 +541,10 @@ function updateCountdownUI(){
   const elapsed = Math.floor((now.getTime() - periodTs.getTime())/1000);
   const rem = 60 - (elapsed % 60);
   cdEl.innerText = rem + 's';
-  document.getElementById('periodDisplay').innerText = currentPeriodStr || '--';
-
-  // 🔥 auto increment when new minute starts
-  if(rem === 60){
-    autoIncrementPeriod();
-  }
-}
-  const now = new Date();
-  const elapsed = Math.floor((now.getTime() - periodTs.getTime())/1000);
-  const rem = 60 - (elapsed % 60);
-  cdEl.innerText = rem + 's';
   // also update displayed period (in case changed)
   document.getElementById('periodDisplay').innerText = currentPeriodStr || '--';
 }
 setInterval(updateCountdownUI, 1000);
-
-
-/* helper: auto increment period every 60s */
-async function autoIncrementPeriod(){
-  try{
-    const snap = await getDoc(periodRef);
-    if(!snap.exists()) return;
-    const curr = snap.data().number;
-    if(!curr) return;
-    const prefix = curr.slice(0,curr.length-3);
-    let last = parseInt(curr.slice(-3),10) || 0;
-    last = last >= 999 ? 1 : last + 1;
-    const next = prefix + String(last).padStart(3,'0');
-    await setDoc(periodRef,{ number: next, ts: serverTimestamp() });
-  }catch(e){ console.warn('autoIncrementPeriod error', e); }
-}
 
 /* =========================
    Generate prediction logic
@@ -660,7 +673,6 @@ document.getElementById('adminUnlockBtn').addEventListener('click', ()=>{
   }
 });
 
-let adminAutoId = null;
 document.getElementById('adminSetBtn').addEventListener('click', async ()=>{
   const last3 = Number(document.getElementById('adminLast3').value||0);
   if(isNaN(last3) || last3 < 1 || last3 > 999){ alert('Enter 1–999'); return; }
@@ -682,26 +694,20 @@ document.getElementById('adminSetBtn').addEventListener('click', async ()=>{
   }catch(e){ alert('Set failed: '+ (e.message||e)); }
 });
 
+
 document.getElementById('adminStartAuto').addEventListener('click', ()=>{
   if(adminAutoId) return alert('Auto already running');
-  adminAutoId = setInterval(async ()=>{
-    try{
-      const snap = await getDoc(periodRef);
-      if(!snap.exists()) return;
-      const curr = snap.data().number;
-      const prefix = curr.slice(0,curr.length-3);
-      let last = parseInt(curr.slice(-3),10) || 0;
-      last = last >= 999 ? 1 : last + 1;
-      const next = prefix + String(last).padStart(3,'0');
-      await setDoc(periodRef,{ number: next, ts: serverTimestamp() });
-    }catch(e){ console.warn('auto increment err', e); }
-  }, 60000);
+  // schedule using current server timestamp alignment
+  scheduleAutoIncrement();
   alert('Auto-increment started');
 });
 
 document.getElementById('adminStopAuto').addEventListener('click', ()=>{
-  if(adminAutoId){ clearInterval(adminAutoId); adminAutoId = null; alert('Auto stopped'); } else alert('Auto not running');
+  if(adminAutoTimeout){ clearTimeout(adminAutoTimeout); adminAutoTimeout = null; }
+  if(adminAutoId){ clearInterval(adminAutoId); adminAutoId = null; alert('Auto stopped'); }
+  else alert('Auto not running');
 });
+
 
 /* =========================
    Init & small helpers
