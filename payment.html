@@ -3,85 +3,153 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Coin Predictions — Payment</title>
+<title>Payment — Coin Predictions</title>
 <link rel="icon" href="favicon.ico"/>
 <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
 <style>
-  :root{--panel:rgba(255,255,255,0.04);--neon:#00ff9d;--accent:#1dd3ff;--muted:#9fb0d6}
-  body{margin:0;padding:24px;background:url('anime2.png') center/cover fixed;color:#eaf6ff;font-family:Inter,Arial}
+  :root{--panel:rgba(255,255,255,0.03);--muted:#9fb0d6;--neon:#00ff9d;--accent:#1dd3ff}
+  *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
+  body{margin:0;padding:24px;background:url('anime2.png') center/cover fixed;color:#eaf6ff}
   #tsparticles{position:fixed;inset:0;z-index:0}
-  .wrap{position:relative;z-index:2;max-width:800px;margin:auto}
-  .card{background:var(--panel);padding:18px;border-radius:14px;box-shadow:0 10px 25px rgba(0,0,0,0.6)}
-  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:10px 14px;border:none;border-radius:8px;color:#001;font-weight:700;cursor:pointer}
-  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.1);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
+  .wrap{position:relative;z-index:2;max-width:980px;margin:0 auto}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+  .card{background:var(--panel);padding:18px;border-radius:14px}
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+  input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+  .qrBox{width:100%;height:300px;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#000}
+  .qrBox img{max-width:100%;max-height:100%;display:block}
+  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:10px 12px;border-radius:10px;border:none;color:#001;font-weight:800;cursor:pointer}
+  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.05);padding:8px;border-radius:8px;color:var(--muted)}
   .small{font-size:13px;color:var(--muted)}
-  input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#eaf6ff;margin-top:6px}
+  @media (max-width:900px){ .grid{grid-template-columns:1fr} .qrBox{height:200px} }
 </style>
 </head>
 <body>
 <div id="tsparticles"></div>
+
 <div class="wrap">
-  <div class="card">
-    <h2>Payment</h2>
-    <div id="planInfo" class="small muted"></div>
-    <div style="margin-top:14px">
-      <label class="small">Enter 12-digit UTR / Reference Number</label>
-      <input id="utrInput" maxlength="12" placeholder="XXXXXXXXXXXX">
+  <div class="top">
+    <div style="font-weight:800">Payment</div>
+    <div class="small">Wallet: <strong id="walletTop">0</strong></div>
+  </div>
+
+  <div class="card grid">
+    <div>
+      <h2 style="margin:0 0 8px 0">Make Payment</h2>
+      <div class="small">Selected plan loaded from Plans page. Scan QR & pay, then submit 12-digit UTR for admin approval.</div>
+
+      <div style="margin-top:12px">
+        <label class="small">Coins to buy</label>
+        <input id="payCoins" readonly>
+        <label class="small" style="margin-top:8px">Amount (₹)</label>
+        <input id="payAmount" readonly>
+        <label class="small" style="margin-top:8px">Enter 12-digit UTR</label>
+        <input id="payUTR" maxlength="12" placeholder="123456789012">
+        <div style="margin-top:12px;display:flex;gap:10px">
+          <button id="submitBtn" class="btn">Submit for Approval</button>
+          <button id="cancelBtn" class="ghost">Cancel</button>
+        </div>
+        <div id="msg" style="margin-top:10px" class="small"></div>
+      </div>
     </div>
-    <div style="margin-top:14px;display:flex;gap:10px">
-      <button id="submitBtn" class="btn">Submit</button>
-      <button id="backBtn" class="ghost">Back</button>
+
+    <div>
+      <div class="card" style="padding:14px">
+        <div class="qrBox">
+          <!-- <--- replace this filename if you use different QR image name -->
+          <img id="qrImg" src="Screenshot_20250915-104012.Gallery.png" alt="QR Code">
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="small">Customer Service</div>
+          <div style="margin-top:8px">
+            <button class="btn" id="csBtn">Contact on Telegram</button>
+          </div>
+          <div style="margin-top:10px" class="small">Admin will approve payment; after approval coins will appear in your wallet.</div>
+        </div>
+      </div>
     </div>
-    <div id="msg" class="small" style="margin-top:10px"></div>
   </div>
 </div>
 
+<!-- sound effects -->
+<audio id="sndClick" src="click.mp3"></audio>
+<audio id="sndHover" src="hover.mp3"></audio>
+
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  import { getFirestore, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-// ✅ FIXED FIREBASE CONFIG
-const firebaseConfig = {
-  apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
-  authDomain: "terminal-xxrr.firebaseapp.com",
-  databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "terminal-xxrr",
-  storageBucket: "terminal-xxrr.appspot.com",
-  messagingSenderId: "722753278120",
-  appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
-};
-const app=initializeApp(firebaseConfig);
-const db=getFirestore(app);
+  const firebaseConfig = {
+    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+    authDomain: "terminal-xxrr.firebaseapp.com",
+    databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
+    projectId: "terminal-xxrr",
+    storageBucket: "terminal-xxrr.appspot.com",
+    messagingSenderId: "722753278120",
+    appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-// particle bg
-tsParticles.load("tsparticles",{fpsLimit:60,particles:{number:{value:30},color:{value:"#00ff9d"},links:{enable:true,distance:130,color:"#00ff9d",opacity:0.1},move:{enable:true,speed:0.7}}});
+  // particles (subtle)
+  tsParticles.load("tsparticles", {
+    fpsLimit: 60,
+    particles: {
+      number: { value: 30 },
+      color: { value: "#00ff9d" },
+      shape: { type: "circle" },
+      links: { enable: true, distance: 120, color: "#00ff9d", opacity: 0.08, width: 1 },
+      move: { enable: true, speed: 0.8 }
+    }
+  });
 
-// show selected plan
-const planCoins=parseInt(localStorage.getItem('pendingPlan')||'0',10);
-if(planCoins>0){
-  document.getElementById('planInfo').innerText=`Selected plan: ${planCoins} coins (₹${(planCoins/2).toFixed(0)})`;
-}else{
-  document.getElementById('planInfo').innerText="No plan selected. Go back.";
-}
+  // sounds
+  const sndClick = document.getElementById('sndClick');
+  function playClick(){ try{ sndClick.currentTime=0; sndClick.play(); }catch(e){} }
 
-// submit UTR
-document.getElementById('submitBtn').onclick=async()=>{
-  const utr=document.getElementById('utrInput').value.trim();
-  if(!/^[0-9]{12}$/.test(utr)){ alert("Enter valid 12-digit UTR"); return; }
-  if(!planCoins){ alert("No plan selected"); return; }
-  try{
-    await addDoc(collection(db,"pending"),{
-      utr, coins:planCoins, amount:(planCoins/2), ts:serverTimestamp()
-    });
-    document.getElementById('msg').innerText="Submitted. Waiting admin approval.";
-    localStorage.removeItem('pendingPlan');
-  }catch(e){
-    document.getElementById('msg').innerText="Error: "+(e.message||e);
-  }
-};
+  // load pending plan
+  const pending = parseInt(localStorage.getItem('pendingPlan') || '100',10);
+  document.getElementById('payCoins').value = pending;
+  document.getElementById('payAmount').value = (pending * 0.5).toFixed(2);
+  document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins') || '0';
 
-// back
-document.getElementById('backBtn').onclick=()=>location.href="index.html";
+  document.getElementById('csBtn').addEventListener('click', ()=> { playClick(); window.open('https://t.me/Nskskssiwi','_blank'); });
+
+  // require login to submit
+  onAuthStateChanged(auth, user=>{
+    // simple notification only; submit checks auth again
+  });
+
+  document.getElementById('submitBtn').addEventListener('click', async ()=>{
+    playClick();
+    const utr = (document.getElementById('payUTR').value||'').trim();
+    if(!/^[0-9]{12}$/.test(utr)){ document.getElementById('msg').innerText = 'Enter valid 12-digit UTR'; return; }
+    try{
+      const user = auth.currentUser;
+      if(!user){
+        if(confirm('You must be logged in to submit payment. Go to home to login?')) location.href='index.html';
+        return;
+      }
+      await addDoc(collection(db,'pending'), {
+        utr, coins: pending, amount: (pending*0.5), userId: user.uid, userEmail: user.email||null, status:'pending', ts: serverTimestamp()
+      });
+      document.getElementById('msg').innerText = 'Submitted for admin approval.';
+      localStorage.removeItem('pendingPlan');
+      // send user to prediction page (they will see wallet update once admin approves)
+      setTimeout(()=> location.href='prediction.html', 800);
+    }catch(e){
+      document.getElementById('msg').innerText = e.message;
+    }
+  });
+
+  document.getElementById('cancelBtn').addEventListener('click', ()=>{ playClick(); location.href='index.html'; });
+
+  // images: if you want to change QR file name, edit <img id="qrImg" src="..."> above
+  // optionally you can set via JS:
+  // document.getElementById('qrImg').src = 'your-image.png';
 </script>
 </body>
 </html>
