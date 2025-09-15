@@ -1,60 +1,62 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Prediction — Coin Predictions (Fixed)</title>
-<link rel="icon" href="favicon.ico"/>
-<style>
-  :root{--panel:rgba(255,255,255,0.03);--neon:#00ff9d;--accent:#1dd3ff;--muted:#9fb0d6}
-  *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
-  body{margin:0;padding:20px;background:url('anime3.png') center/cover fixed;color:#eaf6ff}
-  .wrap{position:relative;z-index:2;max-width:980px;margin:0 auto}
-  .card{background:var(--panel);padding:18px;border-radius:14px}
-  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:10px 14px;border-radius:10px;border:none;color:#001;font-weight:800;cursor:pointer}
-  .small{font-size:13px;color:var(--muted)}
-  .period{font-weight:800;font-size:18px}
-</style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Coin Predictions — Prediction</title>
+  <style>
+    body{background:#07121a;color:#eaf6ff;font-family:Inter,system-ui,Arial;margin:0;padding:20px}
+    .wrap{max-width:900px;margin:auto}
+    h2{margin:0 0 12px 0}
+    .card{background:rgba(255,255,255,0.03);padding:16px;border-radius:12px;margin-bottom:16px}
+    .btn{background:linear-gradient(90deg,#00ff9d,#1dd3ff);color:#001;
+      padding:10px 16px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
+    .btn:disabled{opacity:0.5;cursor:not-allowed}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.1);text-align:center}
+    .muted{color:#9fb0d6;font-size:13px}
+    .tag{padding:4px 8px;border-radius:6px;font-size:12px;font-weight:700}
+    .big{background:#1dd3ff22;color:#1dd3ff}
+    .small{background:#00ff9d22;color:#00ff9d}
+    .win{background:#00ff9d33;color:#00ff9d}
+    .loss{background:#ff4d4d33;color:#ff4d4d}
+  </style>
 </head>
 <body>
 <div class="wrap">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <div style="font-weight:900">Coin Predictions</div>
-    <div class="small">Wallet: <strong id="wallet">0</strong> coins</div>
+  <h2>Prediction Panel</h2>
+  <div class="card">
+    <div>Wallet: <strong id="wallet">0</strong> coins</div>
+    <div style="margin-top:10px">
+      <button id="genBtn" class="btn">Generate Prediction (10 coins)</button>
+    </div>
+    <div id="lastPrediction" style="margin-top:10px" class="muted"></div>
   </div>
 
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div><span class="small">Live period:</span> <span class="period" id="livePeriod">—</span></div>
-      <div><span class="small" id="serverTag">Server Connected</span></div>
-    </div>
-
-    <div style="margin-top:10px" class="small" id="countdown">Next period in: --s</div>
-
-    <div style="margin-top:14px;display:flex;gap:12px;align-items:center">
-      <button id="genBtn" class="btn">Generate Prediction (10 coins)</button>
-      <button id="refreshBtn" class="btn" style="background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)">Refresh</button>
-    </div>
-
-    <div id="resultCard" style="display:none;margin-top:14px">
-      <div class="card">
-        <div><b>Period:</b> <span id="predPeriod">—</span></div>
-        <div style="margin-top:8px"><b>Signal:</b> <span id="predSignal">—</span></div>
-        <div style="margin-top:8px"><b>Numbers:</b> <span id="predNums">—</span></div>
-      </div>
-    </div>
-
-    <div style="margin-top:12px" class="small">Your Predictions (local only):</div>
-    <div id="hist" style="margin-top:8px;max-height:260px;overflow:auto;border-radius:8px;padding:8px;background:rgba(0,0,0,0.18)"></div>
+    <h3 style="margin-top:0">Prediction History</h3>
+    <div class="muted">Win / Loss mark करने से accuracy calculate होगी</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Period</th>
+          <th>Signal</th>
+          <th>Result</th>
+          <th>Mark</th>
+        </tr>
+      </thead>
+      <tbody id="history"></tbody>
+    </table>
+    <div style="margin-top:10px" id="accuracy" class="muted">Accuracy: 0%</div>
   </div>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-  import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-  // Unified Firebase config
+  // Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
     authDomain: "terminal-xxrr.firebaseapp.com",
@@ -68,87 +70,93 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // settings/currentPeriod listener
-  let prefix = null;
-  let startLast3 = 0;
-  let startMs = null;
-  let unsubSettings = null;
+  const walletEl = document.getElementById('wallet');
+  const genBtn = document.getElementById('genBtn');
+  const lastPrediction = document.getElementById('lastPrediction');
+  const historyEl = document.getElementById('history');
+  const accuracyEl = document.getElementById('accuracy');
 
-  function pad3(n){ return String(n).padStart(3,'0'); }
+  let userId = null;
+  let wallet = 0;
+  let history = [];
 
-  function computeCurrent(){ 
-    if(prefix === null || startMs === null) return { period: '—', secToNext: '--' };
-    const now = Date.now();
-    const elapsedMin = Math.floor((now - startMs) / 60000);
-    const currentLast3 = ( (startLast3 + elapsedMin) % 1000 + 1000 ) % 1000;
-    const period = prefix + pad3(currentLast3);
-    // next change happens at startMs + (elapsedMin+1)*60000
-    const nextChangeAt = startMs + (elapsedMin + 1) * 60000;
-    const secToNext = Math.max(0, Math.ceil((nextChangeAt - now)/1000));
-    return { period, secToNext };
-  }
-
-  function startUIUpdater(){
-    // clear any existing interval
-    if(window.__periodInterval) clearInterval(window.__periodInterval);
-    window.__periodInterval = setInterval(()=>{
-      const cur = computeCurrent();
-      document.getElementById('livePeriod').innerText = cur.period;
-      document.getElementById('countdown').innerText = 'Next period in: ' + cur.secToNext + 's';
-    }, 1000);
-    // run once immediately
-    const cur = computeCurrent();
-    document.getElementById('livePeriod').innerText = cur.period;
-    document.getElementById('countdown').innerText = 'Next period in: ' + cur.secToNext + 's';
-  }
-
-  // listen to settings/currentPeriod doc
-  unsubSettings = onSnapshot(doc(db,'settings','currentPeriod'), snap => {
-    if(!snap.exists()){ prefix = null; startMs = null; startLast3 = 0; document.getElementById('serverTag').innerText = 'No period set'; startUIUpdater(); return; }
-    const d = snap.data();
-    // prefix stored as string, startLast3 number, start may be Timestamp or number
-    prefix = String(d.prefix || d.full?.slice(0, -3) || '');
-    startLast3 = Number(d.startLast3 || (d.full ? Number(d.full.slice(-3)) : 0));
-    if(d.start && typeof d.start === 'object' && d.start.toMillis) { startMs = d.start.toMillis(); }
-    else { startMs = Number(d.start) || Date.now(); }
-    document.getElementById('serverTag').innerText = 'Server Connected';
-    startUIUpdater();
-  }, err=>{ document.getElementById('serverTag').innerText = 'Settings load error'; console.error(err); });
-
-  // wallet handling (basic)
-  let userUid = null;
-  onAuthStateChanged(auth,user=>{
-    if(user){ userUid = user.uid; const uref = doc(db,'users',userUid); onSnapshot(uref,snap=>{ const d=snap.exists()?snap.data():null; document.getElementById('wallet').innerText = d? (d.wallet||0):0; }); }
-    else { userUid = null; document.getElementById('wallet').innerText = localStorage.getItem('wallet_coins')||0; }
+  // Period number sync from Firestore (admin sets base period)
+  let basePeriod = "";
+  const periodDoc = doc(db,"system","period");
+  onSnapshot(periodDoc,snap=>{
+    if(snap.exists()){
+      basePeriod = snap.data().number;
+    }
   });
 
-  // local history functions
-  function loadHist(){ const arr = JSON.parse(localStorage.getItem('__preds__')||'[]'); const el = document.getElementById('hist'); el.innerHTML = ''; if(!arr.length){ el.innerHTML = '<div class=\"small\">No predictions yet</div>'; return; } arr.forEach(p=>{ const div=document.createElement('div'); div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.04)'; div.innerHTML = `<div style=\"display:flex;justify-content:space-between\"><div><b>${p.period}</b><div class=\"small\">${p.signal} • ${p.nums}</div></div><div class=\"small\">${new Date(p.ts).toLocaleString()}</div></div>`; el.appendChild(div); }); }
-  loadHist();
-
-  // generate prediction: local only and deduct coins left as-is (server transaction omitted for demo)
-  document.getElementById('genBtn').addEventListener('click', ()=>{
-    const COST = 10;
-    if(!userUid){ if(confirm('Login required. Go to home?')) location.href='index.html'; return; }
-    // create prediction
-    const signal = Math.random() < 0.5 ? 'SMALL' : 'BIG';
-    let a,b;
-    if(signal === 'SMALL'){ a = Math.floor(Math.random()*5); b = Math.floor(Math.random()*5); } else { a = 5 + Math.floor(Math.random()*5); b = 5 + Math.floor(Math.random()*5); }
-    const cur = computeCurrent();
-    const period = cur.period;
-    const nums = `${a} / ${b}`;
-    document.getElementById('resultCard').style.display='block';
-    document.getElementById('predPeriod').innerText = period;
-    document.getElementById('predSignal').innerText = signal;
-    document.getElementById('predNums').innerText = nums;
-    const arr = JSON.parse(localStorage.getItem('__preds__')||'[]');
-    arr.unshift({ period, signal, nums, ts: Date.now() });
-    localStorage.setItem('__preds__', JSON.stringify(arr.slice(0,200)));
-    loadHist();
+  // Auth + Wallet sync
+  onAuthStateChanged(auth, async user=>{
+    if(user){
+      userId = user.uid;
+      const uDoc = doc(db,'users',userId);
+      onSnapshot(uDoc, snap=>{
+        if(snap.exists()){
+          const data = snap.data();
+          wallet = data.wallet || 0;
+          walletEl.innerText = wallet;
+          history = data.history || [];
+          renderHistory();
+        }
+      });
+    }
   });
 
-  document.getElementById('refreshBtn').addEventListener('click', ()=>{ loadHist(); });
+  // Generate Prediction
+  genBtn.onclick = async ()=>{
+    if(wallet < 10){ alert("Not enough coins!"); return; }
+    const signal = Math.random() > 0.5 ? "Big" : "Small";
+    const period = basePeriod || "----";
 
+    wallet -= 10;
+    const pred = { period, signal, result:"", ts:Date.now() };
+    history.unshift(pred);
+
+    lastPrediction.innerHTML = `Your Prediction: <span class="tag ${signal.toLowerCase()}">${signal}</span> for Period <b>${period}</b>`;
+
+    await updateDoc(doc(db,'users',userId), {
+      wallet,
+      history
+    });
+  };
+
+  // Render History
+  function renderHistory(){
+    historyEl.innerHTML = "";
+    history.forEach((h,i)=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${h.period}</td>
+        <td><span class="tag ${h.signal.toLowerCase()}">${h.signal}</span></td>
+        <td>${h.result ? `<span class="tag ${h.result}">${h.result}</span>` : '-'}</td>
+        <td>
+          <button onclick="markResult(${i},'win')">Win</button>
+          <button onclick="markResult(${i},'loss')">Loss</button>
+        </td>
+      `;
+      historyEl.appendChild(tr);
+    });
+    calcAccuracy();
+  }
+
+  // Mark Result
+  window.markResult = async (idx,res)=>{
+    history[idx].result = res;
+    await updateDoc(doc(db,'users',userId),{ history });
+    renderHistory();
+  };
+
+  // Accuracy
+  function calcAccuracy(){
+    const done = history.filter(h=>h.result);
+    const wins = done.filter(h=>h.result==="win").length;
+    const acc = done.length ? ((wins/done.length)*100).toFixed(1) : 0;
+    accuracyEl.innerText = `Accuracy: ${acc}% (Wins: ${wins}/${done.length})`;
+  }
 </script>
 </body>
 </html>
