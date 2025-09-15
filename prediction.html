@@ -3,102 +3,151 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Coin Predictions — Live</title>
+<title>Prediction — Coin Predictions (Fixed)</title>
 <link rel="icon" href="favicon.ico"/>
-<script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
 <style>
-  :root{--panel:rgba(255,255,255,0.04);--neon:#00ff9d;--accent:#1dd3ff;--muted:#9fb0d6}
+  :root{--panel:rgba(255,255,255,0.03);--neon:#00ff9d;--accent:#1dd3ff;--muted:#9fb0d6}
   *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
-  html,body{height:100%;margin:0}
-  body{background:url('anime3.png') center/cover fixed;color:#eaf6ff;display:flex;align-items:center;justify-content:center;padding:28px}
-  #tsparticles{position:fixed;inset:0;z-index:0}
-  .wrap{position:relative;z-index:2;width:100%;max-width:900px}
-  .card{background:var(--panel);backdrop-filter: blur(6px);padding:20px;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,0.6);margin-bottom:16px;text-align:center}
-  .big{font-size:20px;font-weight:800}
-  .muted{color:var(--muted)}
-  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));color:#001;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
+  body{margin:0;padding:20px;background:url('anime3.png') center/cover fixed;color:#eaf6ff}
+  .wrap{position:relative;z-index:2;max-width:980px;margin:0 auto}
+  .card{background:var(--panel);padding:18px;border-radius:14px}
+  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:10px 14px;border-radius:10px;border:none;color:#001;font-weight:800;cursor:pointer}
+  .small{font-size:13px;color:var(--muted)}
+  .period{font-weight:800;font-size:18px}
 </style>
 </head>
 <body>
-<div id="tsparticles"></div>
-
 <div class="wrap">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-weight:900">Coin Predictions</div>
+    <div class="small">Wallet: <strong id="wallet">0</strong> coins</div>
+  </div>
+
   <div class="card">
-    <div class="big">Server Connected ✅</div>
-    <div class="muted">Real-time coin prediction system</div>
-  </div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><span class="small">Live period:</span> <span class="period" id="livePeriod">—</span></div>
+      <div><span class="small" id="serverTag">Server Connected</span></div>
+    </div>
 
-  <div class="card" id="periodCard">
-    <div style="margin-bottom:8px"><strong>Period:</strong> <span id="periodNumber">loading...</span></div>
-    <div><strong>Countdown:</strong> <span id="countdown">60s</span></div>
-  </div>
+    <div style="margin-top:10px" class="small" id="countdown">Next period in: --s</div>
 
-  <div class="card" style="display:flex;gap:8px;justify-content:center">
-    <button class="btn" onclick="location.href='index.html'">Back to Plans</button>
-    <button class="btn" onclick="location.href='payment.html'">Payment</button>
-    <button class="btn" onclick="location.href='admin.html'">Admin</button>
+    <div style="margin-top:14px;display:flex;gap:12px;align-items:center">
+      <button id="genBtn" class="btn">Generate Prediction (10 coins)</button>
+      <button id="refreshBtn" class="btn" style="background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)">Refresh</button>
+    </div>
+
+    <div id="resultCard" style="display:none;margin-top:14px">
+      <div class="card">
+        <div><b>Period:</b> <span id="predPeriod">—</span></div>
+        <div style="margin-top:8px"><b>Signal:</b> <span id="predSignal">—</span></div>
+        <div style="margin-top:8px"><b>Numbers:</b> <span id="predNums">—</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px" class="small">Your Predictions (local only):</div>
+    <div id="hist" style="margin-top:8px;max-height:260px;overflow:auto;border-radius:8px;padding:8px;background:rgba(0,0,0,0.18)"></div>
   </div>
 </div>
 
-<script>
-  // particles
-  tsParticles.load("tsparticles", {
-    fpsLimit: 60,
-    particles: {
-      number: { value: 40 },
-      color: { value: "#00ff9d" },
-      links: { enable: true, distance: 140, color: "#00ff9d", opacity: 0.12, width: 1 },
-      move: { enable: true, speed: 0.8 },
-      size: { value: { min: 1, max: 4 } },
-      opacity: { value: 0.7 }
-    }
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+  // Unified Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+    authDomain: "terminal-xxrr.firebaseapp.com",
+    databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "terminal-xxrr",
+    storageBucket: "terminal-xxrr.appspot.com",
+    messagingSenderId: "722753278120",
+    appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // settings/currentPeriod listener
+  let prefix = null;
+  let startLast3 = 0;
+  let startMs = null;
+  let unsubSettings = null;
+
+  function pad3(n){ return String(n).padStart(3,'0'); }
+
+  function computeCurrent(){ 
+    if(prefix === null || startMs === null) return { period: '—', secToNext: '--' };
+    const now = Date.now();
+    const elapsedMin = Math.floor((now - startMs) / 60000);
+    const currentLast3 = ( (startLast3 + elapsedMin) % 1000 + 1000 ) % 1000;
+    const period = prefix + pad3(currentLast3);
+    // next change happens at startMs + (elapsedMin+1)*60000
+    const nextChangeAt = startMs + (elapsedMin + 1) * 60000;
+    const secToNext = Math.max(0, Math.ceil((nextChangeAt - now)/1000));
+    return { period, secToNext };
+  }
+
+  function startUIUpdater(){
+    // clear any existing interval
+    if(window.__periodInterval) clearInterval(window.__periodInterval);
+    window.__periodInterval = setInterval(()=>{
+      const cur = computeCurrent();
+      document.getElementById('livePeriod').innerText = cur.period;
+      document.getElementById('countdown').innerText = 'Next period in: ' + cur.secToNext + 's';
+    }, 1000);
+    // run once immediately
+    const cur = computeCurrent();
+    document.getElementById('livePeriod').innerText = cur.period;
+    document.getElementById('countdown').innerText = 'Next period in: ' + cur.secToNext + 's';
+  }
+
+  // listen to settings/currentPeriod doc
+  unsubSettings = onSnapshot(doc(db,'settings','currentPeriod'), snap => {
+    if(!snap.exists()){ prefix = null; startMs = null; startLast3 = 0; document.getElementById('serverTag').innerText = 'No period set'; startUIUpdater(); return; }
+    const d = snap.data();
+    // prefix stored as string, startLast3 number, start may be Timestamp or number
+    prefix = String(d.prefix || d.full?.slice(0, -3) || '');
+    startLast3 = Number(d.startLast3 || (d.full ? Number(d.full.slice(-3)) : 0));
+    if(d.start && typeof d.start === 'object' && d.start.toMillis) { startMs = d.start.toMillis(); }
+    else { startMs = Number(d.start) || Date.now(); }
+    document.getElementById('serverTag').innerText = 'Server Connected';
+    startUIUpdater();
+  }, err=>{ document.getElementById('serverTag').innerText = 'Settings load error'; console.error(err); });
+
+  // wallet handling (basic)
+  let userUid = null;
+  onAuthStateChanged(auth,user=>{
+    if(user){ userUid = user.uid; const uref = doc(db,'users',userUid); onSnapshot(uref,snap=>{ const d=snap.exists()?snap.data():null; document.getElementById('wallet').innerText = d? (d.wallet||0):0; }); }
+    else { userUid = null; document.getElementById('wallet').innerText = localStorage.getItem('wallet_coins')||0; }
   });
 
-  /* -----------------------------
-     PERIOD CALCULATION (fixed)
-     - period = basePeriod + minutesSinceBase
-     - basePeriod     : BigInt (example taken from your message)
-     - baseTimestamp  : Date for that basePeriod (include timezone +05:30 if you use IST)
-     If your measured mapping differs, change the two variables below.
-     ----------------------------- */
+  // local history functions
+  function loadHist(){ const arr = JSON.parse(localStorage.getItem('__preds__')||'[]'); const el = document.getElementById('hist'); el.innerHTML = ''; if(!arr.length){ el.innerHTML = '<div class=\"small\">No predictions yet</div>'; return; } arr.forEach(p=>{ const div=document.createElement('div'); div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.04)'; div.innerHTML = `<div style=\"display:flex;justify-content:space-between\"><div><b>${p.period}</b><div class=\"small\">${p.signal} • ${p.nums}</div></div><div class=\"small\">${new Date(p.ts).toLocaleString()}</div></div>`; el.appendChild(div); }); }
+  loadHist();
 
-  // === EDIT THESE if you want to change mapping ===
-  // I used the mapping you mentioned: at 2025-09-15 03:56 (IST) period was 20250915100010627
-  const basePeriodStr = "20250915100010627";             // base period number (string)
-  const baseTsISO = "2025-09-15T03:56:00+05:30";         // exact timestamp for that basePeriod (IST)
-  // ==================================================
+  // generate prediction: local only and deduct coins left as-is (server transaction omitted for demo)
+  document.getElementById('genBtn').addEventListener('click', ()=>{
+    const COST = 10;
+    if(!userUid){ if(confirm('Login required. Go to home?')) location.href='index.html'; return; }
+    // create prediction
+    const signal = Math.random() < 0.5 ? 'SMALL' : 'BIG';
+    let a,b;
+    if(signal === 'SMALL'){ a = Math.floor(Math.random()*5); b = Math.floor(Math.random()*5); } else { a = 5 + Math.floor(Math.random()*5); b = 5 + Math.floor(Math.random()*5); }
+    const cur = computeCurrent();
+    const period = cur.period;
+    const nums = `${a} / ${b}`;
+    document.getElementById('resultCard').style.display='block';
+    document.getElementById('predPeriod').innerText = period;
+    document.getElementById('predSignal').innerText = signal;
+    document.getElementById('predNums').innerText = nums;
+    const arr = JSON.parse(localStorage.getItem('__preds__')||'[]');
+    arr.unshift({ period, signal, nums, ts: Date.now() });
+    localStorage.setItem('__preds__', JSON.stringify(arr.slice(0,200)));
+    loadHist();
+  });
 
-  const basePeriod = BigInt(basePeriodStr);
-  const baseDate = new Date(baseTsISO);
-
-  function computePeriodForNow(nowDate){
-    // minutes difference (floor)
-    const diffMs = nowDate.getTime() - baseDate.getTime();
-    const diffMin = Math.floor(diffMs / 60000);
-    const periodBig = basePeriod + BigInt(diffMin);
-    return periodBig.toString();
-  }
-
-  function secondsToNextMinute(now){
-    // seconds until the next minute (0..59 -> return 60-seconds)
-    const s = now.getSeconds();
-    return 60 - s;
-  }
-
-  function updateUI(){
-    const now = new Date();
-    try{
-      document.getElementById('periodNumber').innerText = computePeriodForNow(now);
-    }catch(e){
-      // fallback if BigInt fails
-      document.getElementById('periodNumber').innerText = basePeriodStr;
-    }
-    document.getElementById('countdown').innerText = secondsToNextMinute(now) + "s";
-  }
-
-  // Update every second so countdown is smooth.
-  updateUI();
-  setInterval(updateUI, 1000);
+  document.getElementById('refreshBtn').addEventListener('click', ()=>{ loadHist(); });
 
 </script>
 </body>
