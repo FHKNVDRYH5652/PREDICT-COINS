@@ -104,7 +104,13 @@
   document.getElementById('payAmount').value = (pending * 0.5).toFixed(2);
   document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins') || '0';
 
-  document.getElementById('csBtn').addEventListener('click', ()=>{ playClick(); window.open('https://t.me/Nskskssiwi','_blank'); });
+  document.getElementById('csBtn').addEventListener('click', ()=> { playClick(); window.open('https://t.me/Nskskssiwi','_blank'); });
+
+  // auth state to display wallet top
+  onAuthStateChanged(auth, user=>{
+    document.getElementById('walletTop').innerText = user ? '—' : (localStorage.getItem('wallet_coins') || '0');
+    // we don't rely on it here; when logged in user will be credited by admin.
+  });
 
   document.getElementById('submitBtn').addEventListener('click', async ()=>{
     playClick();
@@ -116,20 +122,27 @@
         if(confirm('You must be logged in to submit payment. Go to home to login?')) location.href='index.html';
         return;
       }
-      await addDoc(collection(db,'pending'), {
+
+      // Prepare payload with serverTimestamp and local createdAt fallback
+      const payload = {
         utr,
         coins: pending,
         amount: (pending*0.5),
         userId: user.uid,
         userEmail: user.email||null,
         status:'pending',
-        ts: serverTimestamp() || new Date() // ✅ always ensure ts
-      });
+        ts: serverTimestamp(),               // server timestamp (may populate later)
+        createdAtLocal: new Date().toISOString() // guaranteed, used for ordering in admin
+      };
+
+      await addDoc(collection(db,'pending'), payload);
       document.getElementById('msg').innerText = 'Submitted for admin approval.';
       localStorage.removeItem('pendingPlan');
       setTimeout(()=> location.href='prediction.html', 800);
     }catch(e){
-      document.getElementById('msg').innerText = e.message;
+      // helpful debug message
+      console.error('submit pending error', e);
+      document.getElementById('msg').innerText = e.message || 'Failed to submit. Check console for details.';
     }
   });
 
