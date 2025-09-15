@@ -7,153 +7,99 @@
 <link rel="icon" href="favicon.ico"/>
 <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
 <style>
-  :root{
-    --bg-dark:#07121a;
-    --panel:rgba(255,255,255,0.04);
-    --neon:#00ff9d;
-    --accent:#1dd3ff;
-    --muted:#9fb0d6;
-    --glass:rgba(255,255,255,0.02);
-  }
+  :root{--panel:rgba(255,255,255,0.04);--neon:#00ff9d;--accent:#1dd3ff;--muted:#9fb0d6}
   *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
   html,body{height:100%;margin:0}
-  body{
-    background: url('anime3.png') center/cover fixed no-repeat;
-    color:#eaf6ff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:28px;
-  }
-  #tsparticles { position: fixed; inset:0; z-index:0; }
+  body{background:url('anime3.png') center/cover fixed;color:#eaf6ff;display:flex;align-items:center;justify-content:center;padding:28px}
+  #tsparticles{position:fixed;inset:0;z-index:0}
   .wrap{position:relative;z-index:2;width:100%;max-width:900px}
-  .card{background:var(--panel);backdrop-filter: blur(6px);padding:20px;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,0.6);margin-bottom:16px}
-  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-  .brand{font-weight:900;font-size:20px;letter-spacing:1px}
-  .big{font-size:26px;font-weight:900;margin:0}
-  .muted{color:var(--muted);font-size:14px}
-  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));color:#001;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;font-weight:800;letter-spacing:0.6px}
-  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.08);padding:10px 16px;border-radius:10px;color:var(--muted);cursor:pointer}
-  .flex{display:flex;gap:12px;flex-wrap:wrap}
-  footer{margin-top:14px;color:var(--muted);font-size:13px;text-align:center}
+  .card{background:var(--panel);backdrop-filter: blur(6px);padding:20px;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,0.6);margin-bottom:16px;text-align:center}
+  .big{font-size:20px;font-weight:800}
+  .muted{color:var(--muted)}
+  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));color:#001;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
 </style>
 </head>
 <body>
 <div id="tsparticles"></div>
 
 <div class="wrap">
-  <div class="top">
-    <div class="brand">Live Prediction</div>
-    <div class="muted">Wallet: <strong id="walletTop">0</strong> coins</div>
-  </div>
-
-  <div class="card" style="text-align:center">
-    <h2 class="big">Server Connected ✅</h2>
-    <p class="muted">Real-time coin prediction system</p>
-  </div>
-
-  <div class="card" style="text-align:center">
-    <p><strong>Period:</strong> <span id="periodNumber">Loading...</span></p>
-    <p><strong>Countdown:</strong> <span id="countdown">60s</span></p>
-  </div>
-
   <div class="card">
-    <div class="flex" style="justify-content:center">
-      <button class="btn" id="backPlans">Back to Plans</button>
-      <button class="ghost" id="goPayment">Payment</button>
-      <button class="ghost" id="goAdmin">Admin</button>
-    </div>
+    <div class="big">Server Connected ✅</div>
+    <div class="muted">Real-time coin prediction system</div>
   </div>
 
-  <footer>Assets: anime3.png · music.m4a · click.mp3 · hover.mp3</footer>
+  <div class="card" id="periodCard">
+    <div style="margin-bottom:8px"><strong>Period:</strong> <span id="periodNumber">loading...</span></div>
+    <div><strong>Countdown:</strong> <span id="countdown">60s</span></div>
+  </div>
+
+  <div class="card" style="display:flex;gap:8px;justify-content:center">
+    <button class="btn" onclick="location.href='index.html'">Back to Plans</button>
+    <button class="btn" onclick="location.href='payment.html'">Payment</button>
+    <button class="btn" onclick="location.href='admin.html'">Admin</button>
+  </div>
 </div>
 
-<audio id="sndClick" src="click.mp3"></audio>
-<audio id="sndHover" src="hover.mp3"></audio>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-  import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
-    authDomain: "terminal-xxrr.firebaseapp.com",
-    databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
-    projectId: "terminal-xxrr",
-    storageBucket: "terminal-xxrr.appspot.com",
-    messagingSenderId: "722753278120",
-    appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
-  };
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  // particles background
+<script>
+  // particles
   tsParticles.load("tsparticles", {
     fpsLimit: 60,
     particles: {
       number: { value: 40 },
       color: { value: "#00ff9d" },
-      shape: { type: "circle" },
-      opacity: { value: 0.7, random:true },
-      size: { value: {min:1,max:4} },
-      links: { enable:true, distance:140, color:"#00ff9d", opacity:0.12, width:1 },
-      move: { enable:true, speed:0.8 }
-    },
-    interactivity: { events: { onHover:{enable:true,mode:"repulse"} } },
-    detectRetina:true
-  });
-
-  // sounds
-  const sndClick=document.getElementById('sndClick');
-  const sndHover=document.getElementById('sndHover');
-  function playClick(){ try{ sndClick.currentTime=0; sndClick.play(); }catch(e){} }
-  function playHover(){ try{ sndHover.currentTime=0; sndHover.play(); }catch(e){} }
-
-  document.querySelectorAll('.btn, .ghost').forEach(el=>{
-    el.addEventListener('mousedown', playClick);
-    el.addEventListener('mouseenter', playHover);
-  });
-
-  // Period generator
-  function getPeriodNumber(){
-    const now=new Date();
-    const year=now.getFullYear();
-    const month=String(now.getMonth()+1).padStart(2,'0');
-    const day=String(now.getDate()).padStart(2,'0');
-    const middle="000";
-    const minutesSinceMidnight=now.getHours()*60+now.getMinutes();
-    const baseCounter=10600;
-    const counter=baseCounter+minutesSinceMidnight;
-    return `${year}${month}${day}${middle}${counter}`;
-  }
-  function updatePeriod(){
-    document.getElementById("periodNumber").innerText=getPeriodNumber();
-    const seconds=new Date().getSeconds();
-    const remain=60-seconds;
-    document.getElementById("countdown").innerText=remain+"s";
-  }
-  setInterval(updatePeriod,1000);
-  updatePeriod();
-
-  // nav
-  document.getElementById('backPlans').addEventListener('click',()=>{location.href='index.html';});
-  document.getElementById('goPayment').addEventListener('click',()=>{location.href='payment.html';});
-  document.getElementById('goAdmin').addEventListener('click',()=>{location.href='admin.html';});
-
-  // wallet realtime
-  onAuthStateChanged(auth,user=>{
-    if(user){
-      const uDoc=doc(db,'users',user.uid);
-      onSnapshot(uDoc,snap=>{
-        const data=snap.exists()?snap.data():null;
-        document.getElementById('walletTop').innerText=data?(data.wallet||0):0;
-      });
-    }else{
-      document.getElementById('walletTop').innerText=localStorage.getItem('wallet_coins')||'0';
+      links: { enable: true, distance: 140, color: "#00ff9d", opacity: 0.12, width: 1 },
+      move: { enable: true, speed: 0.8 },
+      size: { value: { min: 1, max: 4 } },
+      opacity: { value: 0.7 }
     }
   });
+
+  /* -----------------------------
+     PERIOD CALCULATION (fixed)
+     - period = basePeriod + minutesSinceBase
+     - basePeriod     : BigInt (example taken from your message)
+     - baseTimestamp  : Date for that basePeriod (include timezone +05:30 if you use IST)
+     If your measured mapping differs, change the two variables below.
+     ----------------------------- */
+
+  // === EDIT THESE if you want to change mapping ===
+  // I used the mapping you mentioned: at 2025-09-15 03:56 (IST) period was 20250915100010627
+  const basePeriodStr = "20250915100010627";             // base period number (string)
+  const baseTsISO = "2025-09-15T03:56:00+05:30";         // exact timestamp for that basePeriod (IST)
+  // ==================================================
+
+  const basePeriod = BigInt(basePeriodStr);
+  const baseDate = new Date(baseTsISO);
+
+  function computePeriodForNow(nowDate){
+    // minutes difference (floor)
+    const diffMs = nowDate.getTime() - baseDate.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    const periodBig = basePeriod + BigInt(diffMin);
+    return periodBig.toString();
+  }
+
+  function secondsToNextMinute(now){
+    // seconds until the next minute (0..59 -> return 60-seconds)
+    const s = now.getSeconds();
+    return 60 - s;
+  }
+
+  function updateUI(){
+    const now = new Date();
+    try{
+      document.getElementById('periodNumber').innerText = computePeriodForNow(now);
+    }catch(e){
+      // fallback if BigInt fails
+      document.getElementById('periodNumber').innerText = basePeriodStr;
+    }
+    document.getElementById('countdown').innerText = secondsToNextMinute(now) + "s";
+  }
+
+  // Update every second so countdown is smooth.
+  updateUI();
+  setInterval(updateUI, 1000);
+
 </script>
 </body>
 </html>
