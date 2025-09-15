@@ -496,49 +496,31 @@ onSnapshot(periodRef, snap=>{
 
 
 
+/* Real-time clock based period calculation */
+const FIXED_PREFIX = "2025091510001";
+const BASE_HOUR = 2;
+const BASE_MIN = 34;
+const BASE_NUMBER = 11265;
 
-
-/* Firestore realtime period display with fixed permanent prefix */
-const FIXED_PREFIX = "20250915100010";
-let last3Digits = "001";
-let countdown = 60;
-
-// Listen to Firestore in realtime
-onSnapshot(periodRef, snap => {
-  if (snap.exists()) {
-    const data = snap.data();
-    last3Digits = data.number ? data.number.slice(-3) : "001";
-    const ts = data.ts ? data.ts.toDate() : new Date();
-    const diff = Math.floor((Date.now() - ts.getTime())/1000);
-    countdown = 60 - (diff % 60);
-  }
-  updatePeriodCountdownUI();
-});
-
-function updatePeriodCountdownUI(){
-  const fullNumber = FIXED_PREFIX + String(last3Digits).padStart(3,'0');
-  document.getElementById('periodDisplay').innerText = fullNumber;
-  document.getElementById('adminCurPeriod').innerText = fullNumber;
-  document.getElementById('countdownDisplay').innerText = countdown + 's';
+function getCurrentPeriod(){
+  const now = new Date();
+  const base = new Date(now.getFullYear(), now.getMonth(), now.getDate(), BASE_HOUR, BASE_MIN, 0, 0);
+  const diffMin = Math.floor((now - base) / 60000);
+  const number = BASE_NUMBER + diffMin;
+  return FIXED_PREFIX + number;
 }
 
-// Local timer for countdown
-setInterval(()=>{
-  if(countdown > 0) countdown--;
-  else countdown = 60;
-  updatePeriodCountdownUI();
-},1000);
+function updateCountdown(){
+  const now = new Date();
+  const sec = now.getSeconds();
+  const countdown = 60 - sec;
+  document.getElementById("countdownDisplay").innerText = countdown + "s";
+  document.getElementById("periodDisplay").innerText = getCurrentPeriod();
+  document.getElementById("adminCurPeriod").innerText = getCurrentPeriod();
+}
 
-// Admin Panel: set last 3 digits only
-document.getElementById('adminSetBtn').addEventListener('click', async ()=>{
-  const last3 = Number(document.getElementById('adminLast3').value||0);
-  if(isNaN(last3) || last3 < 1 || last3 > 999){ alert('Enter 1–999'); return; }
-  const newNum = FIXED_PREFIX + String(last3).padStart(3,'0');
-  try{
-    await setDoc(periodRef, { number: newNum, ts: serverTimestamp() });
-    alert('Period set: ' + newNum);
-  }catch(e){ alert('Set failed: ' + (e.message||e)); }
-});
+setInterval(updateCountdown, 1000);
+updateCountdown();
 
 /* =========================
    Generate prediction logic
