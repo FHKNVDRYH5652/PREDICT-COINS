@@ -490,6 +490,35 @@ setInterval(updateCountdownUI, 1000);
 document.getElementById('genPredBtn').addEventListener('click', async ()=>{
   playClick();
   if(!currentUser){ alert('Not signed in — reload'); return; }
+  const uRef = doc(db,'users',currentUser.uid);
+  const uSnap = await getDoc(uRef);
+  const curWallet = uSnap.exists() ? (uSnap.data().wallet || 0) : 0;
+  if(curWallet < 10){ alert('Not enough coins'); return; }
+
+  try{
+    await runTransaction(db, async tx=>{
+      const userSnap = await tx.get(uRef);
+      const cur = userSnap.exists() ? (userSnap.data().wallet || 0) : 0;
+      if(cur < 10) throw new Error('Insufficient coins');
+      tx.update(uRef, { wallet: cur - 10 });
+
+      const predRef = doc(collection(db,'predictions'));
+      const signal = Math.random() > 0.5 ? 'BIG' : 'SMALL';
+      tx.set(predRef, {
+        userId: currentUser.uid,
+        period: currentPeriodStr || ('unknown'),
+        signal,
+        result: '',
+        ts: serverTimestamp()
+      });
+    });
+    document.getElementById('lastPred').innerText = 'Prediction generated — check history below';
+  }catch(e){
+    alert('Generate failed: ' + (e.message || e));
+  }
+});
+  playClick();
+  if(!currentUser){ alert('Not signed in — reload'); return; }
   // check wallet
   const uRef = doc(db,'users',currentUser.uid);
   const uSnap = await getDoc(uRef);
