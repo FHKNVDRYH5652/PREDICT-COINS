@@ -57,7 +57,7 @@
       <div class="card" style="padding:14px">
         <div class="qrBox">
           <!-- <--- replace this filename if you use different QR image name -->
-          <img id="qrImg" src="Screenshot_20250915-104012.Gallery.png" alt="QR Code">
+          <img id="qrImg" src="qr.png" alt="QR Code">
         </div>
 
         <div style="margin-top:12px">
@@ -84,7 +84,7 @@
   const firebaseConfig = {
     apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
     authDomain: "terminal-xxrr.firebaseapp.com",
-    databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
+    databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "terminal-xxrr",
     storageBucket: "terminal-xxrr.appspot.com",
     messagingSenderId: "722753278120",
@@ -133,7 +133,7 @@
         if(confirm('You must be logged in to submit payment. Go to home to login?')) location.href='index.html';
         return;
       }
-      await addDoc(collection(db,'pending'), {
+      const ref = await addDoc(collection(db,'pending'), {
         utr, coins: pending, amount: (pending*0.5), userId: user.uid, userEmail: user.email||null, status:'pending', ts: serverTimestamp()
       });
       document.getElementById('msg').innerText = 'Submitted for admin approval.';
