@@ -42,7 +42,6 @@
   .wallet{background:var(--glass);padding:10px 12px;border-radius:10px}
   .small{font-size:13px;color:var(--muted)}
   footer{margin-top:12px;color:var(--muted);font-size:13px;text-align:center}
-  /* login modal small */
   #authBar{display:flex;gap:8px;align-items:center}
   @media (max-width:920px){ .grid{grid-template-columns:1fr} }
 </style>
@@ -114,11 +113,9 @@
   <footer>Keep assets with these files: <code>anime1.png, anime2.png, anime3.png, music.m4a, click.mp3, hover.mp3, Screenshot_20250915-104012.Gallery.png</code></footer>
 </div>
 
-<!-- small audio players for sound effects -->
 <audio id="sndClick" src="click.mp3"></audio>
 <audio id="sndHover" src="hover.mp3"></audio>
 
-<!-- LOGIN DIALOG (kept minimal, no design break) -->
 <div id="loginDialog" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center">
   <div style="background:#06121a;padding:18px;border-radius:10px;max-width:400px;margin:auto">
     <h3 style="margin:0 0 8px 0;color:#eaf6ff">Login / Register</h3>
@@ -136,136 +133,76 @@
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-  import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getFirestore,doc,onSnapshot,setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-  // === FIREBASE CONFIG (as provided) ===
-  const firebaseConfig = {
-    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
-    authDomain: "terminal-xxrr.firebaseapp.com",
-    projectId: "terminal-xxrr",
-    storageBucket: "terminal-xxrr.appspot.com",
-    messagingSenderId: "722753278120",
-    appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
-  };
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+const firebaseConfig = {
+  apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+  authDomain: "terminal-xxrr.firebaseapp.com",
+  projectId: "terminal-xxrr",
+  storageBucket: "terminal-xxrr.appspot.com",   // ✅ FIXED
+  messagingSenderId: "722753278120",
+  appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
+};
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
 
-  // particles
-  tsParticles.load("tsparticles", {
-    fpsLimit: 60,
-    interactivity: { detectsOn: "canvas", events: { onHover: { enable: true, mode: "repulse" }, onClick: { enable: true, mode: "push" } } },
-    particles: {
-      number: { value: 40 },
-      color: { value: "#00ff9d" },
-      shape: { type: "circle" },
-      opacity: { value: 0.8, random: true },
-      size: { value: { min: 1, max: 4 } },
-      links: { enable: true, distance: 140, color: "#00ff9d", opacity: 0.12, width: 1 },
-      move: { enable: true, speed: 0.9, direction: "none", outMode: "bounce" }
-    },
-    detectRetina: true
+// particles
+tsParticles.load("tsparticles",{fpsLimit:60,particles:{number:{value:40},color:{value:"#00ff9d"},links:{enable:true,distance:140,color:"#00ff9d",opacity:0.12,width:1},move:{enable:true,speed:0.9}}});
+
+// Plans
+const presets=[100,200,500,1000,2000,4000];
+const plansEl=document.getElementById('plans');
+const customQty=document.getElementById('customQty');
+let selected=100;
+function renderPlans(){
+  plansEl.innerHTML='';
+  presets.forEach(p=>{
+    const d=document.createElement('div');
+    d.className='plan';
+    d.innerHTML=`<div style="font-weight:800">${p} coins</div><div class="small muted">₹${(p/2).toFixed(0)}</div>`;
+    d.onclick=()=>{selected=p;customQty.value=p;Array.from(plansEl.children).forEach(c=>c.classList.remove('selected'));d.classList.add('selected');};
+    plansEl.appendChild(d);
+    if(p===selected)d.classList.add('selected');
   });
+}
+renderPlans();
 
-  const sndClick = document.getElementById('sndClick');
-  const sndHover = document.getElementById('sndHover');
-  function playClick(){ try{ sndClick.currentTime=0; sndClick.play(); }catch(e){} }
-  function playHover(){ try{ sndHover.currentTime=0; sndHover.play(); }catch(e){} }
+document.getElementById('goPay').onclick=()=>{
+  let q=parseInt(customQty.value||'0',10);
+  if(isNaN(q)||q<100){alert('Minimum 100 coins');customQty.value=100;return;}
+  if(q>4000){alert('Maximum 4000 coins');customQty.value=4000;return;}
+  localStorage.setItem('pendingPlan',String(q));
+  location.href='payment.html';
+};
+document.getElementById('goPredict').onclick=()=>location.href='prediction.html';
 
-  // Plans render (unchanged)
-  const presets = [100,200,500,1000,2000,4000];
-  const plansEl = document.getElementById('plans');
-  const customQty = document.getElementById('customQty');
-  let selected = 100;
-  function renderPlans(){
-    plansEl.innerHTML = '';
-    presets.forEach(p=>{
-      const d = document.createElement('div');
-      d.className='plan';
-      d.innerHTML = `<div style="font-weight:800">${p} coins</div><div class="small muted">₹${(p/2).toFixed(0)}</div>`;
-      d.onclick = ()=> { selected = p; customQty.value = p; Array.from(plansEl.children).forEach(c=>c.classList.remove('selected')); d.classList.add('selected'); playClick(); };
-      plansEl.appendChild(d);
-      if(p===selected) d.classList.add('selected');
-      d.addEventListener('mouseenter', playHover);
-    });
+// Auth
+const loginDialog=document.getElementById('loginDialog');
+btnLogin.onclick=()=>loginDialog.style.display='flex';
+closeLogin.onclick=()=>loginDialog.style.display='none';
+btnLogout.onclick=()=>signOut(auth);
+
+doSignup.onclick=async()=>{
+  try{let e=authEmail.value,p=authPass.value;
+    let res=await createUserWithEmailAndPassword(auth,e,p);
+    await setDoc(doc(db,"users",res.user.uid),{wallet:0});
+  }catch(err){authMsg.innerText=err.message;}
+};
+doLogin.onclick=async()=>{
+  try{await signInWithEmailAndPassword(auth,authEmail.value,authPass.value);}catch(err){authMsg.innerText=err.message;}
+};
+
+onAuthStateChanged(auth,u=>{
+  if(u){
+    btnLogin.style.display="none";btnLogout.style.display="inline-block";loginDialog.style.display="none";
+    onSnapshot(doc(db,"users",u.uid),s=>walletTop.innerText=s.exists()?s.data().wallet:0);
+  }else{
+    btnLogin.style.display="inline-block";btnLogout.style.display="none";walletTop.innerText="0";
   }
-  renderPlans();
-
-  document.getElementById('goPay').addEventListener('click', ()=>{
-    let q = parseInt(customQty.value||'0',10);
-    if(isNaN(q) || q < 100){ alert('Minimum 100 coins'); customQty.value=100; return; }
-    if(q > 4000){ alert('Maximum 4000 coins'); customQty.value=4000; return; }
-    localStorage.setItem('pendingPlan', String(q));
-    playClick();
-    location.href = 'payment.html';
-  });
-
-  document.getElementById('linkPayment').addEventListener('click', ()=>{ playClick(); location.href='payment.html'; });
-  document.getElementById('linkAdmin').addEventListener('click', ()=>{ playClick(); location.href='admin.html'; });
-  document.getElementById('linkPrediction').addEventListener('click', ()=>{ playClick(); location.href='prediction.html'; });
-  document.getElementById('csBtn').addEventListener('click', ()=>{ playClick(); window.open('https://t.me/Nskskssiwi','_blank'); });
-
-  document.querySelectorAll('.btn, .ghost, .plan').forEach(el => {
-    el.addEventListener('mousedown', playClick);
-  });
-
-  // Auth UI
-  const loginDialog = document.getElementById('loginDialog');
-  const btnLogin = document.getElementById('btnLogin');
-  const btnLogout = document.getElementById('btnLogout');
-  const doLogin = document.getElementById('doLogin');
-  const doSignup = document.getElementById('doSignup');
-  const closeLogin = document.getElementById('closeLogin');
-  const authMsg = document.getElementById('authMsg');
-
-  btnLogin.addEventListener('click', ()=> loginDialog.style.display='flex');
-  closeLogin.addEventListener('click', ()=> { loginDialog.style.display='none'; authMsg.innerText=''; });
-  btnLogout.addEventListener('click', async ()=>{
-    try{ await signOut(auth); alert('Logged out'); }catch(e){ alert(e.message||e); }
-  });
-
-  doSignup.addEventListener('click', async ()=>{
-    authMsg.innerText=''; const email=document.getElementById('authEmail').value.trim(); const pass=document.getElementById('authPass').value;
-    try{
-      if(!email||!pass){ authMsg.innerText='Enter email & password'; return; }
-      const res = await createUserWithEmailAndPassword(auth,email,pass);
-      // create user doc if not exists
-      const uRef = doc(db,'users',res.user.uid);
-      // create minimal user doc via onAuthStateChanged in other pages (we keep this simple)
-      authMsg.innerText = 'Registered & logged in';
-      setTimeout(()=> loginDialog.style.display='none',700);
-    }catch(e){ authMsg.innerText = e.message || e; }
-  });
-
-  doLogin.addEventListener('click', async ()=>{
-    authMsg.innerText=''; const email=document.getElementById('authEmail').value.trim(); const pass=document.getElementById('authPass').value;
-    try{
-      if(!email||!pass){ authMsg.innerText='Enter email & password'; return; }
-      await signInWithEmailAndPassword(auth,email,pass);
-      authMsg.innerText = 'Logged in';
-      setTimeout(()=> loginDialog.style.display='none',700);
-    }catch(e){ authMsg.innerText = e.message || e; }
-  });
-
-  // show logged-in user's wallet in realtime
-  onAuthStateChanged(auth, user=>{
-    if(user){
-      btnLogin.style.display='none'; btnLogout.style.display='inline-block';
-      const uDoc = doc(db, 'users', user.uid);
-      onSnapshot(uDoc, snap=>{
-        const data = snap.exists() ? snap.data() : null;
-        document.getElementById('walletTop').innerText = data ? (data.wallet||0) : 0;
-      }, err=>{
-        console.error('wallet snapshot error', err);
-        document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins')||'0';
-      });
-    } else {
-      btnLogin.style.display='inline-block'; btnLogout.style.display='none';
-      document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins')||'0';
-    }
-  });
+});
 </script>
 </body>
 </html>
