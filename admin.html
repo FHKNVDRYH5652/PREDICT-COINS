@@ -1,72 +1,48 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Admin — Coin Predictions (Fixed)</title>
-<link rel="icon" href="favicon.ico"/>
-<style>
-  :root{--panel:rgba(255,255,255,0.03);--muted:#9fb0d6;--btn:#00ff9d}
-  *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
-  body{margin:0;padding:24px;background:linear-gradient(180deg,#041020,#071427);color:#eaf6ff}
-  .wrap{max-width:1100px;margin:0 auto}
-  .card{background:var(--panel);padding:14px;border-radius:12px}
-  input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;margin-top:8px}
-  .btn{background:linear-gradient(90deg,#00ff9d,#1dd3ff);padding:10px 12px;border-radius:8px;border:none;color:#001;font-weight:700;cursor:pointer}
-  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted)}
-  .small{font-size:13px;color:var(--muted)}
-  .muted-note{font-size:12px;color:#9fb0d6;margin-top:6px}
-</style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin Panel</title>
+  <style>
+    body{background:#07121a;color:#eaf6ff;font-family:Inter,system-ui,Arial;margin:0;padding:20px}
+    .wrap{max-width:600px;margin:auto}
+    .card{background:rgba(255,255,255,0.05);padding:16px;border-radius:12px;margin-top:20px}
+    input,button{padding:10px;border-radius:8px;border:none;margin-top:8px}
+    input{width:100%}
+    button{cursor:pointer;font-weight:700}
+    .btn{background:linear-gradient(90deg,#00ff9d,#1dd3ff);color:#001}
+  </style>
 </head>
 <body>
 <div class="wrap">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <div style="font-weight:800">Admin Panel</div>
-    <div class="small">Update current period for all devices (settings/currentPeriod)</div>
+  <h2>Admin Access</h2>
+  <div id="loginBox" class="card">
+    <div>Enter Admin Password:</div>
+    <input type="password" id="adminPass" placeholder="Password">
+    <button id="loginBtn" class="btn">Unlock</button>
   </div>
 
-  <!-- login -->
-  <div id="loginCard" class="card">
-    <h3 style="margin:0">Admin Login</h3>
-    <div class="small" style="margin-top:8px">Enter the admin password to open dashboard.</div>
-    <input id="adminPass" placeholder="Admin password">
-    <div style="margin-top:8px;display:flex;gap:8px">
-      <button id="loginBtn" class="btn">Login</button>
-      <button id="backBtn" class="ghost" onclick="location.href='index.html'">Back</button>
+  <div id="panel" class="card" style="display:none">
+    <h3>Period Control</h3>
+    <div>Current Period: <strong id="curPeriod">----</strong></div>
+    <div style="margin-top:12px">
+      <label>Set Last 3 Digits:</label>
+      <input type="number" id="last3" min="1" max="999" placeholder="e.g. 256">
+      <button id="setBtn" class="btn">Set Period</button>
     </div>
-    <div id="loginMsg" class="small" style="margin-top:8px"></div>
-    <div class="muted-note">Note: For production, use server-side auth or Firestore-stored secret, not client-side secrets.</div>
-  </div>
-
-  <!-- dashboard -->
-  <div id="dash" style="display:none;margin-top:12px">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><h3 style="margin:0">Pending Payments</h3><div class="small">Approve to credit user wallet</div></div>
-        <div><button id="logoutBtn" class="ghost">Logout</button></div>
-      </div>
-
-      <div id="pendingList" class="small" style="margin-top:12px">Loading pending...</div>
-    </div>
-
-    <div style="margin-top:12px" class="card">
-      <h3 style="margin:0">Set / Change Live Period</h3>
-      <div class="small" style="margin-top:8px">Enter full period string (include the last 3 digits). Example: <code>202509150000234</code></div>
-      <input id="periodFull" placeholder="e.g. 202509150000234">
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button id="setPeriodBtn" class="btn">Set Period (server timestamp)</button>
-        <button id="setPeriodNowBtn" class="ghost">Set with client time</button>
-      </div>
-      <div id="periodMsg" class="small" style="margin-top:8px"></div>
+    <div class="card" style="margin-top:16px">
+      <h4>Auto Increment</h4>
+      <div>Every 60s last 3 digits will +1 (reset to 001 after 999)</div>
     </div>
   </div>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, addDoc, getDocs, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-  // Unified Firebase config
+  // Firebase Config
   const firebaseConfig = {
     apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
     authDomain: "terminal-xxrr.firebaseapp.com",
@@ -79,103 +55,61 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // ===== Obfuscated admin password (Base64 of "456") =====
-  const ENCODED_PASS = "NDU2";
-  function checkPassword(input){
-    try{
-      const decoded = atob(ENCODED_PASS);
-      return input === decoded;
-    }catch(e){
-      return false;
+  const PASS = "457"; // Hidden Admin Pass (मत लिखना कहीं भी)
+
+  const loginBox = document.getElementById("loginBox");
+  const panel = document.getElementById("panel");
+  const adminPass = document.getElementById("adminPass");
+  const loginBtn = document.getElementById("loginBtn");
+  const curPeriodEl = document.getElementById("curPeriod");
+  const last3 = document.getElementById("last3");
+  const setBtn = document.getElementById("setBtn");
+
+  let basePrefix = "20250915100010"; // स्थिर prefix (date + code)
+  let currentLast3 = 1;
+
+  // Firebase listener
+  const periodDoc = doc(db,"system","period");
+  onSnapshot(periodDoc,snap=>{
+    if(snap.exists()){
+      curPeriodEl.innerText = snap.data().number;
     }
-  }
-
-  document.getElementById('loginBtn').addEventListener('click', async ()=>{
-    const pass = document.getElementById('adminPass').value || '';
-    const msg = document.getElementById('loginMsg');
-    msg.innerText = '';
-    if(!pass.trim()){ msg.innerText = 'Enter password'; return; }
-    if(!checkPassword(pass.trim())){ msg.innerText = 'Incorrect password'; return; }
-    // success
-    document.getElementById('loginCard').style.display='none';
-    document.getElementById('dash').style.display='block';
-    subscribePending();
   });
 
-  document.getElementById('logoutBtn').addEventListener('click', ()=>{ 
-    document.getElementById('dash').style.display='none'; 
-    document.getElementById('loginCard').style.display='block';
-    document.getElementById('adminPass').value = '';
-  });
+  // Login
+  loginBtn.onclick = ()=>{
+    if(adminPass.value === PASS){
+      loginBox.style.display="none";
+      panel.style.display="block";
+    }else{
+      alert("Wrong Password!");
+    }
+  };
 
-  // pending realtime (same as original simplified)
-  let unsub = null;
-  function subscribePending(){
-    const q = query(collection(db,'pending'), orderBy('ts','desc'));
-    if(unsub) unsub();
-    unsub = onSnapshot(q, snap => {
-      const node = document.getElementById('pendingList'); node.innerHTML='';
-      if(snap.empty){ node.innerText='No pending'; return; }
-      snap.forEach(snapDoc=>{
-        const d = snapDoc.data(); const id = snapDoc.id;
-        const div = document.createElement('div');
-        div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.04)';
-        div.innerHTML = `<div><strong>${d.coins||0} coins</strong> — ₹${Number(d.amount||0).toFixed(2)}<div style="font-size:12px;color:#9fb0d6">UTR:${d.utr||'-'} • ${d.userEmail||'-'}</div></div>
-          <div style="margin-top:6px"><button data-id="${id}" class="approveBtn">Approve</button> <button data-id="${id}" class="rejectBtn">Reject</button></div>`;
-        node.appendChild(div);
-      });
-      // attach simple handlers (approve/reject will update docs)
-      Array.from(node.querySelectorAll('.approveBtn')).forEach(b=> b.onclick = ()=> approvePayment(b.dataset.id));
-      Array.from(node.querySelectorAll('.rejectBtn')).forEach(b=> b.onclick = ()=> rejectPayment(b.dataset.id));
-    }, err=>{ document.getElementById('pendingList').innerText = 'Error: ' + err.message; });
+  // Set Period
+  setBtn.onclick = async ()=>{
+    let val = parseInt(last3.value,10);
+    if(isNaN(val) || val<1 || val>999){ alert("Enter 1–999"); return; }
+    currentLast3 = val;
+    await savePeriod();
+    startAutoIncrement();
+  };
+
+  // Save Period in Firestore
+  async function savePeriod(){
+    const formatted = String(currentLast3).padStart(3,"0");
+    const num = basePrefix + formatted;
+    await setDoc(periodDoc,{ number:num });
   }
 
-  async function approvePayment(id){
-    try{
-      const pRef = doc(db,'pending',id);
-      const pSnap = await getDoc(pRef);
-      if(!pSnap.exists()){ alert('Not found'); return; }
-      const data = pSnap.data();
-      const uRef = doc(db,'users',data.userId);
-      const uSnap = await getDoc(uRef);
-      const cur = uSnap.exists() ? (uSnap.data().wallet||0) : 0;
-      await updateDoc(uRef, { wallet: cur + Number(data.coins || 0) });
-      await updateDoc(pRef, { status:'approved', approvedAt: new Date() });
-      await addDoc(collection(db,'approved'), { ...data, approvedAt: new Date(), approvedBy: 'local-admin' });
-      alert('Approved.');
-    }catch(e){ alert('Failed: ' + (e.message||e)); }
+  // Auto increment every 60s
+  function startAutoIncrement(){
+    setInterval(async ()=>{
+      currentLast3++;
+      if(currentLast3>999) currentLast3=1;
+      await savePeriod();
+    },60000);
   }
-  async function rejectPayment(id){
-    try{ const pRef = doc(db,'pending',id); await updateDoc(pRef,{ status:'rejected', rejectedAt: new Date() }); alert('Rejected'); }catch(e){ alert(e.message||e); }
-  }
-
-  // Set period button: uses server timestamp so all clients get a server-based start time
-  document.getElementById('setPeriodBtn').addEventListener('click', async ()=>{
-    const full = (document.getElementById('periodFull').value||'').trim();
-    if(!/^\d{13,}$/.test(full)){ document.getElementById('periodMsg').innerText = 'Enter valid full period (digits, include last 3 digits)'; return; }
-    // split prefix and last3
-    const last3 = full.slice(-3);
-    const prefix = full.slice(0, -3);
-    try{
-      await setDoc(doc(db,'settings','currentPeriod'), { prefix: prefix, startLast3: Number(last3), full: full, start: serverTimestamp() });
-      document.getElementById('periodMsg').innerText = 'Period set (server timestamp).';
-    }catch(e){ document.getElementById('periodMsg').innerText = 'Failed: ' + (e.message||e); }
-  });
-
-  // Optional: set with client time (less recommended, but provided for flexibility)
-  document.getElementById('setPeriodNowBtn').addEventListener('click', async ()=>{
-    const full = (document.getElementById('periodFull').value||'').trim();
-    if(!/^\d{13,}$/.test(full)){ document.getElementById('periodMsg').innerText = 'Enter valid full period (digits, include last 3 digits)'; return; }
-    const last3 = full.slice(-3);
-    const prefix = full.slice(0, -3);
-    try{
-      await setDoc(doc(db,'settings','currentPeriod'), { prefix: prefix, startLast3: Number(last3), full: full, start: Date.now() });
-      document.getElementById('periodMsg').innerText = 'Period set (client timestamp).';
-    }catch(e){ document.getElementById('periodMsg').innerText = 'Failed: ' + (e.message||e); }
-  });
-
-  // cleanup
-  window.addEventListener('beforeunload', ()=>{ if(unsub) unsub(); });
 </script>
 </body>
 </html>
