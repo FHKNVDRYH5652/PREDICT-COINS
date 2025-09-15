@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Coin Predictions — Plans</title>
 <link rel="icon" href="favicon.ico"/>
-<!-- tsParticles CDN for background animation -->
 <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
 <style>
   :root{
@@ -26,7 +25,6 @@
     justify-content:center;
     padding:28px;
   }
-  /* particles canvas sits behind content */
   #tsparticles { position: fixed; inset:0; z-index:0; }
   .wrap{position:relative;z-index:2;width:100%;max-width:1100px}
   .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
@@ -44,18 +42,24 @@
   .wallet{background:var(--glass);padding:10px 12px;border-radius:10px}
   .small{font-size:13px;color:var(--muted)}
   footer{margin-top:12px;color:var(--muted);font-size:13px;text-align:center}
+  /* login modal small */
+  #authBar{display:flex;gap:8px;align-items:center}
   @media (max-width:920px){ .grid{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
-
-<!-- Particles background -->
 <div id="tsparticles"></div>
 
 <div class="wrap">
   <div class="top">
     <div class="brand">Coin Predictions</div>
-    <div class="wallet small">Wallet: <strong id="walletTop">0</strong> coins</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="wallet small">Wallet: <strong id="walletTop">0</strong> coins</div>
+      <div id="authBar">
+        <button id="btnLogin" class="ghost">Login</button>
+        <button id="btnLogout" class="ghost" style="display:none">Logout</button>
+      </div>
+    </div>
   </div>
 
   <div class="card grid">
@@ -63,9 +67,7 @@
       <h2 style="margin:0 0 8px 0">Choose a Plan</h2>
       <div class="small muted">Min 100 — Max 4000. Rate: <b>2 coins = ₹1</b> (₹0.5 / coin).</div>
 
-      <div style="margin-top:12px" class="plans" id="plans">
-        <!-- plans injected by JS -->
-      </div>
+      <div style="margin-top:12px" class="plans" id="plans"></div>
 
       <div style="margin-top:12px">
         <label class="small muted">Or custom (100–4000)</label>
@@ -116,16 +118,32 @@
 <audio id="sndClick" src="click.mp3"></audio>
 <audio id="sndHover" src="hover.mp3"></audio>
 
+<!-- LOGIN DIALOG (kept minimal, no design break) -->
+<div id="loginDialog" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center">
+  <div style="background:#06121a;padding:18px;border-radius:10px;max-width:400px;margin:auto">
+    <h3 style="margin:0 0 8px 0;color:#eaf6ff">Login / Register</h3>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <input id="authEmail" placeholder="Email" style="padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf6ff">
+      <input id="authPass" placeholder="Password (min 6)" type="password" style="padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf6ff">
+      <div style="display:flex;gap:8px">
+        <button id="doLogin" class="btn">Login</button>
+        <button id="doSignup" class="btn">Register</button>
+        <button id="closeLogin" class="ghost">Close</button>
+      </div>
+      <div id="authMsg" class="small" style="margin-top:6px"></div>
+    </div>
+  </div>
+</div>
+
 <script type="module">
-  // Firebase init (same config used in all pages)
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
   import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
+  // === FIREBASE CONFIG (as provided) ===
   const firebaseConfig = {
     apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
     authDomain: "terminal-xxrr.firebaseapp.com",
-    databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
     projectId: "terminal-xxrr",
     storageBucket: "terminal-xxrr.appspot.com",
     messagingSenderId: "722753278120",
@@ -135,7 +153,7 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // particles config (green nodes + lines)
+  // particles
   tsParticles.load("tsparticles", {
     fpsLimit: 60,
     interactivity: { detectsOn: "canvas", events: { onHover: { enable: true, mode: "repulse" }, onClick: { enable: true, mode: "push" } } },
@@ -151,18 +169,16 @@
     detectRetina: true
   });
 
-  // UI sounds
   const sndClick = document.getElementById('sndClick');
   const sndHover = document.getElementById('sndHover');
   function playClick(){ try{ sndClick.currentTime=0; sndClick.play(); }catch(e){} }
   function playHover(){ try{ sndHover.currentTime=0; sndHover.play(); }catch(e){} }
 
-  // plans
+  // Plans render (unchanged)
   const presets = [100,200,500,1000,2000,4000];
   const plansEl = document.getElementById('plans');
   const customQty = document.getElementById('customQty');
   let selected = 100;
-
   function renderPlans(){
     plansEl.innerHTML = '';
     presets.forEach(p=>{
@@ -185,7 +201,7 @@
     playClick();
     location.href = 'payment.html';
   });
-  // nav buttons
+
   document.getElementById('linkPayment').addEventListener('click', ()=>{ playClick(); location.href='payment.html'; });
   document.getElementById('linkAdmin').addEventListener('click', ()=>{ playClick(); location.href='admin.html'; });
   document.getElementById('linkPrediction').addEventListener('click', ()=>{ playClick(); location.href='prediction.html'; });
@@ -195,19 +211,61 @@
     el.addEventListener('mousedown', playClick);
   });
 
+  // Auth UI
+  const loginDialog = document.getElementById('loginDialog');
+  const btnLogin = document.getElementById('btnLogin');
+  const btnLogout = document.getElementById('btnLogout');
+  const doLogin = document.getElementById('doLogin');
+  const doSignup = document.getElementById('doSignup');
+  const closeLogin = document.getElementById('closeLogin');
+  const authMsg = document.getElementById('authMsg');
+
+  btnLogin.addEventListener('click', ()=> loginDialog.style.display='flex');
+  closeLogin.addEventListener('click', ()=> { loginDialog.style.display='none'; authMsg.innerText=''; });
+  btnLogout.addEventListener('click', async ()=>{
+    try{ await signOut(auth); alert('Logged out'); }catch(e){ alert(e.message||e); }
+  });
+
+  doSignup.addEventListener('click', async ()=>{
+    authMsg.innerText=''; const email=document.getElementById('authEmail').value.trim(); const pass=document.getElementById('authPass').value;
+    try{
+      if(!email||!pass){ authMsg.innerText='Enter email & password'; return; }
+      const res = await createUserWithEmailAndPassword(auth,email,pass);
+      // create user doc if not exists
+      const uRef = doc(db,'users',res.user.uid);
+      // create minimal user doc via onAuthStateChanged in other pages (we keep this simple)
+      authMsg.innerText = 'Registered & logged in';
+      setTimeout(()=> loginDialog.style.display='none',700);
+    }catch(e){ authMsg.innerText = e.message || e; }
+  });
+
+  doLogin.addEventListener('click', async ()=>{
+    authMsg.innerText=''; const email=document.getElementById('authEmail').value.trim(); const pass=document.getElementById('authPass').value;
+    try{
+      if(!email||!pass){ authMsg.innerText='Enter email & password'; return; }
+      await signInWithEmailAndPassword(auth,email,pass);
+      authMsg.innerText = 'Logged in';
+      setTimeout(()=> loginDialog.style.display='none',700);
+    }catch(e){ authMsg.innerText = e.message || e; }
+  });
+
   // show logged-in user's wallet in realtime
   onAuthStateChanged(auth, user=>{
     if(user){
+      btnLogin.style.display='none'; btnLogout.style.display='inline-block';
       const uDoc = doc(db, 'users', user.uid);
       onSnapshot(uDoc, snap=>{
         const data = snap.exists() ? snap.data() : null;
         document.getElementById('walletTop').innerText = data ? (data.wallet||0) : 0;
+      }, err=>{
+        console.error('wallet snapshot error', err);
+        document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins')||'0';
       });
     } else {
+      btnLogin.style.display='inline-block'; btnLogout.style.display='none';
       document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins')||'0';
     }
   });
-
 </script>
 </body>
 </html>
