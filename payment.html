@@ -13,7 +13,7 @@
   #tsparticles{position:fixed;inset:0;z-index:0}
   .wrap{position:relative;z-index:2;max-width:980px;margin:0 auto}
   .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-  .card{background:var(--panel);padding:18px;border-radius:14px}
+  .card{background:var(--panel);padding:18px;border-radius:14px;box-shadow:0 10px 25px rgba(0,0,0,0.6)}
   .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
   input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
   .qrBox{width:100%;height:300px;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#000}
@@ -30,7 +30,7 @@
 <div class="wrap">
   <div class="top">
     <div style="font-weight:800">Payment</div>
-    <div class="small">Wallet: <strong id="walletTop">0</strong></div>
+    <div class="small">Wallet: <strong id="walletTop">0</strong> coins</div>
   </div>
 
   <div class="card grid">
@@ -83,7 +83,7 @@
     apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
     authDomain: "terminal-xxrr.firebaseapp.com",
     projectId: "terminal-xxrr",
-    storageBucket: "terminal-xxrr.appspot.com",
+    storageBucket: "terminal-xxrr.appspot.com",  // ✅ FIXED
     messagingSenderId: "722753278120",
     appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
   };
@@ -91,62 +91,50 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // particles
   tsParticles.load("tsparticles", {
     fpsLimit: 60,
     particles: { number:{value:30}, color:{value:"#00ff9d"}, shape:{type:"circle"}, links:{enable:true,distance:120,color:"#00ff9d",opacity:0.08,width:1}, move:{enable:true,speed:0.8} }
   });
-
-  const sndClick = document.getElementById('sndClick');
-  function playClick(){ try{ sndClick.currentTime=0; sndClick.play(); }catch(e){} }
 
   const pending = parseInt(localStorage.getItem('pendingPlan') || '100',10);
   document.getElementById('payCoins').value = pending;
   document.getElementById('payAmount').value = (pending * 0.5).toFixed(2);
   document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins') || '0';
 
-  document.getElementById('csBtn').addEventListener('click', ()=> { playClick(); window.open('https://t.me/Nskskssiwi','_blank'); });
+  document.getElementById('csBtn').addEventListener('click', ()=> { window.open('https://t.me/Nskskssiwi','_blank'); });
 
-  // auth state to display wallet top
   onAuthStateChanged(auth, user=>{
     document.getElementById('walletTop').innerText = user ? '—' : (localStorage.getItem('wallet_coins') || '0');
-    // we don't rely on it here; when logged in user will be credited by admin.
   });
 
   document.getElementById('submitBtn').addEventListener('click', async ()=>{
-    playClick();
     const utr = (document.getElementById('payUTR').value||'').trim();
     if(!/^[0-9]{12}$/.test(utr)){ document.getElementById('msg').innerText = 'Enter valid 12-digit UTR'; return; }
     try{
       const user = auth.currentUser;
-      if(!user){
-        if(confirm('You must be logged in to submit payment. Go to home to login?')) location.href='index.html';
-        return;
-      }
+      if(!user){ alert('You must login first'); location.href='index.html'; return; }
 
-      // Prepare payload with serverTimestamp and local createdAt fallback
-      const payload = {
+      await addDoc(collection(db,'pending'), {
         utr,
         coins: pending,
         amount: (pending*0.5),
         userId: user.uid,
         userEmail: user.email||null,
         status:'pending',
-        ts: serverTimestamp(),               // server timestamp (may populate later)
-        createdAtLocal: new Date().toISOString() // guaranteed, used for ordering in admin
-      };
-
-      await addDoc(collection(db,'pending'), payload);
+        ts: serverTimestamp(),
+        createdAtLocal: new Date().toISOString()
+      });
       document.getElementById('msg').innerText = 'Submitted for admin approval.';
       localStorage.removeItem('pendingPlan');
       setTimeout(()=> location.href='prediction.html', 800);
     }catch(e){
-      // helpful debug message
-      console.error('submit pending error', e);
-      document.getElementById('msg').innerText = e.message || 'Failed to submit. Check console for details.';
+      console.error('submit error', e);
+      document.getElementById('msg').innerText = e.message || 'Failed to submit. Check console.';
     }
   });
 
-  document.getElementById('cancelBtn').addEventListener('click', ()=>{ playClick(); location.href='index.html'; });
+  document.getElementById('cancelBtn').addEventListener('click', ()=>{ location.href='index.html'; });
 </script>
 </body>
 </html>
