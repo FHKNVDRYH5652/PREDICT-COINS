@@ -133,7 +133,7 @@
         if(confirm('You must be logged in to submit payment. Go to home to login?')) location.href='index.html';
         return;
       }
-      const ref = await addDoc(collection(db,'pending'), {
+      await addDoc(collection(db,'payments'), {
         utr, coins: pending, amount: (pending*0.5), userId: user.uid, userEmail: user.email||null, status:'pending', ts: serverTimestamp()
       });
       document.getElementById('msg').innerText = 'Submitted for admin approval.';
