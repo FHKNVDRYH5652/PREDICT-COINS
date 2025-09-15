@@ -7,139 +7,90 @@
 <link rel="icon" href="favicon.ico"/>
 <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
 <style>
-  :root{--panel:rgba(255,255,255,0.03);--neon:#00ff9d;--accent:#1dd3ff;--muted:#9fb0d6}
-  *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
-  body{margin:0;padding:20px;background:url('anime3.png') center/cover fixed;color:#eaf6ff}
+  :root{--panel:rgba(255,255,255,0.04);--neon:#00ff9d;--accent:#1dd3ff;--muted:#9fb0d6}
+  body{margin:0;padding:24px;background:url('anime2.png') center/cover fixed;color:#eaf6ff;font-family:Inter,Arial}
   #tsparticles{position:fixed;inset:0;z-index:0}
-  .wrap{position:relative;z-index:2;max-width:980px;margin:0 auto}
-  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-  .card{background:var(--panel);padding:18px;border-radius:14px}
-  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:10px 14px;border-radius:10px;border:none;color:#001;font-weight:800;cursor:pointer}
+  .wrap{position:relative;z-index:2;max-width:960px;margin:auto}
+  .card{background:var(--panel);padding:18px;border-radius:14px;box-shadow:0 10px 25px rgba(0,0,0,0.6)}
+  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:10px 14px;border:none;border-radius:8px;color:#001;font-weight:700;cursor:pointer}
+  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.1);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
   .small{font-size:13px;color:var(--muted)}
-  .period{font-weight:800;font-size:18px}
-  .serverTag{display:inline-block;padding:6px 10px;border-radius:20px;background:rgba(0,0,0,0.25);font-weight:700;color:#bff}
+  #resultBox{margin-top:16px;padding:14px;background:rgba(0,0,0,0.4);border-radius:10px}
 </style>
 </head>
 <body>
 <div id="tsparticles"></div>
-<audio id="bgMusic" src="music.m4a" autoplay loop></audio>
-<audio id="sndClick" src="click.mp3"></audio>
-
 <div class="wrap">
-  <div class="top">
-    <div style="font-weight:900">Coin Predictions</div>
-    <div class="small">Wallet: <strong id="wallet">0</strong> coins</div>
-  </div>
-
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div><span class="small">Live period:</span> <span class="period" id="livePeriod">—</span></div>
-      <div><span class="serverTag" id="serverTag">Server Connected</span></div>
+    <h2 style="margin:0 0 10px 0">Generate Prediction</h2>
+    <div class="small">Each prediction costs <b>10 coins</b>. Your current wallet: <span id="walletTop">0</span> coins.</div>
+    <div style="margin-top:12px;display:flex;gap:10px">
+      <button id="genBtn" class="btn">Generate</button>
+      <button id="backBtn" class="ghost">Back to Plans</button>
     </div>
-
-    <div style="margin-top:10px" class="small" id="countdown">Next period in: --s</div>
-
-    <div style="margin-top:14px;display:flex;gap:12px;align-items:center">
-      <button id="genBtn" class="btn">Generate Prediction (10 coins)</button>
-      <button id="refreshBtn" class="btn" style="background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)">Refresh</button>
-    </div>
-
-    <div id="resultCard" style="display:none;margin-top:14px">
-      <div class="card">
-        <div><b>Period:</b> <span id="predPeriod">—</span></div>
-        <div style="margin-top:8px"><b>Signal:</b> <span id="predSignal">—</span></div>
-        <div style="margin-top:8px"><b>Numbers:</b> <span id="predNums">—</span></div>
-      </div>
-    </div>
-
-    <div style="margin-top:12px" class="small">History:</div>
-    <div id="hist" style="margin-top:8px;max-height:260px;overflow:auto;border-radius:8px;padding:8px;background:rgba(0,0,0,0.18)"></div>
+    <div id="resultBox" class="small">No prediction yet.</div>
   </div>
 </div>
 
+<audio id="sndClick" src="click.mp3"></audio>
+<audio id="sndHover" src="hover.mp3"></audio>
+
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-  import { getFirestore, doc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getFirestore,doc,onSnapshot,runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
-    authDomain: "terminal-xxrr.firebaseapp.com",
-    projectId: "terminal-xxrr",
-    storageBucket: "terminal-xxrr.appspot.com",
-    messagingSenderId: "722753278120",
-    appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
-  };
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+const firebaseConfig = {
+  apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+  authDomain: "terminal-xxrr.firebaseapp.com",
+  projectId: "terminal-xxrr",
+  storageBucket: "terminal-xxrr.appspot.com",   // ✅ FIXED
+  messagingSenderId: "722753278120",
+  appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
+};
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
 
-  tsParticles.load("tsparticles", { fpsLimit:60, particles:{ number:{value:40}, color:{value:"#00ff9d"}, links:{enable:true,distance:120,color:"#00ff9d",opacity:0.12,width:1}, move:{enable:true,speed:0.9} } });
+// particles
+tsParticles.load("tsparticles",{fpsLimit:60,particles:{number:{value:30},color:{value:"#00ff9d"},links:{enable:true,distance:120,color:"#00ff9d",opacity:0.1},move:{enable:true,speed:0.9}}});
 
-  const sndClick = document.getElementById('sndClick');
-  function playClick(){ try{ sndClick.currentTime=0; sndClick.play(); }catch(e){} }
+const walletEl=document.getElementById('walletTop');
+const resultBox=document.getElementById('resultBox');
 
-  const BASE_PERIOD = 20250914100011164n;
-  const BASE_DATE = new Date('2025-09-14T12:53:00+05:30'); // IST
-  function currentPeriod(){
-    const now = new Date();
-    const diffMin = Math.floor((now - BASE_DATE) / 60000);
-    return String(BASE_PERIOD + BigInt(diffMin));
+onAuthStateChanged(auth,user=>{
+  if(user){
+    onSnapshot(doc(db,"users",user.uid),s=>{
+      walletEl.innerText=s.exists()?s.data().wallet:0;
+    });
+  }else{
+    alert("Login required");location.href="index.html";
   }
-  function secToNext(){ const now = Date.now(); return Math.max(0, Math.round((Math.ceil(now/60000)*60000 - now)/1000)); }
-  function updatePeriodUI(){ document.getElementById('livePeriod').innerText = currentPeriod(); document.getElementById('countdown').innerText = 'Next period in: ' + secToNext() + 's'; }
-  setInterval(updatePeriodUI,1000); updatePeriodUI();
+});
 
-  // wallet handling (realtime)
-  let userUid = null;
-  onAuthStateChanged(auth,user=>{
-    if(user){
-      userUid = user.uid;
-      const uref = doc(db,'users',userUid);
-      onSnapshot(uref,snap=>{
-        const d=snap.exists()?snap.data():null;
-        document.getElementById('wallet').innerText = d? (d.wallet||0):0;
-      }, err=>{
-        console.error('wallet snapshot error', err);
-        document.getElementById('wallet').innerText = localStorage.getItem('wallet_coins')||0;
-      });
-    }
-    else { userUid = null; document.getElementById('wallet').innerText = localStorage.getItem('wallet_coins')||0; }
-  });
+document.getElementById('genBtn').onclick=async()=>{
+  const user=auth.currentUser;
+  if(!user){alert("Login required");return;}
+  try{
+    await runTransaction(db,async(t)=>{
+      const ref=doc(db,"users",user.uid);
+      const snap=await t.get(ref);
+      if(!snap.exists())throw "No wallet doc";
+      let bal=snap.data().wallet||0;
+      if(bal<10)throw "Not enough coins";
+      t.update(ref,{wallet:bal-10});
+      return bal-10;
+    });
+    // generate dummy prediction
+    const outcomes=["BUY","SELL","HOLD"];
+    const pick=outcomes[Math.floor(Math.random()*outcomes.length)];
+    resultBox.innerHTML=`<b>Prediction:</b> ${pick}`;
+  }catch(e){
+    resultBox.innerText="Error: "+e;
+  }
+};
 
-  function loadHist(){ const arr = JSON.parse(localStorage.getItem('__preds__')||'[]'); const el = document.getElementById('hist'); el.innerHTML = ''; if(!arr.length){ el.innerHTML = '<div class="small">No predictions yet</div>'; return; } arr.slice(0,200).forEach(p=>{ const div=document.createElement('div'); div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.04)'; div.innerHTML = `<div style="display:flex;justify-content:space-between"><div><b>${p.period}</b><div class="small">${p.signal} • ${p.nums}</div></div><div class="small">${new Date(p.ts).toLocaleTimeString()}</div></div>`; el.appendChild(div); }); }
-  loadHist();
-
-  document.getElementById('genBtn').addEventListener('click', async ()=>{
-    playClick();
-    const COST = 10;
-    if(!userUid){ if(confirm('Login required. Go to home?')) location.href='index.html'; return; }
-    const userRef = doc(db,'users',userUid);
-    try{
-      await runTransaction(db, async (tx)=>{
-        const snap = await tx.get(userRef);
-        if(!snap.exists()) throw new Error('User doc not found');
-        const cur = snap.data().wallet || 0;
-        if(cur < COST) throw new Error('Not enough coins');
-        tx.update(userRef, { wallet: cur - COST });
-      });
-      const signal = Math.random() < 0.5 ? 'SMALL' : 'BIG';
-      let a,b;
-      if(signal === 'SMALL'){ a = Math.floor(Math.random()*5); b = Math.floor(Math.random()*5); } else { a = 5 + Math.floor(Math.random()*5); b = 5 + Math.floor(Math.random()*5); }
-      const period = currentPeriod();
-      const nums = `${a} / ${b}`;
-      document.getElementById('resultCard').style.display='block';
-      document.getElementById('predPeriod').innerText = period;
-      document.getElementById('predSignal').innerText = signal;
-      document.getElementById('predNums').innerText = nums;
-      const arr = JSON.parse(localStorage.getItem('__preds__')||'[]');
-      arr.unshift({ period, signal, nums, ts: Date.now() });
-      localStorage.setItem('__preds__', JSON.stringify(arr.slice(0,200)));
-      loadHist();
-    }catch(e){ alert(e.message || 'Failed'); }
-  });
-
-  document.getElementById('refreshBtn').addEventListener('click', ()=>{ loadHist(); });
+document.getElementById('backBtn').onclick=()=>location.href="index.html";
 </script>
 </body>
 </html>
