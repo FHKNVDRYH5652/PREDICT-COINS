@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Coin Predictions — Plans</title>
 <link rel="icon" href="favicon.ico"/>
+<!-- tsParticles CDN for background animation -->
 <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
 <style>
   :root{
@@ -25,6 +26,7 @@
     justify-content:center;
     padding:28px;
   }
+  /* particles canvas sits behind content */
   #tsparticles { position: fixed; inset:0; z-index:0; }
   .wrap{position:relative;z-index:2;width:100%;max-width:1100px}
   .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
@@ -42,19 +44,18 @@
   .wallet{background:var(--glass);padding:10px 12px;border-radius:10px}
   .small{font-size:13px;color:var(--muted)}
   footer{margin-top:12px;color:var(--muted);font-size:13px;text-align:center}
-  #authBar{display:flex;gap:8px;align-items:center}
   @media (max-width:920px){ .grid{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
+
+<!-- Particles background -->
 <div id="tsparticles"></div>
 
 <div class="wrap">
   <div class="top">
     <div class="brand">Coin Predictions</div>
-    <div style="display:flex;align-items:center;gap:12px">
-      <div class="wallet small">Wallet: <strong id="walletTop">0</strong> coins</div>
-    </div>
+    <div class="wallet small">Wallet: <strong id="walletTop">0</strong> coins</div>
   </div>
 
   <div class="card grid">
@@ -62,7 +63,9 @@
       <h2 style="margin:0 0 8px 0">Choose a Plan</h2>
       <div class="small muted">Min 100 — Max 4000. Rate: <b>2 coins = ₹1</b> (₹0.5 / coin).</div>
 
-      <div style="margin-top:12px" class="plans" id="plans"></div>
+      <div style="margin-top:12px" class="plans" id="plans">
+        <!-- plans injected by JS -->
+      </div>
 
       <div style="margin-top:12px">
         <label class="small muted">Or custom (100–4000)</label>
@@ -81,7 +84,7 @@
           <div style="display:flex;align-items:center;gap:12px">
             <div style="width:64px;height:64px;border-radius:50%;background:#111;display:flex;align-items:center;justify-content:center;font-weight:800">AK</div>
             <div>
-              <div style="font-weight:700">@BABA_TILLU</div>
+              <div style="font-weight:700">@BABA TILLU</div>
               <div class="small muted">Premium + secure</div>
             </div>
           </div>
@@ -106,30 +109,36 @@
     </div>
   </div>
 
-  <footer>Keep assets with these files: <code>anime1.png, anime2.png, anime3.png, music.m4a, click.mp3, hover.mp3</code></footer>
+  <footer>Keep assets with these files: <code>anime1.png, anime2.png, anime3.png, music.m4a, click.mp3, hover.mp3, Screenshot_20250915-104012.Gallery.png</code></footer>
 </div>
 
+<!-- small audio players for sound effects -->
 <audio id="sndClick" src="click.mp3"></audio>
 <audio id="sndHover" src="hover.mp3"></audio>
 
 <script type="module">
+  // Firebase init (same config used in all pages)
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-  // ✅ FIXED FIREBASE CONFIG
   const firebaseConfig = {
     apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
     authDomain: "terminal-xxrr.firebaseapp.com",
-    databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
+    databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
     projectId: "terminal-xxrr",
     storageBucket: "terminal-xxrr.appspot.com",
     messagingSenderId: "722753278120",
     appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
   };
-  initializeApp(firebaseConfig);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-  // particles
+  // particles config (green nodes + lines)
   tsParticles.load("tsparticles", {
     fpsLimit: 60,
+    interactivity: { detectsOn: "canvas", events: { onHover: { enable: true, mode: "repulse" }, onClick: { enable: true, mode: "push" } } },
     particles: {
       number: { value: 40 },
       color: { value: "#00ff9d" },
@@ -137,27 +146,30 @@
       opacity: { value: 0.8, random: true },
       size: { value: { min: 1, max: 4 } },
       links: { enable: true, distance: 140, color: "#00ff9d", opacity: 0.12, width: 1 },
-      move: { enable: true, speed: 0.9 }
+      move: { enable: true, speed: 0.9, direction: "none", outMode: "bounce" }
     },
-    interactivity: { events: { onHover: { enable: true, mode: "repulse" }, onClick: { enable: true, mode: "push" } } }
+    detectRetina: true
   });
 
-  const sndClick=document.getElementById('sndClick');
-  const sndHover=document.getElementById('sndHover');
+  // UI sounds
+  const sndClick = document.getElementById('sndClick');
+  const sndHover = document.getElementById('sndHover');
   function playClick(){ try{ sndClick.currentTime=0; sndClick.play(); }catch(e){} }
   function playHover(){ try{ sndHover.currentTime=0; sndHover.play(); }catch(e){} }
 
-  const presets=[100,200,500,1000,2000,4000];
-  const plansEl=document.getElementById('plans');
-  const customQty=document.getElementById('customQty');
-  let selected=100;
+  // plans
+  const presets = [100,200,500,1000,2000,4000];
+  const plansEl = document.getElementById('plans');
+  const customQty = document.getElementById('customQty');
+  let selected = 100;
+
   function renderPlans(){
-    plansEl.innerHTML='';
+    plansEl.innerHTML = '';
     presets.forEach(p=>{
-      const d=document.createElement('div');
+      const d = document.createElement('div');
       d.className='plan';
-      d.innerHTML=`<div style="font-weight:800">${p} coins</div><div class="small muted">₹${(p/2).toFixed(0)}</div>`;
-      d.onclick=()=>{ selected=p; customQty.value=p; Array.from(plansEl.children).forEach(c=>c.classList.remove('selected')); d.classList.add('selected'); playClick(); };
+      d.innerHTML = `<div style="font-weight:800">${p} coins</div><div class="small muted">₹${(p/2).toFixed(0)}</div>`;
+      d.onclick = ()=> { selected = p; customQty.value = p; Array.from(plansEl.children).forEach(c=>c.classList.remove('selected')); d.classList.add('selected'); playClick(); };
       plansEl.appendChild(d);
       if(p===selected) d.classList.add('selected');
       d.addEventListener('mouseenter', playHover);
@@ -165,25 +177,37 @@
   }
   renderPlans();
 
-  document.getElementById('goPay').onclick=()=>{
-    let q=parseInt(customQty.value||'0',10);
-    if(isNaN(q)||q<100){alert('Minimum 100 coins');customQty.value=100;return;}
-    if(q>4000){alert('Maximum 4000 coins');customQty.value=4000;return;}
-    localStorage.setItem('pendingPlan',String(q));
+  document.getElementById('goPay').addEventListener('click', ()=>{
+    let q = parseInt(customQty.value||'0',10);
+    if(isNaN(q) || q < 100){ alert('Minimum 100 coins'); customQty.value=100; return; }
+    if(q > 4000){ alert('Maximum 4000 coins'); customQty.value=4000; return; }
+    localStorage.setItem('pendingPlan', String(q));
     playClick();
-    location.href='payment.html';
-  };
+    location.href = 'payment.html';
+  });
+  // nav buttons
+  document.getElementById('linkPayment').addEventListener('click', ()=>{ playClick(); location.href='payment.html'; });
+  document.getElementById('linkAdmin').addEventListener('click', ()=>{ playClick(); location.href='admin.html'; });
+  document.getElementById('linkPrediction').addEventListener('click', ()=>{ playClick(); location.href='prediction.html'; });
+  document.getElementById('csBtn').addEventListener('click', ()=>{ playClick(); window.open('https://t.me/Nskskssiwi','_blank'); });
 
-  document.getElementById('linkPayment').onclick=()=>{playClick();location.href='payment.html';};
-  document.getElementById('linkAdmin').onclick=()=>{playClick();location.href='admin.html';};
-  document.getElementById('linkPrediction').onclick=()=>{playClick();location.href='prediction.html';};
-  document.getElementById('csBtn').onclick=()=>{playClick();window.open('https://t.me/Nskskssiwi','_blank');};
+  document.querySelectorAll('.btn, .ghost, .plan').forEach(el => {
+    el.addEventListener('mousedown', playClick);
+  });
 
-  document.querySelectorAll('.btn, .ghost, .plan').forEach(el=>el.addEventListener('mousedown', playClick));
+  // show logged-in user's wallet in realtime
+  onAuthStateChanged(auth, user=>{
+    if(user){
+      const uDoc = doc(db, 'users', user.uid);
+      onSnapshot(uDoc, snap=>{
+        const data = snap.exists() ? snap.data() : null;
+        document.getElementById('walletTop').innerText = data ? (data.wallet||0) : 0;
+      });
+    } else {
+      document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins')||'0';
+    }
+  });
 
-  // Wallet update from localStorage
-  function updateWallet(){ document.getElementById('walletTop').innerText=localStorage.getItem('wallet_coins')||'0'; }
-  updateWallet();
 </script>
 </body>
 </html>
