@@ -3,111 +3,157 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Prediction — Coin Predictions</title>
+<title>Coin Predictions — Live</title>
 <link rel="icon" href="favicon.ico"/>
 <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
 <style>
-  :root{--panel:rgba(255,255,255,0.04);--neon:#00ff9d;--accent:#1dd3ff;--muted:#9fb0d6}
-  body{margin:0;padding:24px;background:url('anime2.png') center/cover fixed;color:#eaf6ff;font-family:Inter,Arial}
-  #tsparticles{position:fixed;inset:0;z-index:0}
-  .wrap{position:relative;z-index:2;max-width:800px;margin:auto}
-  .card{background:var(--panel);padding:18px;border-radius:14px;box-shadow:0 10px 25px rgba(0,0,0,0.6)}
-  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:10px 14px;border:none;border-radius:8px;color:#001;font-weight:700;cursor:pointer}
-  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.1);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
-  .wallet{background:rgba(0,0,0,0.2);padding:6px 10px;border-radius:10px;margin-bottom:12px}
-  .small{font-size:13px;color:var(--muted)}
+  :root{
+    --bg-dark:#07121a;
+    --panel:rgba(255,255,255,0.04);
+    --neon:#00ff9d;
+    --accent:#1dd3ff;
+    --muted:#9fb0d6;
+    --glass:rgba(255,255,255,0.02);
+  }
+  *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
+  html,body{height:100%;margin:0}
+  body{
+    background: url('anime3.png') center/cover fixed no-repeat;
+    color:#eaf6ff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px;
+  }
+  #tsparticles { position: fixed; inset:0; z-index:0; }
+  .wrap{position:relative;z-index:2;width:100%;max-width:900px}
+  .card{background:var(--panel);backdrop-filter: blur(6px);padding:20px;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,0.6);margin-bottom:16px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  .brand{font-weight:900;font-size:20px;letter-spacing:1px}
+  .big{font-size:26px;font-weight:900;margin:0}
+  .muted{color:var(--muted);font-size:14px}
+  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));color:#001;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;font-weight:800;letter-spacing:0.6px}
+  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.08);padding:10px 16px;border-radius:10px;color:var(--muted);cursor:pointer}
+  .flex{display:flex;gap:12px;flex-wrap:wrap}
+  footer{margin-top:14px;color:var(--muted);font-size:13px;text-align:center}
 </style>
 </head>
 <body>
 <div id="tsparticles"></div>
+
 <div class="wrap">
-  <div class="wallet">Wallet: <b id="walletTop">0</b> coins</div>
-  <div class="card">
-    <h2>Coin Predictions</h2>
-
-    <div style="margin-top:12px">
-      <div>Live period: <b id="periodNum"></b></div>
-      <div>Next period in: <b id="countdown"></b>s</div>
-      <div style="margin-top:6px">
-        <span style="padding:6px 12px;background:gray;border-radius:8px">Server Connected</span>
-      </div>
-    </div>
-
-    <div style="margin-top:14px;display:flex;gap:10px">
-      <button id="genBtn" class="btn">Generate Prediction (10 coins)</button>
-      <button id="refreshBtn" class="ghost">Refresh</button>
-    </div>
-
-    <h3 style="margin-top:18px">History:</h3>
-    <div id="history" class="small">No predictions yet</div>
+  <div class="top">
+    <div class="brand">Live Prediction</div>
+    <div class="muted">Wallet: <strong id="walletTop">0</strong> coins</div>
   </div>
+
+  <div class="card" style="text-align:center">
+    <h2 class="big">Server Connected ✅</h2>
+    <p class="muted">Real-time coin prediction system</p>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <p><strong>Period:</strong> <span id="periodNumber">Loading...</span></p>
+    <p><strong>Countdown:</strong> <span id="countdown">60s</span></p>
+  </div>
+
+  <div class="card">
+    <div class="flex" style="justify-content:center">
+      <button class="btn" id="backPlans">Back to Plans</button>
+      <button class="ghost" id="goPayment">Payment</button>
+      <button class="ghost" id="goAdmin">Admin</button>
+    </div>
+  </div>
+
+  <footer>Assets: anime3.png · music.m4a · click.mp3 · hover.mp3</footer>
 </div>
 
+<audio id="sndClick" src="click.mp3"></audio>
+<audio id="sndHover" src="hover.mp3"></audio>
+
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-// ✅ FIXED FIREBASE CONFIG
-const firebaseConfig = {
-  apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
-  authDomain: "terminal-xxrr.firebaseapp.com",
-  databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "terminal-xxrr",
-  storageBucket: "terminal-xxrr.appspot.com",
-  messagingSenderId: "722753278120",
-  appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
-};
-initializeApp(firebaseConfig);
+  const firebaseConfig = {
+    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+    authDomain: "terminal-xxrr.firebaseapp.com",
+    databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
+    projectId: "terminal-xxrr",
+    storageBucket: "terminal-xxrr.appspot.com",
+    messagingSenderId: "722753278120",
+    appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-// wallet display
-function updateWallet(){
-  document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins')||'0';
-}
-updateWallet();
+  // particles background
+  tsParticles.load("tsparticles", {
+    fpsLimit: 60,
+    particles: {
+      number: { value: 40 },
+      color: { value: "#00ff9d" },
+      shape: { type: "circle" },
+      opacity: { value: 0.7, random:true },
+      size: { value: {min:1,max:4} },
+      links: { enable:true, distance:140, color:"#00ff9d", opacity:0.12, width:1 },
+      move: { enable:true, speed:0.8 }
+    },
+    interactivity: { events: { onHover:{enable:true,mode:"repulse"} } },
+    detectRetina:true
+  });
 
-// === PERIOD NUMBER SYSTEM ===
-function updatePeriod(){
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const MM = String(now.getMonth()+1).padStart(2,'0');
-  const dd = String(now.getDate()).padStart(2,'0');
+  // sounds
+  const sndClick=document.getElementById('sndClick');
+  const sndHover=document.getElementById('sndHover');
+  function playClick(){ try{ sndClick.currentTime=0; sndClick.play(); }catch(e){} }
+  function playHover(){ try{ sndHover.currentTime=0; sndHover.play(); }catch(e){} }
 
-  // total minutes from midnight
-  const minutesOfDay = now.getHours()*60 + now.getMinutes();
-  const baseIncrement = 10500 + minutesOfDay;
+  document.querySelectorAll('.btn, .ghost').forEach(el=>{
+    el.addEventListener('mousedown', playClick);
+    el.addEventListener('mouseenter', playHover);
+  });
 
-  const period = `${yyyy}${MM}${dd}000${baseIncrement}`;
-  document.getElementById("periodNum").innerText = period;
+  // Period generator
+  function getPeriodNumber(){
+    const now=new Date();
+    const year=now.getFullYear();
+    const month=String(now.getMonth()+1).padStart(2,'0');
+    const day=String(now.getDate()).padStart(2,'0');
+    const middle="000";
+    const minutesSinceMidnight=now.getHours()*60+now.getMinutes();
+    const baseCounter=10600;
+    const counter=baseCounter+minutesSinceMidnight;
+    return `${year}${month}${day}${middle}${counter}`;
+  }
+  function updatePeriod(){
+    document.getElementById("periodNumber").innerText=getPeriodNumber();
+    const seconds=new Date().getSeconds();
+    const remain=60-seconds;
+    document.getElementById("countdown").innerText=remain+"s";
+  }
+  setInterval(updatePeriod,1000);
+  updatePeriod();
 
-  // countdown
-  const sec = now.getSeconds();
-  document.getElementById("countdown").innerText = 60-sec;
-}
-setInterval(updatePeriod,1000);
-updatePeriod();
+  // nav
+  document.getElementById('backPlans').addEventListener('click',()=>{location.href='index.html';});
+  document.getElementById('goPayment').addEventListener('click',()=>{location.href='payment.html';});
+  document.getElementById('goAdmin').addEventListener('click',()=>{location.href='admin.html';});
 
-// prediction generator
-genBtn.onclick=()=>{
-  let coins=parseInt(localStorage.getItem('wallet_coins')||'0',10);
-  if(coins<10){ alert("Not enough coins. Please recharge."); return; }
-  coins-=10;
-  localStorage.setItem('wallet_coins',coins);
-  updateWallet();
-
-  const predictions=["Team A will win","Team B will win","High scoring match","Low scoring match","Draw expected"];
-  const pick=predictions[Math.floor(Math.random()*predictions.length)];
-
-  const hist=document.getElementById('history');
-  const entry=document.createElement('div');
-  entry.innerText=`[${new Date().toLocaleTimeString()}] ${pick}`;
-  if(hist.innerText==="No predictions yet") hist.innerText="";
-  hist.prepend(entry);
-};
-
-// refresh
-refreshBtn.onclick=updatePeriod;
-
-// particles bg
-tsParticles.load("tsparticles",{fpsLimit:60,particles:{number:{value:30},color:{value:"#00ff9d"},links:{enable:true,distance:120,color:"#00ff9d",opacity:0.1},move:{enable:true,speed:0.7}}});
+  // wallet realtime
+  onAuthStateChanged(auth,user=>{
+    if(user){
+      const uDoc=doc(db,'users',user.uid);
+      onSnapshot(uDoc,snap=>{
+        const data=snap.exists()?snap.data():null;
+        document.getElementById('walletTop').innerText=data?(data.wallet||0):0;
+      });
+    }else{
+      document.getElementById('walletTop').innerText=localStorage.getItem('wallet_coins')||'0';
+    }
+  });
 </script>
 </body>
 </html>
