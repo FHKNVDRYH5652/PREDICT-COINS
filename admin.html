@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Admin — Coin Predictions</title>
+<title>Admin — Coin Predictions (Simple Password)</title>
 <link rel="icon" href="favicon.ico"/>
 <style>
   :root{--panel:rgba(255,255,255,0.03);--muted:#9fb0d6;--btn:#00ff9d}
@@ -22,15 +22,14 @@
 <div class="wrap">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div style="font-weight:800">Admin Panel</div>
-    <div class="small">Make sure admin exists in Firestore collection <code>admins</code></div>
+    <div class="small">Simple-password admin (no Firebase Auth). Password = <code>456</code></div>
   </div>
 
   <!-- login -->
   <div id="loginCard" class="card">
     <h3 style="margin:0">Admin Login</h3>
-    <div class="small" style="margin-top:8px">Login with Firebase Auth user that is listed in <code>admins</code> collection.</div>
-    <input id="adminEmail" placeholder="Email">
-    <input id="adminPass" placeholder="Password" type="password">
+    <div class="small" style="margin-top:8px">Enter the admin password to open dashboard.</div>
+    <input id="adminPass" placeholder="Admin password (456)" type="password">
     <div style="margin-top:8px;display:flex;gap:8px">
       <button id="loginBtn" class="btn">Login</button>
       <button id="backBtn" class="ghost" onclick="location.href='index.html'">Back</button>
@@ -60,8 +59,8 @@
 </div>
 
 <script type="module">
+  // Firestore only (no auth)
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
   import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -74,29 +73,33 @@
     appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
   };
   const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // simple password
+  const ADMIN_PASSWORD = '456';
+  // since no auth, use a fixed admin id for approvedBy/rejectedBy
+  const LOCAL_ADMIN_ID = 'local-admin';
+
   document.getElementById('loginBtn').addEventListener('click', async ()=>{
-    const email = document.getElementById('adminEmail').value.trim();
     const pass = document.getElementById('adminPass').value;
-    if(!email||!pass){ document.getElementById('loginMsg').innerText='Enter credentials'; return; }
-    try{
-      const cred = await signInWithEmailAndPassword(auth, email, pass);
-      // verify admins collection by email or uid
-      const adminsSnap = await getDocs(query(collection(db,'admins')));
-      let ok=false;
-      adminsSnap.forEach(d=>{ const data=d.data(); if(data.email && data.email.toLowerCase()===email.toLowerCase()) ok=true; if(d.id===cred.user.uid) ok=true; });
-      if(!ok){ document.getElementById('loginMsg').innerText='Not an admin (add to admins collection)'; await signOut(auth); return; }
-      // show dashboard
-      document.getElementById('loginCard').style.display='none';
-      document.getElementById('dash').style.display='block';
-      subscribePending();
-      renderApprovedRejected();
-    }catch(e){ document.getElementById('loginMsg').innerText = e.message; }
+    if(!pass){ document.getElementById('loginMsg').innerText='Enter password'; return; }
+    if(pass !== ADMIN_PASSWORD){
+      document.getElementById('loginMsg').innerText='Incorrect password';
+      return;
+    }
+    // success: show dashboard
+    document.getElementById('loginCard').style.display='none';
+    document.getElementById('dash').style.display='block';
+    subscribePending();
+    renderApprovedRejected();
+    document.getElementById('loginMsg').innerText = '';
   });
 
-  document.getElementById('logoutBtn').addEventListener('click', async ()=>{ await signOut(auth); document.getElementById('dash').style.display='none'; document.getElementById('loginCard').style.display='block'; });
+  document.getElementById('logoutBtn').addEventListener('click', ()=>{ 
+    // simply hide dashboard and show login
+    document.getElementById('dash').style.display='none'; 
+    document.getElementById('loginCard').style.display='block';
+  });
 
   // pending realtime
   let unsub=null;
@@ -114,6 +117,8 @@
       // attach handlers
       Array.from(node.querySelectorAll('.approveBtn')).forEach(b=> b.onclick = ()=> approvePayment(b.dataset.id));
       Array.from(node.querySelectorAll('.rejectBtn')).forEach(b=> b.onclick = ()=> rejectPayment(b.dataset.id));
+    }, err=>{
+      document.getElementById('pendingList').innerHTML = '<div class="small">Error loading pending: ' + err.message + '</div>';
     });
   }
 
@@ -127,13 +132,14 @@
       const uRef = doc(db,'users',data.userId);
       const uSnap = await getDoc(uRef);
       const cur = uSnap.exists() ? (uSnap.data().wallet||0) : 0;
+      // update wallet (may fail if rules block unauthenticated writes)
       await updateDoc(uRef, { wallet: cur + Number(data.coins) });
       // mark pending
       await updateDoc(pRef, { status:'approved', approvedAt: new Date() });
-      await addDoc(collection(db,'approved'), { ...data, approvedAt: new Date(), approvedBy: auth.currentUser.uid });
+      await addDoc(collection(db,'approved'), { ...data, approvedAt: new Date(), approvedBy: LOCAL_ADMIN_ID });
       alert('Approved and credited.');
       renderApprovedRejected();
-    }catch(e){ alert(e.message||'Failed'); }
+    }catch(e){ alert('Failed: ' + (e.message||e)); }
   }
 
   async function rejectPayment(id){
@@ -143,19 +149,24 @@
       if(!pSnap.exists()){ alert('Not found'); return; }
       const data = pSnap.data();
       await updateDoc(pRef, { status:'rejected', rejectedAt: new Date() });
-      await addDoc(collection(db,'rejected'), { ...data, rejectedAt: new Date(), rejectedBy: auth.currentUser.uid });
+      await addDoc(collection(db,'rejected'), { ...data, rejectedAt: new Date(), rejectedBy: LOCAL_ADMIN_ID });
       alert('Rejected.');
       renderApprovedRejected();
-    }catch(e){ alert(e.message||'Failed'); }
+    }catch(e){ alert('Failed: ' + (e.message||e)); }
   }
 
   async function renderApprovedRejected(){
     const aNode = document.getElementById('approvedList'); aNode.innerHTML='';
     const rNode = document.getElementById('rejectedList'); rNode.innerHTML='';
-    const aSnap = await getDocs(query(collection(db,'approved'), orderBy('approvedAt','desc')));
-    aSnap.forEach(d=>{ const data=d.data(); const div=document.createElement('div'); div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.03)'; div.innerHTML=`<b>${data.coins} coins</b> • UTR:${data.utr||'-'} • ${new Date(data.approvedAt||Date.now()).toLocaleString()}`; aNode.appendChild(div); });
-    const rSnap = await getDocs(query(collection(db,'rejected'), orderBy('rejectedAt','desc')));
-    rSnap.forEach(d=>{ const data=d.data(); const div=document.createElement('div'); div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.03)'; div.innerHTML=`<b>${data.coins} coins</b> • UTR:${data.utr||'-'} • ${new Date(data.rejectedAt||Date.now()).toLocaleString()}`; rNode.appendChild(div); });
+    try{
+      const aSnap = await getDocs(query(collection(db,'approved'), orderBy('approvedAt','desc')));
+      aSnap.forEach(d=>{ const data=d.data(); const div=document.createElement('div'); div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.03)'; div.innerHTML=`<b>${data.coins} coins</b> • UTR:${data.utr||'-'} • ${new Date(data.approvedAt||Date.now()).toLocaleString()}`; aNode.appendChild(div); });
+      const rSnap = await getDocs(query(collection(db,'rejected'), orderBy('rejectedAt','desc')));
+      rSnap.forEach(d=>{ const data=d.data(); const div=document.createElement('div'); div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.03)'; div.innerHTML=`<b>${data.coins} coins</b> • UTR:${data.utr||'-'} • ${new Date(data.rejectedAt||Date.now()).toLocaleString()}`; rNode.appendChild(div); });
+    }catch(e){
+      aNode.innerHTML = '<div class="small">Error: ' + e.message + '</div>';
+      rNode.innerHTML = '<div class="small">Error: ' + e.message + '</div>';
+    }
   }
 
 </script>
