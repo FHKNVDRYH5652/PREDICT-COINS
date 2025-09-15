@@ -1,174 +1,162 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Admin — Coin Predictions</title>
-  <style>
-    :root{--bg:#061021;--card:rgba(255,255,255,0.03);--accent:#00a6ff}
-    *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
-    body{margin:0;background:linear-gradient(180deg,#041020,#071427);color:#eaf6ff;padding:24px}
-    .wrap{max-width:1100px;margin:0 auto}
-    .loginCard{max-width:420px;margin:40px auto;background:var(--card);padding:20px;border-radius:12px}
-    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
-    .card{background:var(--card);padding:14px;border-radius:12px}
-    input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;margin-top:8px}
-    .btn{background:linear-gradient(90deg,#00d2a8,#00a6ff);padding:10px 12px;border-radius:8px;border:none;color:#001;font-weight:700;cursor:pointer}
-    .ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:#9fb0d6;cursor:pointer}
-    .small{font-size:13px;color:#9fb0d6}
-    .history{max-height:420px;overflow:auto;padding:8px;border-radius:8px;background:rgba(0,0,0,0.25)}
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin — Coin Predictions</title>
+<link rel="icon" href="favicon.ico"/>
+<style>
+  :root{--panel:rgba(255,255,255,0.03);--muted:#9fb0d6;--btn:#00ff9d}
+  *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
+  body{margin:0;padding:24px;background:linear-gradient(180deg,#041020,#071427);color:#eaf6ff}
+  .wrap{max-width:1100px;margin:0 auto}
+  .card{background:var(--panel);padding:14px;border-radius:12px}
+  input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;margin-top:8px}
+  .btn{background:linear-gradient(90deg,#00ff9d,#1dd3ff);padding:10px 12px;border-radius:8px;border:none;color:#001;font-weight:700;cursor:pointer}
+  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted)}
+  .history{max-height:420px;overflow:auto;padding:8px;border-radius:8px;background:rgba(0,0,0,0.25)}
+  .small{font-size:13px;color:var(--muted)}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-weight:800">Admin Dashboard</div>
-      <div class="small">Demo admin (password: <code>Mrperfect456</code>)</div>
+<div class="wrap">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-weight:800">Admin Panel</div>
+    <div class="small">Make sure admin exists in Firestore collection <code>admins</code></div>
+  </div>
+
+  <!-- login -->
+  <div id="loginCard" class="card">
+    <h3 style="margin:0">Admin Login</h3>
+    <div class="small" style="margin-top:8px">Login with Firebase Auth user that is listed in <code>admins</code> collection.</div>
+    <input id="adminEmail" placeholder="Email">
+    <input id="adminPass" placeholder="Password" type="password">
+    <div style="margin-top:8px;display:flex;gap:8px">
+      <button id="loginBtn" class="btn">Login</button>
+      <button id="backBtn" class="ghost" onclick="location.href='index.html'">Back</button>
     </div>
+    <div id="loginMsg" class="small" style="margin-top:8px"></div>
+  </div>
 
-    <!-- Login area -->
-    <div id="loginArea" class="loginCard card">
-      <h2 style="margin:0">Admin Login</h2>
-      <div class="small" style="margin-top:8px">Enter password to view pending payments and approve.</div>
-      <input id="adminPass" type="password" placeholder="Password" />
-      <div style="margin-top:10px;display:flex;gap:8px">
-        <button class="btn" id="loginBtn">Login</button>
-        <button class="ghost" id="backBtn">Back to Site</button>
-      </div>
-      <div id="loginMsg" class="small" style="margin-top:8px"></div>
-    </div>
-
-    <!-- Dashboard (hidden until login) -->
-    <div id="dash" style="display:none">
-      <div class="grid">
-        <div class="card">
-          <h3>Pending Payments</h3>
-          <div id="pendingList" class="history"></div>
-        </div>
-
-        <div class="card">
-          <h3>Approved / Rejected</h3>
-          <div style="margin-bottom:8px">
-            <button class="btn" id="refreshBtn">Refresh</button>
-            <button class="ghost" id="logoutBtn">Logout</button>
-          </div>
-          <div style="margin-top:8px" class="small">Approved</div>
-          <div id="approvedList" class="history" style="margin-top:6px"></div>
-          <div style="margin-top:8px" class="small">Rejected</div>
-          <div id="rejectedList" class="history" style="margin-top:6px"></div>
-        </div>
+  <!-- dashboard -->
+  <div id="dash" style="display:none;margin-top:12px">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><h3 style="margin:0">Pending Payments</h3><div class="small">Approve to credit user wallet</div></div>
+        <div><button id="logoutBtn" class="ghost">Logout</button></div>
       </div>
 
-      <div style="margin-top:12px" class="card">
-        <h3>Wallet (single-user demo)</h3>
-        <div class="small">Current wallet coins (for demo user): <b id="walletCount">0</b></div>
-        <div style="margin-top:8px;display:flex;gap:8px">
-          <input id="setCoinsInput" placeholder="set coins number" />
-          <button class="btn" id="setCoinsBtn">Set Wallet</button>
-        </div>
+      <div id="pendingList" class="history" style="margin-top:12px"></div>
+    </div>
+
+    <div style="margin-top:12px" class="card">
+      <h3 style="margin:0">Approved / Rejected</h3>
+      <div style="display:flex;gap:12px;margin-top:8px">
+        <div style="flex:1"><div class="small">Approved</div><div id="approvedList" class="history"></div></div>
+        <div style="flex:1"><div class="small">Rejected</div><div id="rejectedList" class="history"></div></div>
       </div>
     </div>
   </div>
+</div>
 
-<script>
-  const ADMIN_PASS = 'Mrperfect456';
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-  function readJSON(k, fallback=null){ try{ const v = localStorage.getItem(k); return v? JSON.parse(v): fallback; }catch(e){ return fallback; } }
-  function writeJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+  const firebaseConfig = {
+    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+    authDomain: "terminal-xxrr.firebaseapp.com",
+    databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
+    projectId: "terminal-xxrr",
+    storageBucket: "terminal-xxrr.appspot.com",
+    messagingSenderId: "722753278120",
+    appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-  // login
-  document.getElementById('loginBtn').addEventListener('click', ()=>{
-    const pw = document.getElementById('adminPass').value;
-    if(pw === ADMIN_PASS){ document.getElementById('loginArea').style.display='none'; document.getElementById('dash').style.display='block'; renderAll(); }
-    else document.getElementById('loginMsg').innerText = 'Wrong password';
+  document.getElementById('loginBtn').addEventListener('click', async ()=>{
+    const email = document.getElementById('adminEmail').value.trim();
+    const pass = document.getElementById('adminPass').value;
+    if(!email||!pass){ document.getElementById('loginMsg').innerText='Enter credentials'; return; }
+    try{
+      const cred = await signInWithEmailAndPassword(auth, email, pass);
+      // verify admins collection by email or uid
+      const adminsSnap = await getDocs(query(collection(db,'admins')));
+      let ok=false;
+      adminsSnap.forEach(d=>{ const data=d.data(); if(data.email && data.email.toLowerCase()===email.toLowerCase()) ok=true; if(d.id===cred.user.uid) ok=true; });
+      if(!ok){ document.getElementById('loginMsg').innerText='Not an admin (add to admins collection)'; await signOut(auth); return; }
+      // show dashboard
+      document.getElementById('loginCard').style.display='none';
+      document.getElementById('dash').style.display='block';
+      subscribePending();
+      renderApprovedRejected();
+    }catch(e){ document.getElementById('loginMsg').innerText = e.message; }
   });
-  document.getElementById('backBtn').addEventListener('click', ()=> window.location.href = 'index.html');
 
-  function listPending(){
-    const items = [];
-    for(let i=0;i<localStorage.length;i++){
-      const k = localStorage.key(i);
-      if(k && k.startsWith('__pending__')) {
-        const v = readJSON(k);
-        if(v) items.push({key:k, val:v});
-      }
-    }
-    items.sort((a,b)=>b.val.ts - a.val.ts);
-    return items;
-  }
+  document.getElementById('logoutBtn').addEventListener('click', async ()=>{ await signOut(auth); document.getElementById('dash').style.display='none'; document.getElementById('loginCard').style.display='block'; });
 
-  function renderPending(){
-    const node = document.getElementById('pendingList');
-    node.innerHTML = '';
-    const items = listPending();
-    if(items.length===0){ node.innerHTML = '<div class="small">No pending</div>'; return; }
-    items.forEach(it=>{
-      const d = it.val;
-      const row = document.createElement('div');
-      row.style.padding='8px'; row.style.borderBottom='1px solid rgba(255,255,255,0.04)';
-      row.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
-        <div><b>${d.coins} coins</b> — ₹${(d.amount).toFixed(2)}<div class="small">UTR: ${d.utr} • ${new Date(d.ts).toLocaleString()}</div></div>
-        <div><button class="btn approve" data-utr="${d.utr}">Approve</button> <button class="ghost reject" data-utr="${d.utr}">Reject</button></div>
-      </div>`;
-      node.appendChild(row);
+  // pending realtime
+  let unsub=null;
+  function subscribePending(){
+    const q = query(collection(db,'pending'), orderBy('ts','desc'));
+    unsub = onSnapshot(q, snap => {
+      const node = document.getElementById('pendingList'); node.innerHTML='';
+      if(snap.empty){ node.innerHTML='<div class="small">No pending</div>'; return; }
+      snap.forEach(snapDoc=>{
+        const d = snapDoc.data(); const id = snapDoc.id;
+        const row = document.createElement('div'); row.style.padding='8px'; row.style.borderBottom='1px solid rgba(255,255,255,0.04)';
+        row.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><b>${d.coins} coins</b> — ₹${(d.amount||0).toFixed(2)}<div class="small">UTR: ${d.utr || '-'} • ${d.userEmail || '-'}</div></div><div><button data-id="${id}" class="approveBtn">Approve</button> <button data-id="${id}" class="rejectBtn">Reject</button></div></div>`;
+        node.appendChild(row);
+      });
+      // attach handlers
+      Array.from(node.querySelectorAll('.approveBtn')).forEach(b=> b.onclick = ()=> approvePayment(b.dataset.id));
+      Array.from(node.querySelectorAll('.rejectBtn')).forEach(b=> b.onclick = ()=> rejectPayment(b.dataset.id));
     });
-    // attach handlers
-    Array.from(node.querySelectorAll('.approve')).forEach(b=> b.onclick = ()=> adminApprove(b.dataset.utr));
-    Array.from(node.querySelectorAll('.reject')).forEach(b=> b.onclick = ()=> adminReject(b.dataset.utr));
   }
 
-  function adminApprove(utr){
-    const key = '__pending__' + utr;
-    const data = readJSON(key);
-    if(!data) { alert('Not found'); return; }
-    // credit wallet (single-user demo)
-    const cur = parseInt(localStorage.getItem('wallet_coins')||'0',10);
-    localStorage.setItem('wallet_coins', String(cur + Number(data.coins)));
-    // move to approved
-    localStorage.setItem('__approved__' + utr, JSON.stringify({utr:utr, coins:data.coins, amount:data.amount, ts: Date.now()}));
-    localStorage.removeItem(key);
-    renderAll();
-    alert('Approved and wallet credited: ' + data.coins + ' coins');
+  async function approvePayment(id){
+    try{
+      const pRef = doc(db,'pending',id);
+      const pSnap = await getDoc(pRef);
+      if(!pSnap.exists()){ alert('Not found'); return; }
+      const data = pSnap.data();
+      // credit user's wallet
+      const uRef = doc(db,'users',data.userId);
+      const uSnap = await getDoc(uRef);
+      const cur = uSnap.exists() ? (uSnap.data().wallet||0) : 0;
+      await updateDoc(uRef, { wallet: cur + Number(data.coins) });
+      // mark pending
+      await updateDoc(pRef, { status:'approved', approvedAt: new Date() });
+      await addDoc(collection(db,'approved'), { ...data, approvedAt: new Date(), approvedBy: auth.currentUser.uid });
+      alert('Approved and credited.');
+      renderApprovedRejected();
+    }catch(e){ alert(e.message||'Failed'); }
   }
 
-  function adminReject(utr){
-    const key = '__pending__' + utr;
-    const data = readJSON(key);
-    if(!data) { alert('Not found'); return; }
-    localStorage.setItem('__rejected__' + utr, JSON.stringify({utr:utr, coins:data.coins, amount:data.amount, ts: Date.now()}));
-    localStorage.removeItem(key);
-    renderAll();
-    alert('Rejected UTR: ' + utr);
+  async function rejectPayment(id){
+    try{
+      const pRef = doc(db,'pending',id);
+      const pSnap = await getDoc(pRef);
+      if(!pSnap.exists()){ alert('Not found'); return; }
+      const data = pSnap.data();
+      await updateDoc(pRef, { status:'rejected', rejectedAt: new Date() });
+      await addDoc(collection(db,'rejected'), { ...data, rejectedAt: new Date(), rejectedBy: auth.currentUser.uid });
+      alert('Rejected.');
+      renderApprovedRejected();
+    }catch(e){ alert(e.message||'Failed'); }
   }
 
-  function renderApprovedRejected(){
-    const approved = [], rejected = [];
-    for(let i=0;i<localStorage.length;i++){
-      const k = localStorage.key(i);
-      if(k && k.startsWith('__approved__')) approved.push(readJSON(k));
-      if(k && k.startsWith('__rejected__')) rejected.push(readJSON(k));
-    }
-    const aNode = document.getElementById('approvedList');
-    const rNode = document.getElementById('rejectedList');
-    aNode.innerHTML = approved.length? approved.map(a=> `<div style="padding:6px;border-bottom:1px solid rgba(255,255,255,0.03)"><b>${a.coins} coins</b> • UTR:${a.utr} • ${new Date(a.ts).toLocaleString()}</div>`).join('') : '<div class="small">No approved</div>';
-    rNode.innerHTML = rejected.length? rejected.map(a=> `<div style="padding:6px;border-bottom:1px solid rgba(255,255,255,0.03)"><b>${a.coins} coins</b> • UTR:${a.utr} • ${new Date(a.ts).toLocaleString()}</div>`).join('') : '<div class="small">No rejected</div>';
+  async function renderApprovedRejected(){
+    const aNode = document.getElementById('approvedList'); aNode.innerHTML='';
+    const rNode = document.getElementById('rejectedList'); rNode.innerHTML='';
+    const aSnap = await getDocs(query(collection(db,'approved'), orderBy('approvedAt','desc')));
+    aSnap.forEach(d=>{ const data=d.data(); const div=document.createElement('div'); div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.03)'; div.innerHTML=`<b>${data.coins} coins</b> • UTR:${data.utr||'-'} • ${new Date(data.approvedAt||Date.now()).toLocaleString()}`; aNode.appendChild(div); });
+    const rSnap = await getDocs(query(collection(db,'rejected'), orderBy('rejectedAt','desc')));
+    rSnap.forEach(d=>{ const data=d.data(); const div=document.createElement('div'); div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.03)'; div.innerHTML=`<b>${data.coins} coins</b> • UTR:${data.utr||'-'} • ${new Date(data.rejectedAt||Date.now()).toLocaleString()}`; rNode.appendChild(div); });
   }
-
-  document.getElementById('refreshBtn').addEventListener('click', renderAll);
-  document.getElementById('logoutBtn').addEventListener('click', ()=> { document.getElementById('dash').style.display='none'; document.getElementById('loginArea').style.display='block'; });
-
-  function renderWallet(){
-    document.getElementById('walletCount').innerText = localStorage.getItem('wallet_coins') || '0';
-  }
-  document.getElementById('setCoinsBtn').addEventListener('click', ()=>{
-    const v = parseInt(document.getElementById('setCoinsInput').value||'0',10);
-    if(isNaN(v)){ alert('Enter number'); return; }
-    localStorage.setItem('wallet_coins', String(v));
-    renderWallet();
-    alert('Wallet set to ' + v);
-  });
-
-  function renderAll(){ renderPending(); renderApprovedRejected(); renderWallet(); }
 
 </script>
 </body>
