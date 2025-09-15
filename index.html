@@ -495,38 +495,51 @@ onSnapshot(periodRef, snap=>{
 
 
 
-/* countdown + auto-increment with fixed prefix (working version) */
-const FIXED_PREFIX = "20250915100010";
+
+/* countdown + realtime period from Firestore */
+let currentNumber = "";
 let countdown = 60;
-let last3Digits = 1;
+
+// Listen to Firestore period doc in realtime
+onSnapshot(periodRef, snap => {
+  if (snap.exists()) {
+    const data = snap.data();
+    currentNumber = data.number || "";
+    const ts = data.ts ? data.ts.toDate() : new Date();
+    const diff = Math.floor((Date.now() - ts.getTime())/1000);
+    countdown = 60 - (diff % 60);
+    updatePeriodCountdownUI();
+  }
+});
 
 function updatePeriodCountdownUI(){
-  const full = FIXED_PREFIX + String(last3Digits).padStart(3,'0');
-  document.getElementById('periodDisplay').innerText = full;
-  document.getElementById('adminCurPeriod').innerText = full;
+  if(currentNumber){
+    document.getElementById('periodDisplay').innerText = currentNumber;
+    document.getElementById('adminCurPeriod').innerText = currentNumber;
+  }
   document.getElementById('countdownDisplay').innerText = countdown + 's';
 }
 
+// local timer to show countdown decreasing
 setInterval(()=>{
-  countdown--;
-  if(countdown <= 0){
+  if(countdown > 0){
+    countdown--;
+  } else {
     countdown = 60;
-    last3Digits++;
-    if(last3Digits > 999) last3Digits = 1;
   }
   updatePeriodCountdownUI();
-}, 1000);
+},1000);
 
-updatePeriodCountdownUI();
-
-// Admin Panel: set last 3 digits only
-document.getElementById('adminSetBtn').addEventListener('click', ()=>{
+// Admin Panel: set last 3 digits -> update Firestore directly
+document.getElementById('adminSetBtn').addEventListener('click', async ()=>{
   const last3 = Number(document.getElementById('adminLast3').value||0);
   if(isNaN(last3) || last3 < 1 || last3 > 999){ alert('Enter 1–999'); return; }
-  last3Digits = last3;
-  countdown = 60; // reset countdown
-  updatePeriodCountdownUI();
-  alert('Period set: ' + (FIXED_PREFIX + String(last3).padStart(3,'0')));
+  const prefix = currentNumber.length > 3 ? currentNumber.slice(0,-3) : "20250915100010";
+  const newNum = prefix + String(last3).padStart(3,'0');
+  try{
+    await setDoc(periodRef, { number: newNum, ts: serverTimestamp() });
+    alert('Period set: ' + newNum);
+  }catch(e){ alert('Set failed: ' + (e.message||e)); }
 });
 
 /* =========================
