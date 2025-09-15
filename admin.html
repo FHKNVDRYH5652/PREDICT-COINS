@@ -1,109 +1,159 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Admin Panel — Coin Predictions</title>
-<link rel="icon" href="favicon.ico"/>
-<script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
-<style>
-  :root{--panel:rgba(255,255,255,0.04);--neon:#00ff9d;--accent:#1dd3ff;--muted:#9fb0d6}
-  body{margin:0;padding:24px;background:url('anime3.png') center/cover fixed;color:#eaf6ff;font-family:Inter,Arial}
-  #tsparticles{position:fixed;inset:0;z-index:0}
-  .wrap{position:relative;z-index:2;max-width:960px;margin:auto}
-  .card{background:var(--panel);padding:16px;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.6)}
-  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:8px 12px;border:none;border-radius:8px;color:#001;font-weight:700;cursor:pointer}
-  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.1);padding:6px 10px;border-radius:8px;color:var(--muted);cursor:pointer}
-  .row{padding:10px;border-bottom:1px solid rgba(255,255,255,0.08)}
-  .small{font-size:13px;color:var(--muted)}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b, #0f172a);
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .login-box, .dashboard {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 20px;
+      border-radius: 12px;
+      width: 350px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      display: none;
+    }
+    .login-box.active, .dashboard.active {
+      display: block;
+    }
+    input[type="password"] {
+      padding: 10px;
+      width: 80%;
+      border: none;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+      margin: 5px;
+    }
+    button.approve {
+      background: #22c55e;
+      color: white;
+    }
+    button.reject {
+      background: #ef4444;
+      color: white;
+    }
+    .request {
+      background: rgba(255, 255, 255, 0.08);
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: left;
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 <body>
-<div id="tsparticles"></div>
-<div class="wrap">
-  <h2>Admin Panel</h2>
-  <div class="card" id="loginBox">
-    <label class="small">Enter Admin Password</label>
-    <input type="password" id="adminPass" style="width:100%;padding:8px;border-radius:8px;margin-top:6px">
-    <button id="adminLogin" class="btn" style="margin-top:10px">Login</button>
-    <div id="msg" class="small" style="margin-top:6px"></div>
+  <!-- Login Box -->
+  <div class="login-box active" id="loginBox">
+    <h2>Admin Access</h2>
+    <p>Enter Passcode</p>
+    <input type="password" id="adminPass" placeholder="Enter Passcode">
+    <br>
+    <button onclick="checkPass()">Login</button>
+    <p id="error" style="color: red; display: none;">Wrong Passcode</p>
   </div>
 
-  <div id="panelBox" class="card" style="display:none;margin-top:18px">
-    <h3>Pending Approvals</h3>
-    <div id="pendingList" class="small">Loading…</div>
+  <!-- Dashboard -->
+  <div class="dashboard" id="dashboard">
+    <h2>Payment Approval Requests</h2>
+    <div id="requests"></div>
   </div>
-</div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 
-// ✅ FIXED FIREBASE CONFIG
-const firebaseConfig = {
-  apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
-  authDomain: "terminal-xxrr.firebaseapp.com",
-  databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "terminal-xxrr",
-  storageBucket: "terminal-xxrr.appspot.com",
-  messagingSenderId: "722753278120",
-  appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
-};
-const app=initializeApp(firebaseConfig);
-const db=getFirestore(app);
+  <script>
+    // ✅ Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+      authDomain: "terminal-xxrr.firebaseapp.com",
+      databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
+      projectId: "terminal-xxrr",
+      storageBucket: "terminal-xxrr.appspot.com",
+      messagingSenderId: "722753278120",
+      appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-// particles
-tsParticles.load("tsparticles",{fpsLimit:60,particles:{number:{value:25},color:{value:"#00ff9d"},links:{enable:true,distance:130,color:"#00ff9d",opacity:0.1},move:{enable:true,speed:0.7}}});
+    // ✅ Hidden Passcode (change here if needed)
+    const correctPass = "457";
 
-const loginBox=document.getElementById('loginBox');
-const panelBox=document.getElementById('panelBox');
-document.getElementById('adminLogin').onclick=()=>{
-  if(document.getElementById('adminPass').value==="456"){
-    loginBox.style.display="none";
-    panelBox.style.display="block";
-    subscribePending();
-  }else{document.getElementById('msg').innerText="Wrong password";}
-};
+    function checkPass() {
+      const input = document.getElementById("adminPass").value;
+      if (input === correctPass) {
+        document.getElementById("loginBox").classList.remove("active");
+        document.getElementById("dashboard").classList.add("active");
+        loadRequests();
+      } else {
+        document.getElementById("error").style.display = "block";
+      }
+    }
 
-function subscribePending(){
-  const q=query(collection(db,"pending"),orderBy("ts","desc"));
-  onSnapshot(q,snap=>{
-    const node=document.getElementById('pendingList');
-    node.innerHTML='';
-    if(snap.empty){node.innerHTML='<div class="small">No pending</div>';return;}
-    snap.forEach(docSnap=>{
-      const d=docSnap.data();
-      const row=document.createElement('div');
-      row.className="row";
-      row.innerHTML=`<b>${d.coins||0} coins</b> — ₹${Number(d.amount||0).toFixed(2)}
-        <div class="small">UTR: ${d.utr||'-'}</div>
-        <div style="margin-top:6px">
-          <button class="btn" onclick="approve('${docSnap.id}',${d.coins||0})">Approve</button>
-          <button class="ghost" onclick="reject('${docSnap.id}')">Reject</button>
-        </div>`;
-      node.appendChild(row);
-    });
-  });
-}
+    // ✅ Load Payment Requests
+    function loadRequests() {
+      const ref = db.ref("payments");
+      ref.on("value", snapshot => {
+        const data = snapshot.val();
+        const container = document.getElementById("requests");
+        container.innerHTML = "";
 
-// Approve = move to approved collection
-window.approve=async(id,coins)=>{
-  const ref=doc(db,"pending",id);
-  const snap=await getDoc(ref);
-  if(!snap.exists())return;
-  const data=snap.data();
-  await setDoc(doc(db,"approved",id),data);
-  await deleteDoc(ref);
-};
+        if (data) {
+          Object.keys(data).forEach(key => {
+            const req = data[key];
+            if (!req.approved) {
+              const div = document.createElement("div");
+              div.classList.add("request");
+              div.innerHTML = `
+                <p><strong>User:</strong> ${req.user || "Unknown"}</p>
+                <p><strong>UTR:</strong> ${req.utr}</p>
+                <p><strong>Coins:</strong> ${req.coins}</p>
+                <button class="approve" onclick="approveRequest('${key}')">Approve</button>
+                <button class="reject" onclick="rejectRequest('${key}')">Reject</button>
+              `;
+              container.appendChild(div);
+            }
+          });
+        } else {
+          container.innerHTML = "<p>No requests pending.</p>";
+        }
+      });
+    }
 
-window.reject=async(id)=>{
-  const ref=doc(db,"pending",id);
-  const snap=await getDoc(ref);
-  if(!snap.exists())return;
-  const data=snap.data();
-  await setDoc(doc(db,"rejected",id),data);
-  await deleteDoc(ref);
-};
-</script>
+    // ✅ Approve Request
+    function approveRequest(key) {
+      db.ref("payments/" + key).update({ approved: true });
+      alert("Approved successfully!");
+    }
+
+    // ✅ Reject Request
+    function rejectRequest(key) {
+      db.ref("payments/" + key).remove();
+      alert("Request rejected!");
+    }
+  </script>
 </body>
 </html>
