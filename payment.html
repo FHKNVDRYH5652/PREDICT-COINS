@@ -3,92 +3,85 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Payment — Coin Predictions</title>
+<title>Coin Predictions — Payment</title>
 <link rel="icon" href="favicon.ico"/>
 <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
 <style>
-  :root{--panel:rgba(255,255,255,0.03);--muted:#9fb0d6;--neon:#00ff9d;--accent:#1dd3ff}
+  :root{--panel:rgba(255,255,255,0.04);--neon:#00ff9d;--accent:#1dd3ff;--muted:#9fb0d6}
   body{margin:0;padding:24px;background:url('anime2.png') center/cover fixed;color:#eaf6ff;font-family:Inter,Arial}
   #tsparticles{position:fixed;inset:0;z-index:0}
-  .wrap{position:relative;z-index:2;max-width:960px;margin:auto}
+  .wrap{position:relative;z-index:2;max-width:800px;margin:auto}
   .card{background:var(--panel);padding:18px;border-radius:14px;box-shadow:0 10px 25px rgba(0,0,0,0.6)}
-  input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#fff}
-  .qrBox{width:100%;height:280px;background:#000;display:flex;align-items:center;justify-content:center;border-radius:10px}
-  .qrBox img{max-width:100%;max-height:100%}
-  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:10px 12px;border:none;border-radius:8px;color:#001;font-weight:700;cursor:pointer}
+  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:10px 14px;border:none;border-radius:8px;color:#001;font-weight:700;cursor:pointer}
   .ghost{background:transparent;border:1px solid rgba(255,255,255,0.1);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
   .small{font-size:13px;color:var(--muted)}
+  input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#eaf6ff;margin-top:6px}
 </style>
 </head>
 <body>
 <div id="tsparticles"></div>
 <div class="wrap">
   <div class="card">
-    <h2>Make Payment</h2>
-    <div class="small">Selected plan loaded from Plans page. Pay via QR & submit 12-digit UTR for approval.</div>
-    <div style="margin-top:12px">
-      <label class="small">Coins</label>
-      <input id="payCoins" readonly>
-      <label class="small">Amount (₹)</label>
-      <input id="payAmount" readonly>
-      <label class="small">Enter 12-digit UTR</label>
-      <input id="payUTR" maxlength="12" placeholder="123456789012">
-      <div style="margin-top:12px;display:flex;gap:10px">
-        <button id="submitBtn" class="btn">Submit</button>
-        <button id="cancelBtn" class="ghost">Cancel</button>
-      </div>
-      <div id="msg" class="small" style="margin-top:8px"></div>
-    </div>
+    <h2>Payment</h2>
+    <div id="planInfo" class="small muted"></div>
     <div style="margin-top:14px">
-      <div class="qrBox"><img src="qr.png" alt="QR"></div>
-      <div class="small" style="margin-top:8px">After payment, coins will be added once admin approves.</div>
+      <label class="small">Enter 12-digit UTR / Reference Number</label>
+      <input id="utrInput" maxlength="12" placeholder="XXXXXXXXXXXX">
     </div>
+    <div style="margin-top:14px;display:flex;gap:10px">
+      <button id="submitBtn" class="btn">Submit</button>
+      <button id="backBtn" class="ghost">Back</button>
+    </div>
+    <div id="msg" class="small" style="margin-top:10px"></div>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
+// ✅ FIXED FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
   authDomain: "terminal-xxrr.firebaseapp.com",
+  databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "terminal-xxrr",
-  storageBucket: "terminal-xxrr.appspot.com",  // ✅ fixed
+  storageBucket: "terminal-xxrr.appspot.com",
   messagingSenderId: "722753278120",
   appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
 };
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
 
-// load selected plan
-const pending = parseInt(localStorage.getItem('pendingPlan')||'100',10);
-document.getElementById('payCoins').value = pending;
-document.getElementById('payAmount').value = (pending*0.5).toFixed(2);
+// particle bg
+tsParticles.load("tsparticles",{fpsLimit:60,particles:{number:{value:30},color:{value:"#00ff9d"},links:{enable:true,distance:130,color:"#00ff9d",opacity:0.1},move:{enable:true,speed:0.7}}});
 
-submitBtn.onclick=async()=>{
-  const utr=(payUTR.value||'').trim();
-  if(!/^[0-9]{12}$/.test(utr)){ msg.innerText="Enter valid 12-digit UTR"; return; }
+// show selected plan
+const planCoins=parseInt(localStorage.getItem('pendingPlan')||'0',10);
+if(planCoins>0){
+  document.getElementById('planInfo').innerText=`Selected plan: ${planCoins} coins (₹${(planCoins/2).toFixed(0)})`;
+}else{
+  document.getElementById('planInfo').innerText="No plan selected. Go back.";
+}
+
+// submit UTR
+document.getElementById('submitBtn').onclick=async()=>{
+  const utr=document.getElementById('utrInput').value.trim();
+  if(!/^[0-9]{12}$/.test(utr)){ alert("Enter valid 12-digit UTR"); return; }
+  if(!planCoins){ alert("No plan selected"); return; }
   try{
-    await addDoc(collection(db,'pending'),{
-      utr,
-      coins: pending,
-      amount: (pending*0.5),
-      userId:"guest",
-      userEmail:null,
-      status:"pending",
-      ts: serverTimestamp()
+    await addDoc(collection(db,"pending"),{
+      utr, coins:planCoins, amount:(planCoins/2), ts:serverTimestamp()
     });
-    msg.innerText="Submitted! Wait for admin approval.";
+    document.getElementById('msg').innerText="Submitted. Waiting admin approval.";
     localStorage.removeItem('pendingPlan');
-    setTimeout(()=>location.href="index.html",1000);
-  }catch(e){msg.innerText="Error: "+(e.message||e);}
+  }catch(e){
+    document.getElementById('msg').innerText="Error: "+(e.message||e);
+  }
 };
 
-cancelBtn.onclick=()=>location.href="index.html";
-
-// particles
-tsParticles.load("tsparticles",{fpsLimit:60,particles:{number:{value:25},color:{value:"#00ff9d"},links:{enable:true,distance:120,color:"#00ff9d",opacity:0.1},move:{enable:true,speed:0.7}}});
+// back
+document.getElementById('backBtn').onclick=()=>location.href="index.html";
 </script>
 </body>
 </html>
