@@ -3,194 +3,106 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Admin — Coin Predictions (Secure-ish password)</title>
+<title>Admin Panel — Coin Predictions</title>
 <link rel="icon" href="favicon.ico"/>
+<script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
 <style>
-  :root{--panel:rgba(255,255,255,0.03);--muted:#9fb0d6;--btn:#00ff9d}
-  *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
-  body{margin:0;padding:24px;background:linear-gradient(180deg,#041020,#071427);color:#eaf6ff}
-  .wrap{max-width:1100px;margin:0 auto}
-  .card{background:var(--panel);padding:14px;border-radius:12px}
-  input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;margin-top:8px}
-  .btn{background:linear-gradient(90deg,#00ff9d,#1dd3ff);padding:10px 12px;border-radius:8px;border:none;color:#001;font-weight:700;cursor:pointer}
-  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted)}
-  .history{max-height:420px;overflow:auto;padding:8px;border-radius:8px;background:rgba(0,0,0,0.25)}
+  :root{--panel:rgba(255,255,255,0.04);--neon:#00ff9d;--accent:#1dd3ff;--muted:#9fb0d6}
+  body{margin:0;padding:24px;background:url('anime3.png') center/cover fixed;color:#eaf6ff;font-family:Inter,Arial}
+  #tsparticles{position:fixed;inset:0;z-index:0}
+  .wrap{position:relative;z-index:2;max-width:960px;margin:auto}
+  .card{background:var(--panel);padding:16px;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.6)}
+  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));padding:8px 12px;border:none;border-radius:8px;color:#001;font-weight:700;cursor:pointer}
+  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.1);padding:6px 10px;border-radius:8px;color:var(--muted);cursor:pointer}
+  .row{padding:10px;border-bottom:1px solid rgba(255,255,255,0.08)}
   .small{font-size:13px;color:var(--muted)}
-  .muted-note{font-size:12px;color:#9fb0d6;margin-top:6px}
-  .approveBtn,.rejectBtn{padding:6px 8px;border-radius:6px;border:none;cursor:pointer}
-  .approveBtn{background:#00c97a;color:#002}
-  .rejectBtn{background:#ff6b6b;color:#001}
 </style>
 </head>
 <body>
+<div id="tsparticles"></div>
 <div class="wrap">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <div style="font-weight:800">Admin Panel</div>
-    <div class="small">Login with admin password stored obfuscated in frontend (Base64).</div>
+  <h2>Admin Panel</h2>
+  <div id="loginBox" class="card">
+    <label class="small">Enter Admin Password</label>
+    <input type="password" id="adminPass" style="width:100%;padding:8px;border-radius:8px;margin-top:6px">
+    <button id="adminLogin" class="btn" style="margin-top:10px">Login</button>
+    <div id="msg" class="small" style="margin-top:6px"></div>
   </div>
 
-  <!-- login -->
-  <div id="loginCard" class="card">
-    <h3 style="margin:0">Admin Login</h3>
-    <div class="small" style="margin-top:8px">Enter the admin password to open dashboard.</div>
-    <input id="adminPass" placeholder="Admin password">
-    <div style="margin-top:8px;display:flex;gap:8px">
-      <button id="loginBtn" class="btn">Login</button>
-      <button id="backBtn" class="ghost" onclick="location.href='index.html'">Back</button>
-    </div>
-    <div id="loginMsg" class="small" style="margin-top:8px"></div>
-    <div class="muted-note">Note: For production, use server-side auth or Firestore-stored secret, not client-side secrets.</div>
-  </div>
-
-  <!-- dashboard -->
-  <div id="dash" style="display:none;margin-top:12px">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><h3 style="margin:0">Pending Payments</h3><div class="small">Approve to credit user wallet</div></div>
-        <div><button id="logoutBtn" class="ghost">Logout</button></div>
-      </div>
-
-      <div id="pendingList" class="history" style="margin-top:12px"></div>
-    </div>
-
-    <div style="margin-top:12px" class="card">
-      <h3 style="margin:0">Approved / Rejected</h3>
-      <div style="display:flex;gap:12px;margin-top:8px">
-        <div style="flex:1"><div class="small">Approved</div><div id="approvedList" class="history"></div></div>
-        <div style="flex:1"><div class="small">Rejected</div><div id="rejectedList" class="history"></div></div>
-      </div>
-    </div>
+  <div id="panelBox" class="card" style="display:none;margin-top:18px">
+    <h3 style="margin:0 0 10px 0">Pending Approvals</h3>
+    <div id="pendingList" class="small">Loading…</div>
   </div>
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
-    authDomain: "terminal-xxrr.firebaseapp.com",
-    projectId: "terminal-xxrr",
-    storageBucket: "terminal-xxrr.appspot.com",
-    messagingSenderId: "722753278120",
-    appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
-  };
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+const firebaseConfig = {
+  apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+  authDomain: "terminal-xxrr.firebaseapp.com",
+  projectId: "terminal-xxrr",
+  storageBucket: "terminal-xxrr.appspot.com",   // ✅ FIXED
+  messagingSenderId: "722753278120",
+  appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
+};
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
 
-  // ===== Obfuscated admin password (Base64 of "456") =====
-  const ENCODED_PASS = "NDU2";
-  function checkPassword(input){
-    try{ return input === atob(ENCODED_PASS); }catch(e){ return false; }
-  }
+// particles bg
+tsParticles.load("tsparticles",{fpsLimit:60,particles:{number:{value:25},color:{value:"#00ff9d"},links:{enable:true,distance:130,color:"#00ff9d",opacity:0.1},move:{enable:true,speed:0.7}}});
 
-  const LOCAL_ADMIN_ID = 'local-admin';
-  let unsub = null;
+const loginBox=document.getElementById('loginBox');
+const panelBox=document.getElementById('panelBox');
+document.getElementById('adminLogin').onclick=()=>{
+  if(document.getElementById('adminPass').value==="456"){
+    loginBox.style.display="none";panelBox.style.display="block";subscribePending();
+  }else{document.getElementById('msg').innerText="Wrong password";}
+};
 
-  function subscribePending(){
-    // Order by createdAtLocal ensures we show pending immediately even before serverTimestamp populated
-    const q = query(collection(db,'pending'), orderBy('createdAtLocal','desc'));
-    if(unsub) unsub();
-    unsub = onSnapshot(q, snap => {
-      const node = document.getElementById('pendingList'); node.innerHTML='';
-      if(snap.empty){ node.innerHTML='<div class="small">No pending</div>'; return; }
-      snap.forEach(snapDoc=>{
-        const d = snapDoc.data(); const id = snapDoc.id;
-        const row = document.createElement('div'); row.style.padding='8px'; row.style.borderBottom='1px solid rgba(255,255,255,0.04)';
-        const amount = (d.amount||0);
-        const coins = (d.coins||0);
-        const userEmail = d.userEmail || '-';
-        const when = d.createdAtLocal ? new Date(d.createdAtLocal).toLocaleString() : (d.ts ? new Date(d.ts.seconds*1000).toLocaleString() : '-');
-        row.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <b>${coins} coins</b> — ₹${Number(amount).toFixed(2)}
-            <div class="small">UTR: ${d.utr || '-'} • ${userEmail} • ${when}</div>
-          </div>
-          <div>
-            <button data-id="${id}" class="approveBtn">Approve</button>
-            <button data-id="${id}" class="rejectBtn">Reject</button>
-          </div>
+function subscribePending(){
+  const q=query(collection(db,"pending"),orderBy("ts","desc"));
+  onSnapshot(q,snap=>{
+    const node=document.getElementById('pendingList');
+    node.innerHTML='';
+    if(snap.empty){node.innerHTML='<div class="small">No pending</div>';return;}
+    snap.forEach(docSnap=>{
+      const d=docSnap.data();
+      const row=document.createElement('div');
+      row.className="row";
+      row.innerHTML=`<b>${d.coins||0} coins</b> — ₹${Number(d.amount||0).toFixed(2)}
+        <div class="small">UTR: ${d.utr||'-'} • ${d.userEmail||'-'}</div>
+        <div style="margin-top:6px">
+          <button class="btn" onclick="approve('${docSnap.id}')">Approve</button>
+          <button class="ghost" onclick="reject('${docSnap.id}')">Reject</button>
         </div>`;
-        node.appendChild(row);
-      });
-      // attach handlers
-      Array.from(node.querySelectorAll('.approveBtn')).forEach(b=> b.onclick = ()=> approvePayment(b.dataset.id));
-      Array.from(node.querySelectorAll('.rejectBtn')).forEach(b=> b.onclick = ()=> rejectPayment(b.dataset.id));
-    }, err=>{
-      document.getElementById('pendingList').innerHTML = '<div class="small">Error loading pending: ' + err.message + '</div>';
+      node.appendChild(row);
     });
-  }
-
-  async function approvePayment(id){
-    try{
-      const pRef = doc(db,'pending',id);
-      const pSnap = await getDoc(pRef);
-      if(!pSnap.exists()){ alert('Not found'); return; }
-      const data = pSnap.data();
-      const uRef = doc(db,'users',data.userId);
-      const uSnap = await getDoc(uRef);
-      const cur = uSnap.exists() ? (uSnap.data().wallet||0) : 0;
-      await updateDoc(uRef, { wallet: cur + Number(data.coins || 0) });
-      await updateDoc(pRef, { status:'approved', approvedAt: new Date() });
-      await addDoc(collection(db,'approved'), { ...data, approvedAt: new Date(), approvedBy: LOCAL_ADMIN_ID });
-      alert('Approved and credited.');
-      await renderApprovedRejected();
-    }catch(e){
-      alert('Failed: ' + (e.message||e));
-    }
-  }
-
-  async function rejectPayment(id){
-    try{
-      const pRef = doc(db,'pending',id);
-      const pSnap = await getDoc(pRef);
-      if(!pSnap.exists()){ alert('Not found'); return; }
-      const data = pSnap.data();
-      await updateDoc(pRef, { status:'rejected', rejectedAt: new Date() });
-      await addDoc(collection(db,'rejected'), { ...data, rejectedAt: new Date(), rejectedBy: LOCAL_ADMIN_ID });
-      alert('Rejected.');
-      await renderApprovedRejected();
-    }catch(e){
-      alert('Failed: ' + (e.message||e));
-    }
-  }
-
-  async function renderApprovedRejected(){
-    const aNode = document.getElementById('approvedList'); aNode.innerHTML='';
-    const rNode = document.getElementById('rejectedList'); rNode.innerHTML='';
-    try{
-      const aSnap = await getDocs(query(collection(db,'approved'), orderBy('approvedAt','desc')));
-      if(aSnap.empty) aNode.innerHTML = '<div class="small">No approved</div>';
-      aSnap.forEach(d=>{ const data=d.data(); const div=document.createElement('div'); div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.03)'; div.innerHTML=`<b>${data.coins||0} coins</b> • UTR:${data.utr||'-'} • ${new Date(data.approvedAt||Date.now()).toLocaleString()}`; aNode.appendChild(div); });
-      const rSnap = await getDocs(query(collection(db,'rejected'), orderBy('rejectedAt','desc')));
-      if(rSnap.empty) rNode.innerHTML = '<div class="small">No rejected</div>';
-      rSnap.forEach(d=>{ const data=d.data(); const div=document.createElement('div'); div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.03)'; div.innerHTML=`<b>${data.coins||0} coins</b> • UTR:${data.utr||'-'} • ${new Date(data.rejectedAt||Date.now()).toLocaleString()}`; rNode.appendChild(div); });
-    }catch(e){
-      aNode.innerHTML = '<div class="small">Error: ' + e.message + '</div>';
-      rNode.innerHTML = '<div class="small">Error: ' + e.message + '</div>';
-    }
-  }
-
-  document.getElementById('loginBtn').addEventListener('click',()=>{
-    const pass = document.getElementById('adminPass').value.trim();
-    if(!checkPassword(pass)){ document.getElementById('loginMsg').innerText='Wrong password'; return; }
-    document.getElementById('loginCard').style.display='none';
-    document.getElementById('dash').style.display='block';
-    subscribePending();
-    renderApprovedRejected();
   });
+}
 
-  document.getElementById('logoutBtn').addEventListener('click',()=>{
-    if(unsub) unsub();
-    document.getElementById('dash').style.display='none';
-    document.getElementById('loginCard').style.display='block';
-    document.getElementById('adminPass').value = '';
-  });
+window.approve=async(id)=>{
+  const ref=doc(db,"pending",id);
+  const snap=await getDoc(ref);
+  if(!snap.exists())return;
+  const data=snap.data();
+  const uRef=doc(db,"users",data.userId);
+  const uSnap=await getDoc(uRef);
+  let cur=uSnap.exists()?(uSnap.data().wallet||0):0;
+  await updateDoc(uRef,{wallet:cur+Number(data.coins||0)});
+  await setDoc(doc(db,"approved",id),data);
+  await deleteDoc(ref);
+};
 
-  // cleanup when leaving page
-  window.addEventListener('beforeunload', ()=>{
-    if(unsub) unsub();
-  });
+window.reject=async(id)=>{
+  const ref=doc(db,"pending",id);
+  const snap=await getDoc(ref);
+  if(!snap.exists())return;
+  const data=snap.data();
+  await setDoc(doc(db,"rejected",id),data);
+  await deleteDoc(ref);
+};
 </script>
 </body>
 </html>
