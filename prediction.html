@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Prediction — Coin Predictions</title>
+  <style>
+    :root{--card:rgba(255,255,255,0.03);--accent:#00a6ff}
+    *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
+    body{margin:0;padding:20px;background:url('anime3.png') center/cover no-repeat fixed;color:#eaf6ff}
+    .wrap{max-width:980px;margin:0 auto}
+    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.7)}
+    .btn{background:linear-gradient(90deg,#00d2a8,#00a6ff);color:#001;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:800}
+    .small{font-size:13px;color:#9fb0d6}
+    .period{font-weight:800;font-size:18px}
+    .history{max-height:220px;overflow:auto;border-radius:8px;padding:8px;background:rgba(0,0,0,0.25);margin-top:12px}
+    @media (max-width:880px){ .top{flex-direction:column;gap:12px} }
+  </style>
+</head>
+<body>
+  <audio src="music.m4a" autoplay loop></audio>
+
+  <div class="wrap">
+    <div class="top">
+      <div style="font-weight:900">Coin Predictions — Play</div>
+      <div class="small">Wallet: <strong id="wallet">0</strong> coins</div>
+    </div>
+
+    <div class="card">
+      <div><span class="small">Live period:</span> <span class="period" id="livePeriod">—</span></div>
+      <div style="margin-top:8px" class="small" id="countdown">Next period in: --s</div>
+
+      <div style="margin-top:12px;display:flex;gap:12px;align-items:center">
+        <button class="btn" id="genBtn">Generate Prediction (10 coins)</button>
+        <button class="btn" id="refreshBtn" style="background:transparent;border:1px solid rgba(255,255,255,0.06);color:#9fb0d6;font-weight:700">Refresh Wallet</button>
+      </div>
+
+      <div id="resultArea" style="margin-top:14px;display:none">
+        <div class="card" style="padding:12px">
+          <div><b>Period:</b> <span id="predPeriod">—</span></div>
+          <div style="margin-top:8px"><b>Signal:</b> <span id="predSignal">—</span></div>
+          <div style="margin-top:8px"><b>Numbers:</b> <span id="predNums">—</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px" class="small">History (latest first):</div>
+      <div id="hist" class="history"></div>
+    </div>
+
+    <div style="margin-top:12px" class="small">If wallet is empty, go to <a href="index.html" style="color:#bfe">Plans</a> to buy coins.</div>
+  </div>
+
+<script>
+  const BASE_PERIOD = 20250914100011164n;
+  const BASE_DATE = new Date('2025-09-14T12:53:00+05:30'); // IST base the user provided
+  const PRED_COST = 10;
+
+  function currentPeriod(){
+    const now = new Date();
+    const diffMin = Math.floor((now - BASE_DATE) / 60000);
+    return String(BASE_PERIOD + BigInt(diffMin));
+  }
+
+  function secondsToNextMinute(){
+    const now = Date.now();
+    return Math.max(0, Math.round((Math.ceil(now/60000)*60000 - now)/1000));
+  }
+
+  function updatePeriodUI(){
+    document.getElementById('livePeriod').innerText = currentPeriod();
+    document.getElementById('countdown').innerText = 'Next period in: ' + secondsToNextMinute() + 's';
+  }
+  setInterval(updatePeriodUI, 1000);
+  updatePeriodUI();
+
+  // wallet
+  function getWallet(){ return parseInt(localStorage.getItem('wallet_coins')||'0',10); }
+  function setWallet(n){ localStorage.setItem('wallet_coins', String(n)); renderWallet(); }
+  function renderWallet(){ document.getElementById('wallet').innerText = getWallet(); }
+
+  // predictions storage (private)
+  function loadPreds(){ return JSON.parse(localStorage.getItem('__preds__')||'[]'); }
+  function savePreds(a){ localStorage.setItem('__preds__', JSON.stringify(a)); }
+
+  function renderHistory(){
+    const arr = loadPreds();
+    const el = document.getElementById('hist');
+    el.innerHTML = '';
+    if(arr.length===0){ el.innerHTML = '<div class="small">No predictions yet</div>'; return; }
+    arr.slice(0,50).forEach(p=>{
+      const d = document.createElement('div');
+      d.style.padding='8px'; d.style.borderBottom='1px solid rgba(255,255,255,0.04)';
+      d.innerHTML = `<div style="display:flex;justify-content:space-between"><div><b>${p.period}</b><div class="small">${p.signal} • ${p.nums}</div></div><div class="small">${new Date(p.ts).toLocaleTimeString()}</div></div>`;
+      el.appendChild(d);
+    });
+  }
+
+  document.getElementById('genBtn').addEventListener('click', ()=>{
+    let w = getWallet();
+    if(w < PRED_COST){ alert('Not enough coins. Buy coins first.'); return; }
+    // Deduct coins
+    setWallet(w - PRED_COST);
+    // generate random BIG/SMALL
+    const signal = Math.random() < 0.5 ? 'SMALL' : 'BIG';
+    let a,b;
+    if(signal === 'SMALL'){ a = Math.floor(Math.random()*5); b = Math.floor(Math.random()*5); }
+    else { a = 5 + Math.floor(Math.random()*5); b = 5 + Math.floor(Math.random()*5); }
+    const period = currentPeriod();
+    const nums = `${a} / ${b}`;
+    // show
+    document.getElementById('resultArea').style.display = 'block';
+    document.getElementById('predPeriod').innerText = period;
+    document.getElementById('predSignal').innerText = signal;
+    document.getElementById('predNums').innerText = nums;
+    // save
+    const arr = loadPreds();
+    arr.unshift({ period, signal, nums, ts: Date.now() });
+    savePreds(arr.slice(0,200));
+    renderHistory();
+  });
+
+  document.getElementById('refreshBtn').addEventListener('click', ()=> { renderWallet(); renderHistory(); });
+
+  // If admin approved a pending UTR, credit happens in admin; but for convenience: if user lands here and localStorage has approved key for their UTR, admin would have created '__approved__UTR' - we won't auto-scan here for privacy.
+  renderWallet();
+  renderHistory();
+</script>
+</body>
+</html>

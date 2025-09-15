@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Payment — Coin Predictions</title>
+  <style>
+    :root{--card:rgba(255,255,255,0.04);--muted:#9fb0d6;--accent:#00a6ff}
+    *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
+    body{margin:0;padding:24px;background:url('anime2.png') center/cover no-repeat fixed;color:#eaf6ff}
+    .wrap{max-width:980px;margin:0 auto}
+    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.5)}
+    h1{margin:0 0 6px 0}
+    .grid{display:grid;grid-template-columns:1fr 320px;gap:18px}
+    input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    .qr{width:100%;height:260px;border-radius:10px;background:linear-gradient(135deg,#071827,#092536);display:flex;align-items:center;justify-content:center}
+    .btn{background:linear-gradient(90deg,#00d2a8,#00a6ff);padding:10px 12px;border-radius:8px;border:none;color:#001;font-weight:700;cursor:pointer}
+    .link{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted);cursor:pointer}
+    .small{font-size:13px;color:var(--muted)}
+    @media (max-width:900px){ .grid{grid-template-columns:1fr} .qr{height:160px} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div style="font-weight:800">Coin Predictions — Payment</div>
+      <div class="small">Wallet: <strong id="walletTop">0</strong> coins</div>
+    </div>
+
+    <div class="card grid">
+      <div>
+        <h1>Make Payment</h1>
+        <div class="small">Selected plan will be pre-filled (from Plans page). After paying scan QR or use UPI and enter 12-digit UTR below then submit for admin approval.</div>
+
+        <div style="margin-top:12px">
+          <label class="small">Coins to buy</label>
+          <input id="payCoins" type="number" readonly />
+          <label class="small" style="margin-top:8px">Amount (₹)</label>
+          <input id="payAmount" type="text" readonly />
+          <label class="small" style="margin-top:8px">Enter 12-digit UTR</label>
+          <input id="payUTR" type="text" maxlength="12" placeholder="123456789012" />
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn" id="submitBtn">Submit for Approval</button>
+            <button class="link" id="cancelBtn">Cancel</button>
+          </div>
+          <div id="msg" class="small" style="margin-top:10px"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="padding:14px">
+          <div class="qr"><div style="text-align:center"><div style="font-weight:700">QR</div><div class="small">Replace <code>qr.png</code></div></div></div>
+          <div style="margin-top:12px" class="small">Customer Service</div>
+          <div style="margin-top:8px">
+            <button class="btn" onclick="window.open('https://t.me/Nskskssiwi','_blank')">Contact on Telegram</button>
+          </div>
+          <div style="margin-top:12px" class="small">After admin approves payment you will be redirected to Prediction page automatically (demo).</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px" class="small">Tip: Keep this folder's assets together (<code>anime2.png</code>, <code>qr.png</code>).</div>
+  </div>
+
+<script>
+  // load pending plan (set by index.html)
+  const payCoins = document.getElementById('payCoins');
+  const payAmount = document.getElementById('payAmount');
+  const payUTR = document.getElementById('payUTR');
+  const msg = document.getElementById('msg');
+
+  function init(){
+    const pending = parseInt(localStorage.getItem('pendingPlan') || '100', 10);
+    payCoins.value = pending;
+    payAmount.value = (pending * 0.5).toFixed(2);
+    document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins') || '0';
+  }
+  init();
+
+  document.getElementById('cancelBtn').addEventListener('click', ()=> {
+    window.location.href = 'index.html';
+  });
+
+  // Submit for admin approval (store private pending key)
+  document.getElementById('submitBtn').addEventListener('click', ()=>{
+    const utr = (payUTR.value||'').trim();
+    if(!/^[0-9]{12}$/.test(utr)){ msg.innerText = 'Enter valid 12-digit UTR'; return; }
+    const coins = Number(payCoins.value);
+    const amount = Number(payAmount.value);
+    const key = '__pending__' + utr;
+    if(localStorage.getItem(key)){ msg.innerText = 'This UTR is already pending'; return; }
+    const payload = { utr, coins, amount, ts: Date.now(), status: 'pending' };
+    localStorage.setItem(key, JSON.stringify(payload));
+    msg.innerText = 'Submitted for admin approval. Please wait for approval.';
+    // Optionally clear pendingPlan
+    localStorage.removeItem('pendingPlan');
+    // For demo, do NOT auto-credit — admin must approve in admin.html
+    // But we can periodically check if admin approved and redirect — simple polling:
+    const poll = setInterval(()=>{
+      if(localStorage.getItem('__approved__' + utr)){
+        clearInterval(poll);
+        // reload wallet display and redirect to prediction
+        window.location.href = 'prediction.html';
+      }
+    }, 2000);
+  });
+</script>
+</body>
+</html>
