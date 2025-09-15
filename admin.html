@@ -6,7 +6,7 @@
 <title>Admin — Coin Predictions</title>
 <link rel="icon" href="favicon.ico"/>
 <style>
-  :root{--panel:rgba(255,255,255,0.03);--muted:#9fb0d6;--btn:#00ff9d}
+  :root{--panel:rgba(255,255,255,0.03);--muted:#9fb0d6}
   *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
   body{margin:0;padding:24px;background:linear-gradient(180deg,#041020,#071427);color:#eaf6ff}
   .wrap{max-width:1100px;margin:0 auto}
@@ -16,8 +16,6 @@
   .ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted)}
   .history{max-height:420px;overflow:auto;padding:8px;border-radius:8px;background:rgba(0,0,0,0.25)}
   .small{font-size:13px;color:var(--muted)}
-  .muted-note{font-size:12px;color:#9fb0d6;margin-top:6px}
-  .row{display:flex;gap:8px}
   .approveBtn,.rejectBtn{padding:6px 8px;border-radius:6px;border:none;cursor:pointer}
   .approveBtn{background:#00c97a;color:#002}
   .rejectBtn{background:#ff6b6b;color:#001}
@@ -27,51 +25,38 @@
 <div class="wrap">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div style="font-weight:800">Admin Panel</div>
-    <div class="small">Login with admin password stored obfuscated in frontend (Base64).</div>
   </div>
 
   <!-- login -->
   <div id="loginCard" class="card">
     <h3 style="margin:0">Admin Login</h3>
-    <div class="small" style="margin-top:8px">Enter the admin password to open dashboard.</div>
     <input id="adminPass" placeholder="Admin password">
     <div style="margin-top:8px;display:flex;gap:8px">
       <button id="loginBtn" class="btn">Login</button>
       <button id="backBtn" class="ghost" onclick="location.href='index.html'">Back</button>
     </div>
     <div id="loginMsg" class="small" style="margin-top:8px"></div>
-    <div class="muted-note">Note: For production, use server-side auth or Firestore-stored secret, not client-side secrets.</div>
   </div>
 
   <!-- dashboard -->
   <div id="dash" style="display:none;margin-top:12px">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><h3 style="margin:0">Pending Payments</h3><div class="small">Approve to credit user wallet</div></div>
+        <div><h3 style="margin:0">Pending Payments</h3></div>
         <div><button id="logoutBtn" class="ghost">Logout</button></div>
       </div>
-
       <div id="pendingList" class="history" style="margin-top:12px"></div>
-    </div>
-
-    <div style="margin-top:12px" class="card">
-      <h3 style="margin:0">Approved / Rejected</h3>
-      <div style="display:flex;gap:12px;margin-top:8px">
-        <div style="flex:1"><div class="small">Approved</div><div id="approvedList" class="history"></div></div>
-        <div style="flex:1"><div class="small">Rejected</div><div id="rejectedList" class="history"></div></div>
-      </div>
     </div>
   </div>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { getFirestore, collection, query, onSnapshot, doc, getDoc, updateDoc, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+  import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
     authDomain: "terminal-xxrr.firebaseapp.com",
-    databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
     projectId: "terminal-xxrr",
     storageBucket: "terminal-xxrr.appspot.com",
     messagingSenderId: "722753278120",
@@ -80,106 +65,70 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const ENCODED_PASS = "NDU2"; // Base64 of "456"
-  function checkPassword(input){
-    try{ return input === atob(ENCODED_PASS); }catch{ return false; }
-  }
-  const LOCAL_ADMIN_ID = 'local-admin';
-
-  document.getElementById('loginBtn').addEventListener('click', async ()=>{
-    const pass = document.getElementById('adminPass').value.trim();
-    const msg = document.getElementById('loginMsg');
-    msg.innerText = '';
-    if(!pass){ msg.innerText = 'Enter password'; return; }
-    if(!checkPassword(pass)){ msg.innerText = 'Incorrect password'; return; }
-    document.getElementById('loginCard').style.display='none';
-    document.getElementById('dash').style.display='block';
-    subscribePending();
-    await renderApprovedRejected();
-  });
-
-  document.getElementById('logoutBtn').addEventListener('click', ()=>{
-    document.getElementById('dash').style.display='none'; 
-    document.getElementById('loginCard').style.display='block';
-    document.getElementById('adminPass').value = '';
-  });
+  const ENCODED_PASS = "NDU2"; // "456"
+  function checkPassword(input){ return input === atob(ENCODED_PASS); }
 
   let unsub = null;
   function subscribePending(){
-    const q = query(collection(db,'pending')); // ❌ orderBy removed
+    const q = query(collection(db,'pending'), orderBy('ts','desc'));
     if(unsub) unsub();
     unsub = onSnapshot(q, snap => {
       const node = document.getElementById('pendingList'); node.innerHTML='';
       if(snap.empty){ node.innerHTML='<div class="small">No pending</div>'; return; }
-      snap.forEach(snapDoc=>{
-        const d = snapDoc.data(); const id = snapDoc.id;
-        const row = document.createElement('div'); row.style.padding='8px'; row.style.borderBottom='1px solid rgba(255,255,255,0.04)';
-        row.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <b>${d.coins||0} coins</b> — ₹${Number(d.amount||0).toFixed(2)}
-            <div class="small">UTR: ${d.utr || '-'} • ${d.userEmail||'-'}</div>
-          </div>
-          <div>
-            <button data-id="${id}" class="approveBtn">Approve</button>
-            <button data-id="${id}" class="rejectBtn">Reject</button>
-          </div>
-        </div>`;
-        node.appendChild(row);
+      snap.forEach(docSnap=>{
+        const d = docSnap.data(), id=docSnap.id;
+        const div = document.createElement('div');
+        div.style.padding='8px';
+        div.style.borderBottom='1px solid rgba(255,255,255,0.04)';
+        div.innerHTML=`
+          <b>${d.coins||0} coins</b> — ₹${(d.amount||0).toFixed(2)}
+          <div class="small">UTR: ${d.utr||'-'} • ${d.userEmail||'-'}</div>
+          <button data-id="${id}" class="approveBtn">Approve</button>
+          <button data-id="${id}" class="rejectBtn">Reject</button>`;
+        node.appendChild(div);
       });
       node.querySelectorAll('.approveBtn').forEach(b=> b.onclick = ()=> approvePayment(b.dataset.id));
       node.querySelectorAll('.rejectBtn').forEach(b=> b.onclick = ()=> rejectPayment(b.dataset.id));
-    }, err=>{
-      document.getElementById('pendingList').innerHTML = '<div class="small">Error loading pending: ' + err.message + '</div>';
     });
   }
 
   async function approvePayment(id){
-    try{
-      const pRef = doc(db,'pending',id);
-      const pSnap = await getDoc(pRef);
-      if(!pSnap.exists()){ alert('Not found'); return; }
-      const data = pSnap.data();
-      const uRef = doc(db,'users',data.userId);
-      const uSnap = await getDoc(uRef);
-      const cur = uSnap.exists() ? (uSnap.data().wallet||0) : 0;
-      await updateDoc(uRef, { wallet: cur + Number(data.coins||0) });
-      await updateDoc(pRef, { status:'approved', approvedAt: new Date() });
-      await addDoc(collection(db,'approved'), { ...data, approvedAt: new Date(), approvedBy: LOCAL_ADMIN_ID });
-      alert('Approved and credited.');
-      await renderApprovedRejected();
-    }catch(e){ alert('Failed: ' + e.message); }
+    const pRef = doc(db,'pending',id);
+    const pSnap = await getDoc(pRef);
+    if(!pSnap.exists()) return alert('Not found');
+    const data = pSnap.data();
+    const uRef = doc(db,'users',data.userId);
+    const uSnap = await getDoc(uRef);
+    const cur = uSnap.exists()? (uSnap.data().wallet||0):0;
+    await updateDoc(uRef,{ wallet: cur + Number(data.coins||0) });
+    await updateDoc(pRef,{ status:'approved', approvedAt:new Date() });
+    await addDoc(collection(db,'approved'),{...data,approvedAt:new Date()});
+    alert('Approved and credited.');
   }
 
   async function rejectPayment(id){
-    try{
-      const pRef = doc(db,'pending',id);
-      const pSnap = await getDoc(pRef);
-      if(!pSnap.exists()){ alert('Not found'); return; }
-      const data = pSnap.data();
-      await updateDoc(pRef, { status:'rejected', rejectedAt: new Date() });
-      await addDoc(collection(db,'rejected'), { ...data, rejectedAt: new Date(), rejectedBy: LOCAL_ADMIN_ID });
-      alert('Rejected.');
-      await renderApprovedRejected();
-    }catch(e){ alert('Failed: ' + e.message); }
+    const pRef = doc(db,'pending',id);
+    const pSnap = await getDoc(pRef);
+    if(!pSnap.exists()) return alert('Not found');
+    const data = pSnap.data();
+    await updateDoc(pRef,{ status:'rejected', rejectedAt:new Date() });
+    await addDoc(collection(db,'rejected'),{...data,rejectedAt:new Date()});
+    alert('Rejected.');
   }
 
-  async function renderApprovedRejected(){
-    const aNode = document.getElementById('approvedList'); aNode.innerHTML='';
-    const rNode = document.getElementById('rejectedList'); rNode.innerHTML='';
-    try{
-      const aSnap = await getDocs(collection(db,'approved'));
-      if(aSnap.empty) aNode.innerHTML = '<div class="small">No approved</div>';
-      aSnap.forEach(d=>{ const data=d.data(); const div=document.createElement('div'); div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.03)'; div.innerHTML=`<b>${data.coins||0} coins</b> • UTR:${data.utr||'-'} • ${new Date(data.approvedAt||Date.now()).toLocaleString()}`; aNode.appendChild(div); });
-      const rSnap = await getDocs(collection(db,'rejected'));
-      if(rSnap.empty) rNode.innerHTML = '<div class="small">No rejected</div>';
-      rSnap.forEach(d=>{ const data=d.data(); const div=document.createElement('div'); div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.03)'; div.innerHTML=`<b>${data.coins||0} coins</b> • UTR:${data.utr||'-'} • ${new Date(data.rejectedAt||Date.now()).toLocaleString()}`; rNode.appendChild(div); });
-    }catch(e){
-      aNode.innerHTML = '<div class="small">Error: ' + e.message + '</div>';
-      rNode.innerHTML = '<div class="small">Error: ' + e.message + '</div>';
-    }
-  }
+  document.getElementById('loginBtn').addEventListener('click',()=>{
+    const pass=document.getElementById('adminPass').value.trim();
+    if(!checkPassword(pass)){ document.getElementById('loginMsg').innerText='Wrong password'; return; }
+    document.getElementById('loginCard').style.display='none';
+    document.getElementById('dash').style.display='block';
+    subscribePending();
+  });
 
-  window.addEventListener('beforeunload', ()=>{ if(unsub) unsub(); });
+  document.getElementById('logoutBtn').addEventListener('click',()=>{
+    if(unsub) unsub();
+    document.getElementById('dash').style.display='none';
+    document.getElementById('loginCard').style.display='block';
+  });
 </script>
 </body>
 </html>
