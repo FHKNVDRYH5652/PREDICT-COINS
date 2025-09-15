@@ -479,8 +479,6 @@ onSnapshot(periodRef, snap=>{
     periodTs = d.ts ? d.ts.toDate() : new Date();
     document.getElementById('periodDisplay').innerText = currentPeriodStr || '--';
     document.getElementById('adminCurPeriod').innerText = currentPeriodStr || '--';
-    // schedule auto-increment aligned to periodTs / server timestamp
-    scheduleAutoIncrement();
   } else {
     // if not exists, initialize with today's prefix and 001
     (async ()=>{
@@ -495,56 +493,41 @@ onSnapshot(periodRef, snap=>{
   }
 });
 
-// Auto-increment scheduler (auto-starts and aligns with periodTs)
-let adminAutoTimeout = null;
 
-function scheduleAutoIncrement(){
-  try{
-    // clear any existing timers
-    if(adminAutoTimeout){ clearTimeout(adminAutoTimeout); adminAutoTimeout = null; }
-    if(adminAutoId){ clearInterval(adminAutoId); adminAutoId = null; }
-    if(!periodTs || !currentPeriodStr) return;
-    const now = new Date();
-    const elapsed = Math.floor((now.getTime() - periodTs.getTime())/1000);
-    const waitSec = 60 - (elapsed % 60);
-    // trigger first increment after waitSec seconds, then every 60s
-    adminAutoTimeout = setTimeout(async ()=>{
-      try{
-        await doAutoIncrement();
-      }catch(e){ console.warn('first auto increment failed', e); }
-      adminAutoId = setInterval(async ()=>{
-        try{ await doAutoIncrement(); }catch(e){ console.warn('auto increment failed', e); }
-      }, 60000);
-    }, waitSec * 1000);
-  }catch(e){ console.warn('scheduleAutoIncrement err', e); }
+
+/* countdown + auto-increment with fixed prefix (working version) */
+const FIXED_PREFIX = "20250915100010";
+let countdown = 60;
+let last3Digits = 1;
+
+function updatePeriodCountdownUI(){
+  const full = FIXED_PREFIX + String(last3Digits).padStart(3,'0');
+  document.getElementById('periodDisplay').innerText = full;
+  document.getElementById('adminCurPeriod').innerText = full;
+  document.getElementById('countdownDisplay').innerText = countdown + 's';
 }
 
-async function doAutoIncrement(){
-  try{
-    const snap = await getDoc(periodRef);
-    if(!snap.exists()) return;
-    const curr = snap.data().number;
-    const prefix = curr.slice(0, curr.length - 3);
-    let last = parseInt(curr.slice(-3),10) || 0;
-    last = last >= 999 ? 1 : last + 1;
-    const next = prefix + String(last).padStart(3,'0');
-    await setDoc(periodRef, { number: next, ts: serverTimestamp() });
-  }catch(e){ console.warn('doAutoIncrement err', e); }
-}
+setInterval(()=>{
+  countdown--;
+  if(countdown <= 0){
+    countdown = 60;
+    last3Digits++;
+    if(last3Digits > 999) last3Digits = 1;
+  }
+  updatePeriodCountdownUI();
+}, 1000);
 
+updatePeriodCountdownUI();
 
-/* countdown calculation using periodTs */
-function updateCountdownUI(){
-  const cdEl = document.getElementById('countdownDisplay');
-  if(!periodTs || !currentPeriodStr){ cdEl.innerText = '--'; return; }
-  const now = new Date();
-  const elapsed = Math.floor((now.getTime() - periodTs.getTime())/1000);
-  const rem = 60 - (elapsed % 60);
-  cdEl.innerText = rem + 's';
-  // also update displayed period (in case changed)
-  document.getElementById('periodDisplay').innerText = currentPeriodStr || '--';
-}
-setInterval(updateCountdownUI, 1000);
+// Admin Panel: set last 3 digits only
+document.getElementById('adminSetBtn').addEventListener('click', ()=>{
+  const last3 = Number(document.getElementById('adminLast3').value||0);
+  if(isNaN(last3) || last3 < 1 || last3 > 999){ alert('Enter 1–999'); return; }
+  last3Digits = last3;
+  countdown = 60; // reset countdown
+  updatePeriodCountdownUI();
+  alert('Period set: ' + (FIXED_PREFIX + String(last3).padStart(3,'0')));
+});
 
 /* =========================
    Generate prediction logic
@@ -673,6 +656,7 @@ document.getElementById('adminUnlockBtn').addEventListener('click', ()=>{
   }
 });
 
+let adminAutoId = null;
 document.getElementById('adminSetBtn').addEventListener('click', async ()=>{
   const last3 = Number(document.getElementById('adminLast3').value||0);
   if(isNaN(last3) || last3 < 1 || last3 > 999){ alert('Enter 1–999'); return; }
@@ -694,20 +678,26 @@ document.getElementById('adminSetBtn').addEventListener('click', async ()=>{
   }catch(e){ alert('Set failed: '+ (e.message||e)); }
 });
 
-
 document.getElementById('adminStartAuto').addEventListener('click', ()=>{
   if(adminAutoId) return alert('Auto already running');
-  // schedule using current server timestamp alignment
-  scheduleAutoIncrement();
+  adminAutoId = setInterval(async ()=>{
+    try{
+      const snap = await getDoc(periodRef);
+      if(!snap.exists()) return;
+      const curr = snap.data().number;
+      const prefix = curr.slice(0,curr.length-3);
+      let last = parseInt(curr.slice(-3),10) || 0;
+      last = last >= 999 ? 1 : last + 1;
+      const next = prefix + String(last).padStart(3,'0');
+      await setDoc(periodRef,{ number: next, ts: serverTimestamp() });
+    }catch(e){ console.warn('auto increment err', e); }
+  }, 60000);
   alert('Auto-increment started');
 });
 
 document.getElementById('adminStopAuto').addEventListener('click', ()=>{
-  if(adminAutoTimeout){ clearTimeout(adminAutoTimeout); adminAutoTimeout = null; }
-  if(adminAutoId){ clearInterval(adminAutoId); adminAutoId = null; alert('Auto stopped'); }
-  else alert('Auto not running');
+  if(adminAutoId){ clearInterval(adminAutoId); adminAutoId = null; alert('Auto stopped'); } else alert('Auto not running');
 });
-
 
 /* =========================
    Init & small helpers
