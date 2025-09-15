@@ -495,40 +495,49 @@ onSnapshot(periodRef, snap=>{
 
 
 
-/* Final client-side countdown + auto increment with fixed prefix */
+
+
+
+/* Firestore realtime period display with fixed permanent prefix */
 const FIXED_PREFIX = "20250915100010";
+let last3Digits = "001";
 let countdown = 60;
-let last3Digits = 1;
+
+// Listen to Firestore in realtime
+onSnapshot(periodRef, snap => {
+  if (snap.exists()) {
+    const data = snap.data();
+    last3Digits = data.number ? data.number.slice(-3) : "001";
+    const ts = data.ts ? data.ts.toDate() : new Date();
+    const diff = Math.floor((Date.now() - ts.getTime())/1000);
+    countdown = 60 - (diff % 60);
+  }
+  updatePeriodCountdownUI();
+});
 
 function updatePeriodCountdownUI(){
-  const full = FIXED_PREFIX + String(last3Digits).padStart(3,'0');
-  document.getElementById('periodDisplay').innerText = full;
-  document.getElementById('adminCurPeriod').innerText = full;
+  const fullNumber = FIXED_PREFIX + String(last3Digits).padStart(3,'0');
+  document.getElementById('periodDisplay').innerText = fullNumber;
+  document.getElementById('adminCurPeriod').innerText = fullNumber;
   document.getElementById('countdownDisplay').innerText = countdown + 's';
 }
 
-// Timer tick
+// Local timer for countdown
 setInterval(()=>{
-  countdown--;
-  if(countdown <= 0){
-    countdown = 60;
-    last3Digits++;
-    if(last3Digits > 999) last3Digits = 1;
-  }
+  if(countdown > 0) countdown--;
+  else countdown = 60;
   updatePeriodCountdownUI();
-}, 1000);
+},1000);
 
-// Initial UI update
-updatePeriodCountdownUI();
-
-// Admin Panel: set last 3 digits once, then auto increments continue
-document.getElementById('adminSetBtn').addEventListener('click', ()=>{
+// Admin Panel: set last 3 digits only
+document.getElementById('adminSetBtn').addEventListener('click', async ()=>{
   const last3 = Number(document.getElementById('adminLast3').value||0);
   if(isNaN(last3) || last3 < 1 || last3 > 999){ alert('Enter 1–999'); return; }
-  last3Digits = last3;
-  countdown = 60; // reset countdown
-  updatePeriodCountdownUI();
-  alert('Starting period set: ' + (FIXED_PREFIX + String(last3).padStart(3,'0')));
+  const newNum = FIXED_PREFIX + String(last3).padStart(3,'0');
+  try{
+    await setDoc(periodRef, { number: newNum, ts: serverTimestamp() });
+    alert('Period set: ' + newNum);
+  }catch(e){ alert('Set failed: ' + (e.message||e)); }
 });
 
 /* =========================
