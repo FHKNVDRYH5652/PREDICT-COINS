@@ -1,147 +1,213 @@
 <!doctype html>
-<html lang="hi">
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Buy Coins — Coin Predictions</title>
-  <style>
-    :root{
-      --bg-overlay: rgba(3,12,20,0.6);
-      --card: rgba(255,255,255,0.04);
-      --accent: #00d2a8;
-      --accent2: #00a6ff;
-      --muted: #9fb0d6;
-      --glass: rgba(255,255,255,0.03);
-    }
-    *{box-sizing:border-box;font-family:Inter, system-ui, Arial, sans-serif}
-    html,body{height:100%;margin:0}
-    body{
-      background: url('anime1.png') center/cover no-repeat fixed;
-      color:#eaf6ff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:28px;
-    }
-    .wrap{width:100%;max-width:1100px}
-    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-    .brand{font-weight:800;font-size:20px}
-    .wallet{background:var(--glass);padding:10px 14px;border-radius:10px}
-    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
-    .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.7);}
-    h1{margin:0 0 8px 0}
-    .plans{display:flex;flex-wrap:wrap;gap:12px}
-    .plan{background:linear-gradient(180deg,#071425,#08172b);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);cursor:pointer;min-width:150px;text-align:center}
-    .plan.selected{outline:3px solid rgba(0,210,168,0.12);box-shadow:0 6px 18px rgba(0,166,255,0.06)}
-    .muted{color:var(--muted);font-size:13px}
-    input[type=number]{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;margin-top:8px}
-    .btn{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#001;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
-    .link-ghost{background:transparent;border:1px solid rgba(255,255,255,0.05);padding:8px 10px;border-radius:8px;color:var(--muted);cursor:pointer}
-    .small{font-size:13px}
-    .qr{width:100%;height:220px;background:linear-gradient(135deg,#0a1520,#06121a);display:flex;align-items:center;justify-content:center;border-radius:10px;margin-top:12px;color:#6fb8d6}
-    footer{margin-top:14px;color:var(--muted);font-size:13px;text-align:center}
-    @media (max-width:880px){ .grid{grid-template-columns:1fr} .qr{height:160px} }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Coin Predictions — Plans</title>
+<link rel="icon" href="favicon.ico"/>
+<!-- tsParticles CDN for background animation -->
+<script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
+<style>
+  :root{
+    --bg-dark:#07121a;
+    --panel:rgba(255,255,255,0.03);
+    --neon:#00ff9d;
+    --accent:#1dd3ff;
+    --muted:#9fb0d6;
+    --glass:rgba(255,255,255,0.02);
+  }
+  *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
+  html,body{height:100%;margin:0}
+  body{
+    background: url('anime1.png') center/cover fixed no-repeat;
+    color:#eaf6ff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px;
+  }
+  /* particles canvas sits behind content */
+  #tsparticles { position: fixed; inset:0; z-index:0; }
+  .wrap{position:relative;z-index:2;width:100%;max-width:1100px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  .brand{font-weight:900; letter-spacing:1px}
+  .card{background:var(--panel);backdrop-filter: blur(6px);padding:18px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+  .grid{display:grid;grid-template-columns:1fr 340px;gap:18px}
+  .plans{display:flex;flex-wrap:wrap;gap:12px}
+  .plan{min-width:150px;padding:14px;border-radius:10px;background:linear-gradient(180deg,#071425,#08172b);cursor:pointer;border:1px solid rgba(255,255,255,0.03);text-align:center;transition:transform .12s, box-shadow .12s}
+  .plan:hover{transform:translateY(-6px);box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+  .plan.selected{outline:3px solid rgba(0,255,157,0.1);box-shadow:0 10px 40px rgba(0,255,157,0.07)}
+  .muted{color:var(--muted);font-size:13px}
+  input[type=number]{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;margin-top:8px}
+  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));color:#001;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:800;letter-spacing:0.6px}
+  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
+  .wallet{background:var(--glass);padding:10px 12px;border-radius:10px}
+  .small{font-size:13px;color:var(--muted)}
+  footer{margin-top:12px;color:var(--muted);font-size:13px;text-align:center}
+  @media (max-width:920px){ .grid{grid-template-columns:1fr} }
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="topbar">
-      <div class="brand">Coin Predictions — Plans</div>
-      <div class="wallet">Wallet: <strong id="walletTop">0</strong> coins</div>
-    </div>
 
-    <div class="grid">
-      <div class="card">
-        <h1>Choose a plan</h1>
-        <div class="small muted">Minimum <b>100</b> coins (₹50). Maximum <b>4000</b> coins (₹2000).</div>
+<!-- Particles background -->
+<div id="tsparticles"></div>
 
-        <div style="margin-top:12px" class="plans" id="plansContainer">
-          <!-- plans inserted by JS -->
-        </div>
-
-        <div style="margin-top:14px">
-          <label class="small">या अपनी quantity डालें (100 - 4000)</label>
-          <input id="manualQty" type="number" min="100" max="4000" value="100" step="1" />
-        </div>
-
-        <div style="margin-top:14px;display:flex;gap:10px">
-          <button class="btn" id="proceedBtn">Proceed to Payment</button>
-          <button class="link-ghost" id="goAdmin">Admin</button>
-        </div>
-
-        <div style="margin-top:12px" class="small muted">Rate: <b>2 coins = ₹1</b> (₹0.5 per coin).</div>
-      </div>
-
-      <div class="card">
-        <h2>Payment QR</h2>
-        <div class="qr">
-          <div>
-            <div style="font-weight:700">QR Placeholder</div>
-            <div class="small muted" style="margin-top:6px">Use your real QR file named <code>qr.png</code></div>
-          </div>
-        </div>
-
-        <div style="margin-top:12px">
-          <div class="small muted">Customer Service</div>
-          <div style="margin-top:8px">
-            <button class="btn" onclick="window.open('https://t.me/Nskskssiwi','_blank')">Contact on Telegram</button>
-          </div>
-        </div>
-
-        <div style="margin-top:12px">
-          <div class="small muted">Quick links</div>
-          <div style="margin-top:8px;display:flex;gap:8px">
-            <button class="link-ghost" id="linkPredict">Go to Prediction</button>
-            <button class="link-ghost" id="linkPayment">Go to Payment</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <footer>Store these files together: <code>index.html, payment.html, prediction.html, admin.html, anime1.png, anime2.png, anime3.png, music.m4a, qr.png</code></footer>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">Coin Predictions</div>
+    <div class="wallet small">Wallet: <strong id="walletTop">0</strong> coins</div>
   </div>
 
-<script>
+  <div class="card grid">
+    <div>
+      <h2 style="margin:0 0 8px 0">Choose a Plan</h2>
+      <div class="small muted">Min 100 — Max 4000. Rate: <b>2 coins = ₹1</b> (₹0.5 / coin).</div>
+
+      <div style="margin-top:12px" class="plans" id="plans">
+        <!-- plans injected by JS -->
+      </div>
+
+      <div style="margin-top:12px">
+        <label class="small muted">Or custom (100–4000)</label>
+        <input id="customQty" type="number" min="100" max="4000" value="100">
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:10px">
+        <button id="goPay" class="btn">Proceed to Payment</button>
+        <button id="goPredict" class="ghost">Go to Prediction</button>
+      </div>
+    </div>
+
+    <div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="card" style="padding:14px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:64px;height:64px;border-radius:50%;background:#111;display:flex;align-items:center;justify-content:center;font-weight:800">AK</div>
+            <div>
+              <div style="font-weight:700">@TEAM_DARK_73</div>
+              <div class="small muted">Premium + secure</div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small muted">Customer Service</div>
+            <div style="margin-top:8px">
+              <button class="btn" id="csBtn">Contact on Telegram</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:14px">
+          <div class="small muted">Quick Actions</div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button class="ghost" id="linkPayment">Payment</button>
+            <button class="ghost" id="linkAdmin">Admin</button>
+            <button class="ghost" id="linkPrediction">Prediction</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Keep assets with these files: <code>anime1.png, anime2.png, anime3.png, music.m4a, click.mp3, hover.mp3, Screenshot_20250915-104012.Gallery.png</code></footer>
+</div>
+
+<!-- small audio players for sound effects -->
+<audio id="sndClick" src="click.mp3"></audio>
+<audio id="sndHover" src="hover.mp3"></audio>
+
+<script type="module">
+  // Firebase init (same config used in all pages)
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+    authDomain: "terminal-xxrr.firebaseapp.com",
+    databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
+    projectId: "terminal-xxrr",
+    storageBucket: "terminal-xxrr.appspot.com",
+    messagingSenderId: "722753278120",
+    appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // particles config (green nodes + lines)
+  tsParticles.load("tsparticles", {
+    fpsLimit: 60,
+    interactivity: { detectsOn: "canvas", events: { onHover: { enable: true, mode: "repulse" }, onClick: { enable: true, mode: "push" } } },
+    particles: {
+      number: { value: 40 },
+      color: { value: "#00ff9d" },
+      shape: { type: "circle" },
+      opacity: { value: 0.8, random: true },
+      size: { value: { min: 1, max: 4 } },
+      links: { enable: true, distance: 140, color: "#00ff9d", opacity: 0.12, width: 1 },
+      move: { enable: true, speed: 0.9, direction: "none", outMode: "bounce" }
+    },
+    detectRetina: true
+  });
+
+  // UI sounds
+  const sndClick = document.getElementById('sndClick');
+  const sndHover = document.getElementById('sndHover');
+  function playClick(){ try{ sndClick.currentTime=0; sndClick.play(); }catch(e){} }
+  function playHover(){ try{ sndHover.currentTime=0; sndHover.play(); }catch(e){} }
+
+  // plans
   const presets = [100,200,500,1000,2000,4000];
-  const plansContainer = document.getElementById('plansContainer');
-  const manualQty = document.getElementById('manualQty');
+  const plansEl = document.getElementById('plans');
+  const customQty = document.getElementById('customQty');
   let selected = 100;
 
   function renderPlans(){
-    plansContainer.innerHTML = '';
+    plansEl.innerHTML = '';
     presets.forEach(p=>{
-      const el = document.createElement('div');
-      el.className='plan';
-      el.innerHTML = `<div style="font-weight:800">${p} coins</div><div class="small muted">₹${(p/2).toFixed(0)}</div>`;
-      el.onclick = ()=>{ selectPlan(p, el); };
-      plansContainer.appendChild(el);
-      if(p===selected) el.classList.add('selected');
+      const d = document.createElement('div');
+      d.className='plan';
+      d.innerHTML = `<div style="font-weight:800">${p} coins</div><div class="small muted">₹${(p/2).toFixed(0)}</div>`;
+      d.onclick = ()=> { selected = p; customQty.value = p; Array.from(plansEl.children).forEach(c=>c.classList.remove('selected')); d.classList.add('selected'); playClick(); };
+      plansEl.appendChild(d);
+      if(p===selected) d.classList.add('selected');
+      d.addEventListener('mouseenter', playHover);
     });
   }
-  function selectPlan(q, el){
-    selected = q;
-    manualQty.value = q;
-    Array.from(plansContainer.children).forEach(c=> c.classList.remove('selected'));
-    if(el) el.classList.add('selected');
-  }
+  renderPlans();
 
-  document.getElementById('proceedBtn').addEventListener('click', ()=>{
-    let q = parseInt(manualQty.value||'0',10);
-    if(isNaN(q) || q < 100) { alert('Minimum 100 coins'); manualQty.value=100; return; }
-    if(q > 4000) { alert('Maximum 4000 coins'); manualQty.value=4000; return; }
-    // store pending plan for payment page
+  document.getElementById('goPay').addEventListener('click', ()=>{
+    let q = parseInt(customQty.value||'0',10);
+    if(isNaN(q) || q < 100){ alert('Minimum 100 coins'); customQty.value=100; return; }
+    if(q > 4000){ alert('Maximum 4000 coins'); customQty.value=4000; return; }
     localStorage.setItem('pendingPlan', String(q));
-    // redirect
-    window.location.href = 'payment.html';
+    playClick();
+    location.href = 'payment.html';
+  });
+  // nav buttons
+  document.getElementById('linkPayment').addEventListener('click', ()=>{ playClick(); location.href='payment.html'; });
+  document.getElementById('linkAdmin').addEventListener('click', ()=>{ playClick(); location.href='admin.html'; });
+  document.getElementById('linkPrediction').addEventListener('click', ()=>{ playClick(); location.href='prediction.html'; });
+  document.getElementById('csBtn').addEventListener('click', ()=>{ playClick(); window.open('https://t.me/Nskskssiwi','_blank'); });
+
+  document.querySelectorAll('.btn, .ghost, .plan').forEach(el => {
+    el.addEventListener('mousedown', playClick);
   });
 
-  document.getElementById('goAdmin').addEventListener('click', ()=> window.location.href = 'admin.html');
-  document.getElementById('linkPredict').addEventListener('click', ()=> window.location.href = 'prediction.html');
-  document.getElementById('linkPayment').addEventListener('click', ()=> window.location.href = 'payment.html');
+  // show logged-in user's wallet in realtime
+  onAuthStateChanged(auth, user=>{
+    if(user){
+      const uDoc = doc(db, 'users', user.uid);
+      onSnapshot(uDoc, snap=>{
+        const data = snap.exists() ? snap.data() : null;
+        document.getElementById('walletTop').innerText = data ? (data.wallet||0) : 0;
+      });
+    } else {
+      document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins')||'0';
+    }
+  });
 
-  function updateWalletUI(){ document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins')||'0'; }
-  renderPlans();
-  updateWalletUI();
 </script>
 </body>
 </html>
