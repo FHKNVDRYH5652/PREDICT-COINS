@@ -36,28 +36,6 @@
   footer{color:var(--muted);text-align:center;margin-top:12px;font-size:13px}
   audio{display:none}
   @media (max-width:920px){ .grid{grid-template-columns:1fr} }
-
-/* Prediction popup animation */
-#predictionPopup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.2);
-  font-size: 40px;
-  font-weight: 900;
-  padding: 20px 40px;
-  border-radius: 12px;
-  opacity: 0;
-  z-index: 9999;
-  transition: all 0.5s ease-out;
-}
-#predictionPopup.show {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
-}
-.bigPopup { background:#1dd3ff33; color:#1dd3ff; }
-.smallPopup { background:#00ff9d33; color:#00ff9d; }
-
 </style>
 </head>
 <body>
@@ -536,9 +514,6 @@ document.getElementById('genPredBtn').addEventListener('click', async ()=>{
         result: '',
         ts: serverTimestamp()
       });
-      // call popup function
-      showPredictionPopup(signal);
-
     });
     document.getElementById('lastPred').innerText = 'Prediction generated — check history below';
   }catch(e){
@@ -599,18 +574,6 @@ window.markResult = async (id, res) => {
     await updateDoc(doc(db,'predictions',id), { result: res, resolvedAt: serverTimestamp() });
   }catch(e){ alert('Mark failed: '+ (e.message || e)); }
 };
-
-
-// Show popup animation with generated signal
-function showPredictionPopup(signal){
-  const popup = document.getElementById('predictionPopup');
-  popup.innerText = signal;
-  popup.className = ''; // reset
-  popup.classList.add(signal === 'BIG' ? 'bigPopup' : 'smallPopup');
-  popup.classList.add('show');
-  // hide after 5s
-  setTimeout(()=> popup.classList.remove('show'), 5000);
-}
 
 /* =========================
    Admin actions
@@ -676,6 +639,24 @@ document.getElementById('adminStopAuto').addEventListener('click', ()=>{
   if(adminAutoId){ clearInterval(adminAutoId); adminAutoId = null; alert('Auto stopped'); } else alert('Auto not running');
 });
 
+
+/* =========================
+   Auto increment period (always running)
+   ========================= */
+setInterval(async ()=>{
+  try{
+    const snap = await getDoc(periodRef);
+    if(!snap.exists()) return;
+    const curr = snap.data().number;
+    if(!curr) return;
+    const prefix = curr.slice(0,curr.length-3);
+    let last = parseInt(curr.slice(-3),10) || 0;
+    last = last >= 999 ? 1 : last + 1;
+    const next = prefix + String(last).padStart(3,'0');
+    await setDoc(periodRef,{ number: next, ts: serverTimestamp() });
+  }catch(e){ console.warn('auto increment err', e); }
+}, 60000);
+
 /* =========================
    Init & small helpers
    ========================= */
@@ -699,6 +680,5 @@ document.querySelectorAll('.btn, .ghost, .plan').forEach(el=>{
 });
 
 </script>
-<div id="predictionPopup"></div>
 </body>
 </html>
