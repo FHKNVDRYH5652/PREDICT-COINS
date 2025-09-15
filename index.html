@@ -197,13 +197,10 @@
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0">Your Predictions & History</h3>
-      <div class="small">Mark Win / Loss to calculate accuracy</div>
       <table>
         <thead><tr><th>Period</th><th>Signal</th><th>Result</th><th>Action</th></tr></thead>
         <tbody id="predHistory"></tbody>
       </table>
-      <div id="accuracy" class="small" style="margin-top:10px">Accuracy: 0%</div>
     </div>
   </div>
 
@@ -497,7 +494,7 @@ onSnapshot(periodRef, snap=>{
 
 
 /* Real-time clock based period calculation */
-const FIXED_PREFIX = "2025091510001";
+const FIXED_PREFIX = "202509151000";
 const BASE_HOUR = 2;
 const BASE_MIN = 34;
 const BASE_NUMBER = 11265;
@@ -599,14 +596,12 @@ function renderHistory(rows){
     tbody.appendChild(tr);
   });
 
-  // compute accuracy by counting docs with result
   let done = 0, winCount = 0;
   rows.forEach(r=>{
     if(r.result === 'win'){ done++; winCount++; }
     else if(r.result === 'loss'){ done++; }
   });
   const acc = done ? ((winCount/done)*100).toFixed(1) : 0;
-  document.getElementById('accuracy').innerText = `Accuracy: ${acc}% (Wins: ${winCount}/${done})`;
 }
 
 /* global function to mark result (used by buttons) */
