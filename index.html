@@ -8,25 +8,42 @@
 <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
 <style>
   :root{
+    --bg-dark:#07121a;
     --panel:rgba(255,255,255,0.03);
-    --neon:#00ff9d;--accent:#1dd3ff;--muted:#9fb0d6;
+    --neon:#00ff9d;
+    --accent:#1dd3ff;
+    --muted:#9fb0d6;
+    --glass:rgba(255,255,255,0.02);
   }
   *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
-  body{margin:0;padding:28px;background:url('anime1.png') center/cover fixed;color:#eaf6ff}
-  #tsparticles{position:fixed;inset:0;z-index:0}
-  .wrap{position:relative;z-index:2;max-width:1100px;margin:auto}
+  html,body{height:100%;margin:0}
+  body{
+    background: url('anime1.png') center/cover fixed no-repeat;
+    color:#eaf6ff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px;
+  }
+  #tsparticles { position: fixed; inset:0; z-index:0; }
+  .wrap{position:relative;z-index:2;width:100%;max-width:1100px}
   .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-  .brand{font-weight:900}
-  .card{background:var(--panel);padding:18px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+  .brand{font-weight:900; letter-spacing:1px}
+  .card{background:var(--panel);backdrop-filter: blur(6px);padding:18px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
   .grid{display:grid;grid-template-columns:1fr 340px;gap:18px}
   .plans{display:flex;flex-wrap:wrap;gap:12px}
-  .plan{min-width:150px;padding:14px;border-radius:10px;background:linear-gradient(180deg,#071425,#08172b);cursor:pointer;text-align:center}
-  .plan.selected{outline:2px solid #00ff9d}
-  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));color:#001;padding:10px 14px;border-radius:10px;border:none;font-weight:700;cursor:pointer}
-  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.1);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
-  .wallet{background:rgba(0,0,0,0.2);padding:8px 12px;border-radius:10px}
+  .plan{min-width:150px;padding:14px;border-radius:10px;background:linear-gradient(180deg,#071425,#08172b);cursor:pointer;border:1px solid rgba(255,255,255,0.03);text-align:center;transition:transform .12s, box-shadow .12s}
+  .plan:hover{transform:translateY(-6px);box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+  .plan.selected{outline:3px solid rgba(0,255,157,0.1);box-shadow:0 10px 40px rgba(0,255,157,0.07)}
+  .muted{color:var(--muted);font-size:13px}
+  input[type=number]{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;margin-top:8px}
+  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));color:#001;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:800;letter-spacing:0.6px}
+  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
+  .wallet{background:var(--glass);padding:10px 12px;border-radius:10px}
   .small{font-size:13px;color:var(--muted)}
-  @media (max-width:920px){.grid{grid-template-columns:1fr}}
+  footer{margin-top:12px;color:var(--muted);font-size:13px;text-align:center}
+  #authBar{display:flex;gap:8px;align-items:center}
+  @media (max-width:920px){ .grid{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -35,75 +52,138 @@
 <div class="wrap">
   <div class="top">
     <div class="brand">Coin Predictions</div>
-    <div class="wallet small">Wallet: <b id="walletTop">0</b> coins</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="wallet small">Wallet: <strong id="walletTop">0</strong> coins</div>
+    </div>
   </div>
 
   <div class="card grid">
     <div>
-      <h2>Choose a Plan</h2>
-      <div class="small">Min 100 – Max 4000. Rate: <b>2 coins = ₹1</b></div>
-      <div id="plans" class="plans"></div>
+      <h2 style="margin:0 0 8px 0">Choose a Plan</h2>
+      <div class="small muted">Min 100 — Max 4000. Rate: <b>2 coins = ₹1</b> (₹0.5 / coin).</div>
+
+      <div style="margin-top:12px" class="plans" id="plans"></div>
+
       <div style="margin-top:12px">
-        <label class="small">Custom Amount</label>
-        <input id="customQty" type="number" min="100" max="4000" value="100"
-         style="width:100%;padding:10px;border-radius:8px;background:transparent;color:#eaf6ff">
+        <label class="small muted">Or custom (100–4000)</label>
+        <input id="customQty" type="number" min="100" max="4000" value="100">
       </div>
+
       <div style="margin-top:12px;display:flex;gap:10px">
         <button id="goPay" class="btn">Proceed to Payment</button>
         <button id="goPredict" class="ghost">Go to Prediction</button>
       </div>
     </div>
+
     <div>
-      <div class="card" style="padding:14px">
-        <div style="font-weight:700">@BABA_TILLU</div>
-        <div class="small">Customer Service</div>
-        <button id="csBtn" class="btn" style="margin-top:8px">Telegram</button>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="card" style="padding:14px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:64px;height:64px;border-radius:50%;background:#111;display:flex;align-items:center;justify-content:center;font-weight:800">AK</div>
+            <div>
+              <div style="font-weight:700">@BABA_TILLU</div>
+              <div class="small muted">Premium + secure</div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small muted">Customer Service</div>
+            <div style="margin-top:8px">
+              <button class="btn" id="csBtn">Contact on Telegram</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:14px">
+          <div class="small muted">Quick Actions</div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button class="ghost" id="linkPayment">Payment</button>
+            <button class="ghost" id="linkAdmin">Admin</button>
+            <button class="ghost" id="linkPrediction">Prediction</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+
+  <footer>Keep assets with these files: <code>anime1.png, anime2.png, anime3.png, music.m4a, click.mp3, hover.mp3</code></footer>
 </div>
 
+<audio id="sndClick" src="click.mp3"></audio>
+<audio id="sndHover" src="hover.mp3"></audio>
+
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
-  authDomain: "terminal-xxrr.firebaseapp.com",
-  projectId: "terminal-xxrr",
-  storageBucket: "terminal-xxrr.appspot.com",
-  messagingSenderId: "722753278120",
-  appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
-};
-initializeApp(firebaseConfig);
+  // ✅ FIXED FIREBASE CONFIG
+  const firebaseConfig = {
+    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+    authDomain: "terminal-xxrr.firebaseapp.com",
+    databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "terminal-xxrr",
+    storageBucket: "terminal-xxrr.appspot.com",
+    messagingSenderId: "722753278120",
+    appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
+  };
+  initializeApp(firebaseConfig);
 
-// wallet from localStorage
-function updateWallet(){ document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins')||'0'; }
-updateWallet();
-
-// plans
-const presets=[100,200,500,1000,2000,4000];
-const plansEl=document.getElementById('plans');
-let selected=100;
-function renderPlans(){
-  plansEl.innerHTML='';
-  presets.forEach(p=>{
-    const d=document.createElement('div');
-    d.className='plan'; d.innerHTML=`${p} coins<br><span class="small">₹${p/2}</span>`;
-    d.onclick=()=>{selected=p;customQty.value=p;plansEl.querySelectorAll('.plan').forEach(x=>x.classList.remove('selected'));d.classList.add('selected');};
-    plansEl.appendChild(d);
-    if(p===selected)d.classList.add('selected');
+  // particles
+  tsParticles.load("tsparticles", {
+    fpsLimit: 60,
+    particles: {
+      number: { value: 40 },
+      color: { value: "#00ff9d" },
+      shape: { type: "circle" },
+      opacity: { value: 0.8, random: true },
+      size: { value: { min: 1, max: 4 } },
+      links: { enable: true, distance: 140, color: "#00ff9d", opacity: 0.12, width: 1 },
+      move: { enable: true, speed: 0.9 }
+    },
+    interactivity: { events: { onHover: { enable: true, mode: "repulse" }, onClick: { enable: true, mode: "push" } } }
   });
-}
-renderPlans();
 
-goPay.onclick=()=>{
-  let q=parseInt(customQty.value||'0',10);
-  if(q<100||q>4000){alert("Enter between 100–4000");return;}
-  localStorage.setItem('pendingPlan',q);
-  location.href='payment.html';
-};
-goPredict.onclick=()=>location.href='prediction.html';
-csBtn.onclick=()=>window.open('https://t.me/Nskskssiwi','_blank');
+  const sndClick=document.getElementById('sndClick');
+  const sndHover=document.getElementById('sndHover');
+  function playClick(){ try{ sndClick.currentTime=0; sndClick.play(); }catch(e){} }
+  function playHover(){ try{ sndHover.currentTime=0; sndHover.play(); }catch(e){} }
+
+  const presets=[100,200,500,1000,2000,4000];
+  const plansEl=document.getElementById('plans');
+  const customQty=document.getElementById('customQty');
+  let selected=100;
+  function renderPlans(){
+    plansEl.innerHTML='';
+    presets.forEach(p=>{
+      const d=document.createElement('div');
+      d.className='plan';
+      d.innerHTML=`<div style="font-weight:800">${p} coins</div><div class="small muted">₹${(p/2).toFixed(0)}</div>`;
+      d.onclick=()=>{ selected=p; customQty.value=p; Array.from(plansEl.children).forEach(c=>c.classList.remove('selected')); d.classList.add('selected'); playClick(); };
+      plansEl.appendChild(d);
+      if(p===selected) d.classList.add('selected');
+      d.addEventListener('mouseenter', playHover);
+    });
+  }
+  renderPlans();
+
+  document.getElementById('goPay').onclick=()=>{
+    let q=parseInt(customQty.value||'0',10);
+    if(isNaN(q)||q<100){alert('Minimum 100 coins');customQty.value=100;return;}
+    if(q>4000){alert('Maximum 4000 coins');customQty.value=4000;return;}
+    localStorage.setItem('pendingPlan',String(q));
+    playClick();
+    location.href='payment.html';
+  };
+
+  document.getElementById('linkPayment').onclick=()=>{playClick();location.href='payment.html';};
+  document.getElementById('linkAdmin').onclick=()=>{playClick();location.href='admin.html';};
+  document.getElementById('linkPrediction').onclick=()=>{playClick();location.href='prediction.html';};
+  document.getElementById('csBtn').onclick=()=>{playClick();window.open('https://t.me/Nskskssiwi','_blank');};
+
+  document.querySelectorAll('.btn, .ghost, .plan').forEach(el=>el.addEventListener('mousedown', playClick));
+
+  // Wallet update from localStorage
+  function updateWallet(){ document.getElementById('walletTop').innerText=localStorage.getItem('wallet_coins')||'0'; }
+  updateWallet();
 </script>
 </body>
 </html>
