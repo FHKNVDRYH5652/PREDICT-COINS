@@ -56,7 +56,6 @@
     <div>
       <div class="card" style="padding:14px">
         <div class="qrBox">
-          <!-- <--- replace this filename if you use different QR image name -->
           <img id="qrImg" src="qr.png" alt="QR Code">
         </div>
 
@@ -72,7 +71,6 @@
   </div>
 </div>
 
-<!-- sound effects -->
 <audio id="sndClick" src="click.mp3"></audio>
 <audio id="sndHover" src="hover.mp3"></audio>
 
@@ -84,7 +82,6 @@
   const firebaseConfig = {
     apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
     authDomain: "terminal-xxrr.firebaseapp.com",
-    databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
     projectId: "terminal-xxrr",
     storageBucket: "terminal-xxrr.appspot.com",
     messagingSenderId: "722753278120",
@@ -94,34 +91,20 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // particles (subtle)
   tsParticles.load("tsparticles", {
     fpsLimit: 60,
-    particles: {
-      number: { value: 30 },
-      color: { value: "#00ff9d" },
-      shape: { type: "circle" },
-      links: { enable: true, distance: 120, color: "#00ff9d", opacity: 0.08, width: 1 },
-      move: { enable: true, speed: 0.8 }
-    }
+    particles: { number:{value:30}, color:{value:"#00ff9d"}, shape:{type:"circle"}, links:{enable:true,distance:120,color:"#00ff9d",opacity:0.08,width:1}, move:{enable:true,speed:0.8} }
   });
 
-  // sounds
   const sndClick = document.getElementById('sndClick');
   function playClick(){ try{ sndClick.currentTime=0; sndClick.play(); }catch(e){} }
 
-  // load pending plan
   const pending = parseInt(localStorage.getItem('pendingPlan') || '100',10);
   document.getElementById('payCoins').value = pending;
   document.getElementById('payAmount').value = (pending * 0.5).toFixed(2);
   document.getElementById('walletTop').innerText = localStorage.getItem('wallet_coins') || '0';
 
-  document.getElementById('csBtn').addEventListener('click', ()=> { playClick(); window.open('https://t.me/Nskskssiwi','_blank'); });
-
-  // require login to submit
-  onAuthStateChanged(auth, user=>{
-    // simple notification only; submit checks auth again
-  });
+  document.getElementById('csBtn').addEventListener('click', ()=>{ playClick(); window.open('https://t.me/Nskskssiwi','_blank'); });
 
   document.getElementById('submitBtn').addEventListener('click', async ()=>{
     playClick();
@@ -134,11 +117,16 @@
         return;
       }
       await addDoc(collection(db,'pending'), {
-        utr, coins: pending, amount: (pending*0.5), userId: user.uid, userEmail: user.email||null, status:'pending', ts: serverTimestamp()
+        utr,
+        coins: pending,
+        amount: (pending*0.5),
+        userId: user.uid,
+        userEmail: user.email||null,
+        status:'pending',
+        ts: serverTimestamp() || new Date() // ✅ always ensure ts
       });
       document.getElementById('msg').innerText = 'Submitted for admin approval.';
       localStorage.removeItem('pendingPlan');
-      // send user to prediction page (they will see wallet update once admin approves)
       setTimeout(()=> location.href='prediction.html', 800);
     }catch(e){
       document.getElementById('msg').innerText = e.message;
@@ -146,10 +134,6 @@
   });
 
   document.getElementById('cancelBtn').addEventListener('click', ()=>{ playClick(); location.href='index.html'; });
-
-  // images: if you want to change QR file name, edit <img id="qrImg" src="..."> above
-  // optionally you can set via JS:
-  // document.getElementById('qrImg').src = 'your-image.png';
 </script>
 </body>
 </html>
