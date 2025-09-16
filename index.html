@@ -493,31 +493,15 @@ onSnapshot(periodRef, snap=>{
 
 
 
-/* Real-time clock based period calculation */
-const FIXED_PREFIX = "202509151000";
-const BASE_HOUR = 2;
-const BASE_MIN = 34;
-const BASE_NUMBER = 11265;
-
-function getCurrentPeriod(){
-  const now = new Date();
-  const base = new Date(now.getFullYear(), now.getMonth(), now.getDate(), BASE_HOUR, BASE_MIN, 0, 0);
-  const diffMin = Math.floor((now - base) / 60000);
-  const number = BASE_NUMBER + diffMin;
-  return FIXED_PREFIX + number;
-}
-
-function updateCountdown(){
+/* Countdown based only on seconds */
+function updateCountdownOnly(){
   const now = new Date();
   const sec = now.getSeconds();
   const countdown = 60 - sec;
   document.getElementById("countdownDisplay").innerText = countdown + "s";
-  document.getElementById("periodDisplay").innerText = getCurrentPeriod();
-  document.getElementById("adminCurPeriod").innerText = getCurrentPeriod();
 }
-
-setInterval(updateCountdown, 1000);
-updateCountdown();
+setInterval(updateCountdownOnly, 1000);
+updateCountdownOnly();
 
 /* =========================
    Generate prediction logic
