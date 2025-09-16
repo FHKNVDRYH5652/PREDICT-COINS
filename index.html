@@ -229,8 +229,8 @@
       <div id="adminPanelBox" style="display:none;margin-top:12px;text-align:left">
         <div>Current Period: <strong id="adminCurPeriod">--</strong></div>
         <div style="margin-top:10px">
-          <label class="small">Set last 3 digits (1–999)</label>
-          <input id="adminLast3" type="number" min="1" max="999" placeholder="e.g. 256">
+          <label class="small">Set last 5 digits (00001–99999)</label>
+          <input id="adminLast5" type="number" min="1" max="99999" placeholder="e.g. 12069">
           <div style="margin-top:8px">
             <button id="adminSetBtn" class="btn">Set Period</button>
             <button id="adminStartAuto" class="ghost">Start Auto-Increment</button>
@@ -646,25 +646,34 @@ document.getElementById('adminUnlockBtn').addEventListener('click', ()=>{
 
 let adminAutoId = null;
 document.getElementById('adminSetBtn').addEventListener('click', async ()=>{
-  const last3 = Number(document.getElementById('adminLast3').value||0);
-  if(isNaN(last3) || last3 < 1 || last3 > 999){ alert('Enter 1–999'); return; }
-  // compute prefix: prefer existing prefix if set
+  const last5 = Number(document.getElementById('adminLast5').value||0);
+  if(isNaN(last5) || last5 < 1 || last5 > 99999){ 
+    alert('Enter 1–99999'); 
+    return; 
+  }
+
+  // prefix ko purane period ke hisaab se nikalna hai (last 5 digits hata ke)
   let prefix = null;
-  if(currentPeriodStr && currentPeriodStr.length > 3) prefix = currentPeriodStr.slice(0,-3);
-  else {
+  if(currentPeriodStr && currentPeriodStr.length > 5) {
+    prefix = currentPeriodStr.slice(0,-5);
+  } else {
     const now = new Date();
     const YYYY = now.getFullYear().toString();
     const MM = String(now.getMonth()+1).padStart(2,'0');
     const DD = String(now.getDate()).padStart(2,'0');
     prefix = `${YYYY}${MM}${DD}1000`;
   }
-  const newNum = prefix + String(last3).padStart(3,'0');
+
+  const newNum = prefix + String(last5).padStart(5,'0');
   try{
     await setDoc(periodRef, { number: newNum, ts: serverTimestamp() });
     document.getElementById('adminCurPeriod').innerText = newNum;
     alert('Period set: ' + newNum);
-  }catch(e){ alert('Set failed: '+ (e.message||e)); }
+  }catch(e){ 
+    alert('Set failed: '+ (e.message||e)); 
+  }
 });
+    
 
 document.getElementById('adminStartAuto').addEventListener('click', ()=>{
   if(adminAutoId) return alert('Auto already running');
@@ -673,10 +682,12 @@ document.getElementById('adminStartAuto').addEventListener('click', ()=>{
       const snap = await getDoc(periodRef);
       if(!snap.exists()) return;
       const curr = snap.data().number;
-      const prefix = curr.slice(0,curr.length-3);
-      let last = parseInt(curr.slice(-3),10) || 0;
-      last = last >= 999 ? 1 : last + 1;
-      const next = prefix + String(last).padStart(3,'0');
+      const prefix = curr.slice(0,curr.length-5);
+      let last5 = curr.slice(-5);
+      let high2 = last5.slice(0,2);
+      let last3 = parseInt(last5.slice(-3),10) || 0;
+      last3 = last3 >= 999 ? 1 : last3 + 1;
+      const next = prefix + high2 + String(last3).padStart(3,'0');
       await setDoc(periodRef,{ number: next, ts: serverTimestamp() });
     }catch(e){ console.warn('auto increment err', e); }
   }, 60000);
