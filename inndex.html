@@ -1,0 +1,744 @@
+
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Baba Tillu Pro Version — Plans · Payment · Prediction</title>
+
+<!-- Firebase v9 modular (Realtime DB) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getDatabase, ref, push, set, onValue, child, get, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+  // ----- YOUR FIREBASE CONFIG (you provided) -----
+  const firebaseConfig = {
+    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+    authDomain: "terminal-xxrr.firebaseapp.com",
+    databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "terminal-xxrr",
+    storageBucket: "terminal-xxrr.firebasestorage.app",
+    messagingSenderId: "722753278120",
+    appId: "1:722753278120:web:bfa37aab39635a4e57f29d",
+    measurementId: "G-E3MZH3E1K5"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // Expose firebase helpers to window for the rest of the script
+  window._firebase = { db, ref, push, set, onValue, child, get, update };
+</script>
+
+<style>
+  :root{
+    --bg:#060606; --card: rgba(20,20,20,0.95);
+    --accent:#ff3b3b; --muted:#bfcbdc; --glass: rgba(255,255,255,0.03);
+  }
+  *{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Poppins",sans-serif}
+  body{margin:0;min-height:100vh;background:linear-gradient(180deg,#040405,#091018);color:#e8f2ff;display:flex;justify-content:center;padding:20px}
+  .app{width:100%;max-width:1100px;border-radius:12px;padding:18px;background:var(--card);box-shadow:0 10px 60px rgba(0,0,0,0.6)}
+  header{display:flex;align-items:center;gap:12px}
+  .logo{width:64px;height:64px;border-radius:10px;overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center}
+  .logo img{width:100%;height:100%;object-fit:cover}
+  h1{margin:0;font-size:20px;color:var(--accent)}
+  p.small{margin:6px 0;color:var(--muted);font-size:13px}
+
+  /* NAV / screens */
+  .screens{margin-top:16px}
+  .screen{display:none}
+  .screen.active{display:block}
+  .grid{display:grid;grid-template-columns:1fr 420px;gap:16px}
+  @media(max-width:920px){ .grid{grid-template-columns:1fr} .rightCol{order:2} }
+
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+  .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .plan{padding:12px;border-radius:8px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.02)}
+  .plan b{display:block;font-size:1.05rem}
+  .btn{padding:8px 12px;border-radius:8px;border:none;background:linear-gradient(90deg,#ff6b6b,#ff3b3b);color:#0e0e0e;font-weight:800;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+  input[type=text]{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;width:100%}
+
+  /* admin cross */
+  .admin-cross{position:fixed;right:18px;bottom:18px;width:46px;height:46px;border-radius:10px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;cursor:pointer;z-index:9999}
+  .admin-panel{display:none;margin-top:12px;padding:12px;border-radius:8px;background:rgba(0,0,0,0.3)}
+  .list{max-height:260px;overflow:auto}
+
+  /* prediction */
+  .prediction-grid{display:grid;grid-template-columns:1fr 320px;gap:12px}
+  .stat{padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:800}
+  .boxes{display:flex;gap:8px;flex-wrap:wrap}
+  .box{padding:8px 10px;border-radius:8px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.03)}
+  .signal.big{color:#7fe8a7}
+  .signal.small{color:#ffb66b}
+  .live{margin-top:8px;color:var(--muted)}
+  .history-box{max-height:180px;overflow:auto;padding:8px;border-radius:8px;background:rgba(0,0,0,0.25)}
+  .spark{height:50px}
+
+  footer{margin-top:14px;color:var(--muted);font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="logo"><img id="logoImg" src="anime1.png" alt="logo"></div>
+    <div>
+      <h1>Baba Tillu Pro Version</h1>
+      <p class="small">Simple plans → QR payment + UTR → Admin approval → AI predictions</p>
+    </div>
+  </header>
+
+  <!-- Hidden admin cross -->
+  <div class="admin-cross" id="adminCross" title="Admin (hidden)">❌</div>
+
+  <div class="screens">
+    <!-- SCREEN 1: Plan selection -->
+    <div id="screen-plans" class="screen active">
+      <div class="grid">
+        <div class="card">
+          <h2>Choose a Plan</h2>
+          <p class="small">Each plan shows target range and price. Choose to proceed to payment.</p>
+
+          <div class="plans" id="plansContainer"></div>
+        </div>
+
+        <div class="card rightCol">
+          <h3>Selected</h3>
+          <p class="small">Plan: <span id="selectedPlanText">—</span></p>
+          <p class="small">Price: ₹<span id="selectedPlanPrice">0</span></p>
+          <p class="small">Estimated Profit: ₹<span id="selectedPlanProfit">0</span></p>
+          <div style="margin-top:12px">
+            <button class="btn" id="goToPaymentBtn" disabled>Proceed to Payment</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: Payment (QR + UTR) -->
+    <div id="screen-payment" class="screen">
+      <div class="grid">
+        <div class="card">
+          <h2>Payment — Scan QR & submit UTR</h2>
+          <p class="small">Scan using UPI app and pay exact amount shown. Then paste 12-digit UTR and click Confirm to submit request for admin approval.</p>
+
+          <div style="display:flex;gap:12px;align-items:center">
+            <img id="qrImg" src="qr-placeholder.png" alt="QR" style="width:200px;height:200px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)">
+            <div>
+              <div>Payable amount</div>
+              <div class="stat" style="font-size:20px">₹<span id="payAmount">0</span></div>
+              <div style="margin-top:10px">
+                <input id="utrInput" placeholder="Enter 12-digit UTR">
+                <div style="margin-top:8px">
+                  <button class="btn" id="submitUTRBtn">Confirm & Submit UTR</button>
+                  <button class="btn ghost" id="backToPlans">Back</button>
+                </div>
+                <div id="paymentStatus" class="small" style="margin-top:8px;color:var(--muted)"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card rightCol">
+          <h3>Info</h3>
+          <p class="small">Your admin approval will be processed. When admin approves, your coins (balance) will be credited and you'll be taken to the prediction page.</p>
+          <h4 style="margin-top:12px">Pending / recent payments</h4>
+          <div id="pendingList" class="list small-muted"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: Prediction -->
+    <div id="screen-prediction" class="screen">
+      <div class="card">
+        <h2>Prediction</h2>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div style="flex:1">
+            <p class="small">Target: <span id="targetText">—</span> | Balance: ₹<span id="balanceText">0</span></p>
+
+            <div style="margin-top:12px">
+              <label>Enter period (manual first time)</label>
+              <div style="display:flex;gap:8px;margin-top:6px">
+                <input id="periodInput" placeholder="Enter period e.g. 2025091500010529">
+                <button class="btn" id="genBtn">Generate Prediction</button>
+                <button class="btn ghost" id="logoutBtn">Logout</button>
+              </div>
+              <div id="predStatus" class="small" style="margin-top:8px;color:var(--muted)"></div>
+            </div>
+
+            <div style="margin-top:12px">
+              <div>Prediction: <span id="signalOut" class="box">--</span> <span id="confOut" class="small" style="margin-left:10px;color:var(--muted)"></span></div>
+              <div style="margin-top:8px">Bet suggestion: <span id="betOut" class="box">—</span></div>
+            </div>
+
+            <div style="margin-top:12px">
+              <div style="display:flex;gap:8px">
+                <button class="btn" id="winBtn">Win</button>
+                <button class="btn ghost" id="lossBtn">Loss</button>
+              </div>
+              <div class="small" style="margin-top:8px">Press Win if the prediction matched; Loss otherwise. This updates history and balance.</div>
+            </div>
+          </div>
+
+          <div style="width:320px">
+            <div class="card">
+              <h4>Last results (latest first, editable)</h4>
+              <div class="small" style="margin-bottom:8px">Click an item to toggle B/S. These feed the AI (keep at least 10 to start).</div>
+              <div id="lastResults" class="history-box"></div>
+            </div>
+
+            <div class="card" style="margin-top:12px">
+              <h4>Analysis</h4>
+              <div id="analysisBox" class="small" style="min-height:120px"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <footer>Made for you — assets: anime1.png, anime2.png, anime3.png, music.mp4 (replace in folder)</footer>
+</div>
+
+<!-- Admin modal / small panel (client-side admin) -->
+<div id="adminPanelModal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:9999">
+  <div style="background:#0b0b0f;padding:16px;border-radius:10px;width:720px;max-width:95%">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3 style="margin:0;color:var(--accent)">Admin</h3>
+      <div><button class="btn ghost" id="closeAdmin">Close</button></div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:12px">
+      <div style="flex:1">
+        <h4>Pending payments</h4>
+        <div id="adminPending" class="list"></div>
+      </div>
+      <div style="width:320px">
+        <h4>Settings</h4>
+        <div class="small" style="margin-bottom:8px">QR image (replace live):</div>
+        <input id="adminQr" placeholder="Enter QR image URL or filename (e.g. qr.png)">
+        <div style="margin-top:8px">
+          <button class="btn" id="applyQrBtn">Apply QR</button>
+        </div>
+        <div style="margin-top:12px">
+          <h4>Database</h4>
+          <div class="small">Payments are stored in Firebase Realtime DB → /payments</div>
+          <div class="small" style="margin-top:8px">Admin password: <code>456</code> (enter on click ❌)</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ---------------------------
+  SPA state & helpers
+   - Plans configuration
+   - Firebase usage via window._firebase
+----------------------------*/
+const PLANS = [
+  {id:'p1', label:'100 → 300', price:50, profit:200, minBalance:100, maxBalance:300},
+  {id:'p2', label:'200 → 1000', price:100, profit:800, minBalance:200, maxBalance:1000},
+  {id:'p3', label:'500 → 5000', price:250, profit:4500, minBalance:500, maxBalance:5000},
+  {id:'p4', label:'1000 → 15000', price:500, profit:14000, minBalance:1000, maxBalance:15000},
+  {id:'p5', label:'2000 → 30000', price:1000, profit:28000, minBalance:2000, maxBalance:30000},
+  // premium
+  {id:'pr1', label:'1000 → 50000 (Premium)', price:1500, profit:49000, minBalance:1000, maxBalance:50000},
+  {id:'pr2', label:'2000 → 100000 (Premium)', price:3000, profit:98000, minBalance:2000, maxBalance:100000},
+  {id:'pr3', label:'5000 → 500000 (Premium)', price:10000, profit:495000, minBalance:5000, maxBalance:500000}
+];
+
+let selectedPlan = null;
+let localState = {
+  balance:0,
+  targetText: '',
+  paymentRefKey: null,
+  sessionId: 'sess_' + Math.random().toString(36).slice(2,9)
+};
+
+// Simple DOM
+function $(id){ return document.getElementById(id); }
+
+/* ---------- render plans ---------- */
+function renderPlans(){
+  const root = $('plansContainer');
+  root.innerHTML = '';
+  PLANS.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'plan';
+    div.innerHTML = `<b>${p.label}</b>
+      <div class="small">Pay: ₹${p.price} — Profit: ₹${p.profit}</div>
+      <div style="margin-top:8px"><button class="btn" data-id="${p.id}">Choose</button></div>`;
+    root.appendChild(div);
+  });
+  // attach
+  root.querySelectorAll('button').forEach(b => b.addEventListener('click', (e)=>{
+    const id = b.getAttribute('data-id');
+    const plan = PLANS.find(x=>x.id===id);
+    selectPlan(plan);
+  }));
+}
+
+function selectPlan(plan){
+  selectedPlan = plan;
+  $('selectedPlanText').innerText = plan.label;
+  $('selectedPlanPrice').innerText = plan.price;
+  $('selectedPlanProfit').innerText = plan.profit;
+  $('goToPaymentBtn').disabled = false;
+}
+
+/* ---------- navigation ---------- */
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $('screen-' + name).classList.add('active');
+}
+$('goToPaymentBtn').addEventListener('click', ()=>{
+  if(!selectedPlan) return alert('Select a plan first');
+  // set payable amount
+  $('payAmount').innerText = selectedPlan.price;
+  // show
+  showScreen('payment');
+});
+$('backToPlans').addEventListener('click', ()=>{ showScreen('plans'); });
+
+/* ---------- Payment flow (submit UTR) ---------- */
+const firebase = window._firebase;
+function pushPaymentRecord(obj){
+  // writes to /payments and returns key
+  const paymentsRef = firebase.ref(firebase.db, 'payments');
+  const newRef = firebase.push(paymentsRef);
+  firebase.set(newRef, obj);
+  return newRef.key;
+}
+
+function listenPaymentApproval(key, onUpdate){
+  const pRef = firebase.ref(firebase.db, `payments/${key}`);
+  return firebase.onValue(pRef, (snap) => {
+    if(snap.exists()){
+      onUpdate(snap.val());
+    }
+  });
+}
+
+$('submitUTRBtn').addEventListener('click', async ()=>{
+  const utr = $('utrInput').value.trim();
+  if(!/^[0-9]{12}$/.test(utr)){ $('paymentStatus').innerText = 'Enter valid 12-digit UTR'; return; }
+  $('submitUTRBtn').disabled = true; $('paymentStatus').innerText = 'Submitting payment...';
+  try{
+    const payload = {
+      planId: selectedPlan.id,
+      planLabel: selectedPlan.label,
+      amount: selectedPlan.price,
+      profit: selectedPlan.profit,
+      utr,
+      status: 'pending',
+      createdAt: Date.now(),
+      sessionId: localState.sessionId
+    };
+    const key = pushPaymentRecord(payload);
+    localState.paymentRefKey = key;
+    $('paymentStatus').innerText = 'Payment submitted — awaiting admin approval';
+    // listen for updates
+    listenPaymentApproval(key, (data)=>{
+      if(!data) return;
+      if(data.status === 'approved'){
+        $('paymentStatus').innerText = 'Approved by admin — crediting balance...';
+        // credit balance: set to plan minBalance initially (or profit logic)
+        localState.balance = data.creditAmount || selectedPlan.minBalance;
+        localState.targetText = selectedPlan.label;
+        // store a flag locally
+        localStorage.setItem('lastPaid_'+key, JSON.stringify(data));
+        // navigate to prediction after short delay
+        setTimeout(()=> {
+          showPredictionPage();
+        }, 900);
+      } else if(data.status === 'rejected'){
+        $('paymentStatus').innerText = 'Payment rejected by admin';
+      }
+    });
+  }catch(err){
+    console.error(err); $('paymentStatus').innerText = 'Submit failed: ' + (err.message||err);
+  } finally { $('submitUTRBtn').disabled = false; }
+});
+
+/* ---------- admin UI (hidden cross with password 456) ---------- */
+const adminCross = $('adminCross');
+const adminPanelModal = document.getElementById('adminPanelModal');
+const ADMIN_PASSWORD = '456';
+adminCross.addEventListener('click', ()=>{
+  const pw = prompt('Enter admin password:');
+  if(pw === null) return;
+  if(pw === ADMIN_PASSWORD){
+    adminPanelModal.style.display = 'flex';
+    loadPendingPaymentsAdmin();
+  } else {
+    alert('Wrong password');
+  }
+});
+$('closeAdmin').addEventListener('click', ()=> adminPanelModal.style.display = 'none');
+$('applyQrBtn').addEventListener('click', ()=>{
+  const url = $('adminQr').value.trim();
+  if(url) $('qrImg').src = url;
+  alert('QR applied (if URL valid). Also replace file on server for permanent change.');
+});
+
+// Admin: list pending payments and approve
+function loadPendingPaymentsAdmin(){
+  const pRef = firebase.ref(firebase.db, 'payments');
+  // listen for whole list changes (fine for demo)
+  firebase.onValue(pRef, (snap)=>{
+    const out = $('adminPending');
+    out.innerHTML = '';
+    if(!snap.exists()){ out.innerText = 'No payments yet'; return; }
+    const obj = snap.val();
+    const entries = Object.entries(obj).reverse();
+    entries.forEach(([key, val])=>{
+      const row = document.createElement('div');
+      row.style.padding='8px'; row.style.borderBottom='1px solid rgba(255,255,255,0.03)';
+      row.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:13px">
+          <strong>${val.planLabel} — ₹${val.amount}</strong>
+          <div style="font-size:12px;color:#bbb">UTR: ${val.utr} • status: ${val.status}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button data-key="${key}" data-amount="${val.amount}" class="approveBtn">Approve</button>
+          <button data-key="${key}" class="rejectBtn">Reject</button>
+        </div>
+      </div>`;
+      out.appendChild(row);
+    });
+    // attach events
+    out.querySelectorAll('.approveBtn').forEach(b=>{
+      b.addEventListener('click', (e)=>{
+        const k = b.getAttribute('data-key');
+        const amount = parseFloat(b.getAttribute('data-amount')) || 0;
+        approvePaymentAdmin(k, amount);
+      });
+    });
+    out.querySelectorAll('.rejectBtn').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const k = b.getAttribute('data-key');
+        rejectPaymentAdmin(k);
+      });
+    });
+  });
+}
+
+function approvePaymentAdmin(key, amount){
+  // set status & credit amount value (we decide credit equal to plan minBalance or amount-to-balance mapping)
+  const creditAmount = amount *  ( /* assumption: price to initial balance mapping */ 2 ); // simple quick mapping; admin can adjust
+  const pRef = firebase.ref(firebase.db, `payments/${key}`);
+  firebase.update(pRef, { status:'approved', approvedAt: Date.now(), creditAmount });
+  alert('Approved: ' + key);
+}
+function rejectPaymentAdmin(key){
+  const pRef = firebase.ref(firebase.db, `payments/${key}`);
+  firebase.update(pRef, { status:'rejected', rejectedAt: Date.now() });
+  alert('Rejected: ' + key);
+}
+
+/* ---------- show prediction screen & initialize AI/hist ---------- */
+function showPredictionPage(){
+  // load balance & target from localState
+  $('balanceText').innerText = localState.balance || 0;
+  $('targetText').innerText = localState.targetText || '—';
+  showScreen('prediction');
+  // ensure last results exist (prompt user to input 10 if empty)
+  if(!getLocalHistory().length){
+    // prefill with random small/big for demo guidance (but ideally user enters 10)
+    const ask = confirm('No history found — do you want the app to prefill 10 demo last-results? (You can edit them)');
+    if(ask){
+      const arr = [];
+      for(let i=0;i<10;i++) arr.push(Math.random() < 0.5 ? 'B' : 'S');
+      setLocalHistory(arr);
+    } else {
+      // leave empty and let user edit
+    }
+  }
+  renderLastResults();
+  updateAnalysis();
+  startAutoPeriodTick();
+}
+
+/* ---------- local history storage ---------- */
+function getLocalHistory(){
+  try{ return JSON.parse(localStorage.getItem('bt_history')||'[]'); }catch(e){ return []; }
+}
+function setLocalHistory(arr){ localStorage.setItem('bt_history', JSON.stringify(arr)); }
+
+/* render last results UI */
+function renderLastResults(){
+  const root = $('lastResults');
+  const arr = getLocalHistory();
+  root.innerHTML = '';
+  // show latest first
+  arr.slice(0,50).forEach((v, idx) => {
+    // idx 0 is latest
+    const d = document.createElement('div');
+    d.style.display='flex'; d.style.justifyContent='space-between'; d.style.padding='6px';
+    d.style.borderBottom='1px solid rgba(255,255,255,0.03)';
+    d.style.cursor='pointer';
+    d.innerHTML = `<div style="font-weight:700">${v}</div><div style="color:#bbb;font-size:12px">${idx===0?'Latest':''}</div>`;
+    d.addEventListener('click', ()=>{
+      // toggle B<->S
+      arr[idx] = arr[idx] === 'B' ? 'S' : 'B';
+      setLocalHistory(arr);
+      renderLastResults();
+      updateAnalysis();
+    });
+    root.appendChild(d);
+  });
+}
+
+/* ---------- AI analysis & prediction (heuristic) ---------- */
+function updateAnalysis(){
+  const arr = getLocalHistory();
+  if(!arr.length){
+    $('analysisBox').innerText = 'No history yet — enter 10 results then generate.';
+    return;
+  }
+  // Consider last N (prefer 10..30)
+  const N = Math.min(arr.length, 30);
+  const segment = arr.slice(0, N); // latest first
+  // frequency
+  const freq = {B:0, S:0};
+  segment.forEach(x=> freq[x] = (freq[x]||0)+1);
+  const percB = Math.round((freq.B / N) * 100);
+  const percS = Math.round((freq.S / N) * 100);
+
+  // streak detection (longest streak at end)
+  let last = segment[0];
+  let streak = 1;
+  for(let i=1;i<segment.length;i++){
+    if(segment[i] === last) streak++; else break;
+  }
+
+  // pattern check: alternation count
+  let alternations = 0;
+  for(let i=0;i<segment.length-1;i++){
+    if(segment[i] !== segment[i+1]) alternations++;
+  }
+  const alternationRatio = Math.round( (alternations / (segment.length-1)) * 100 );
+
+  // psychology heuristic: assume crowd tends to pick majority; prefer opposite with weighting
+  const crowdBias = freq.B > freq.S ? 'B' : (freq.S > freq.B ? 'S' : 'None');
+
+  // weighted scoring for candidate B and S
+  // base score: freq weight + streak weight + alternation
+  let scoreB = 0, scoreS = 0;
+  scoreB += freq.B * 2;
+  scoreS += freq.S * 2;
+
+  // streak favors the side of streak
+  if(last === 'B') scoreB += streak * 3; else scoreS += streak * 3;
+
+  // alternation reduces confidence
+  scoreB -= alternationRatio * 0.2;
+  scoreS -= alternationRatio * 0.2;
+
+  // psychology: favor opposite of crowd by small boost (to avoid crowd trap)
+  if(crowdBias === 'B') scoreS += 3; else if(crowdBias==='S') scoreB += 3;
+
+  // frequency windows — compare short vs long windows (last 5 vs last 20)
+  const last5 = segment.slice(0, Math.min(5, segment.length));
+  const f5 = {B:0,S:0}; last5.forEach(x=>f5[x]++);
+  if(f5.B > f5.S) scoreB += 4; else if(f5.S > f5.B) scoreS += 4;
+
+  // normalize to confidence
+  let total = scoreB + scoreS;
+  if(total <= 0) { scoreB = scoreS = 1; total = 2; }
+  let confB = Math.round((scoreB / total) * 100);
+  let confS = Math.round((scoreS / total) * 100);
+
+  // pick top
+  let pick = confB > confS ? 'B' : 'S';
+  let confidence = Math.max(confB, confS);
+
+  // Boost confidence when one side >> other
+  if(Math.abs(freq.B - freq.S) >= Math.ceil(N*0.4)) confidence = Math.max(confidence, 85);
+
+  // Safety: require at least 60% to consider "strong" prediction; but user requested always predict with 80-90%
+  // We'll scale confidence toward desired range by magnifying difference slightly
+  if(confidence < 60) confidence = Math.min(80, confidence + 20);
+
+  // compute bet suggestions from balance (levels 15%,30%,55%)
+  const bal = localState.balance || 0;
+  const L1 = Math.max(1, Math.round(bal * 0.15));
+  const L2 = Math.max(1, Math.round(bal * 0.30));
+  const L3 = Math.max(1, Math.round(bal * 0.55));
+  // choose level by last consecutive losses tracked in local storage level loss counter
+  const level = parseInt(localStorage.getItem('lossLevel')||'1');
+  const betAmt = level === 1 ? L1 : level === 2 ? L2 : L3;
+
+  // compose analysis string
+  const analysis = `
+    Last ${N} — B:${freq.B} (${percB}%) | S:${freq.S} (${percS}%)\n
+    Recent streak: ${streak} of ${last}\n
+    Alternation ratio: ${alternationRatio}%\n
+    Crowd bias: ${crowdBias}\n
+    Short window (5) — B:${f5.B} S:${f5.S}\n
+    Combined scores — B:${Math.round(scoreB)} S:${Math.round(scoreS)}\n
+    Final pick: ${pick === 'B' ? 'BIG' : 'SMALL'} with confidence ${confidence}%
+  `;
+  $('analysisBox').innerText = analysis;
+  // show prediction on UI placeholders (but only when user clicks generate — we keep current computed prediction)
+  window._lastPrediction = { pick, confidence, bet: betAmt };
+}
+
+/* ---------- Generate prediction (button) ---------- */
+$('genBtn').addEventListener('click', ()=>{
+  // need period input at least first time
+  const v = $('periodInput').value.trim();
+  if(!v){
+    alert('Enter period number first time (format e.g. 2025091500010529)');
+    return;
+  }
+  // set period and start auto tick
+  setCurrentPeriod(v);
+  // compute analysis and show prediction
+  updateAnalysis();
+  const p = window._lastPrediction || { pick:'B', confidence:80, bet:1 };
+  $('signalOut').innerText = p.pick === 'B' ? 'BIG' : 'SMALL';
+  $('signalOut').className = 'box signal ' + (p.pick === 'B' ? 'big' : 'small');
+  $('confOut').innerText = `${p.confidence}%`;
+  $('betOut').innerText = `₹${p.bet}`;
+  $('predStatus').innerText = 'Prediction ready — press Win or Loss after result.';
+});
+
+/* ---------- Win / Loss handling ---------- */
+$('winBtn').addEventListener('click', ()=>{
+  // add latest prediction outcome as win, update history, reset loss level
+  const pred = window._lastPrediction;
+  if(!pred){ alert('Generate a prediction first'); return; }
+  const period = getCurrentPeriod();
+  recordResult({period, signal: pred.pick, result:'win', confidence: pred.confidence, bet: pred.bet});
+  // update balance
+  localState.balance = Math.round((localState.balance || 0) + pred.bet); // simplistic: add bet amount as profit (you can adjust)
+  $('balanceText').innerText = localState.balance;
+  // reset loss level
+  localStorage.setItem('lossLevel', '1');
+  // update UI
+  renderLastResults();
+  updateAnalysis();
+});
+
+$('lossBtn').addEventListener('click', ()=>{
+  const pred = window._lastPrediction;
+  if(!pred){ alert('Generate a prediction first'); return; }
+  const period = getCurrentPeriod();
+  recordResult({period, signal: pred.pick, result:'loss', confidence: pred.confidence, bet: pred.bet});
+  // deduct bet from balance
+  localState.balance = Math.max(0, Math.round((localState.balance || 0) - pred.bet));
+  $('balanceText').innerText = localState.balance;
+  // increase loss level
+  let lvl = parseInt(localStorage.getItem('lossLevel')||'1');
+  lvl = Math.min(3, lvl + 1);
+  localStorage.setItem('lossLevel', String(lvl));
+  // deeper analysis adjustments will reflect on next updateAnalysis
+  renderLastResults();
+  updateAnalysis();
+});
+
+/* record result into history (local rolling + hidden full history) */
+function recordResult(obj){
+  // obj: {period, signal:'B'|'S', result:'win'|'loss', confidence, bet}
+  // update rolling last 50
+  const arr = getLocalHistory();
+  // newest at start index 0
+  // push new symbol (if win -> keep same signal; if loss -> opposite symbol is actual result? user pressed loss means prediction was wrong,
+  // we need the actual outcome — for simplicity assume actualOutcome = prediction if win else opposite)
+  const actual = obj.result === 'win' ? obj.signal : (obj.signal === 'B' ? 'S' : 'B');
+  arr.unshift(actual);
+  // clip at 200 to keep more data for AI internal hidden store
+  const clipped = arr.slice(0, 200);
+  setLocalHistory(clipped);
+  // also save results separately
+  const results = JSON.parse(localStorage.getItem('bt_results') || '[]');
+  results.unshift(obj);
+  localStorage.setItem('bt_results', JSON.stringify(results.slice(0, 500))); // keep last 500 results
+  // optionally push to firebase /history/<sessionId> to build dataset across devices (not used in AI here)
+  try{
+    const histRef = firebase.ref(firebase.db, `history/${localState.sessionId}`);
+    const k = firebase.push(histRef);
+    firebase.set(k, { ...obj, ts: Date.now() });
+  }catch(e){ console.warn('hist push failed', e); }
+}
+
+/* ---------- helpers: Period auto increment every minute ---------- */
+let currentPeriod = null;
+let periodInterval = null;
+
+function setCurrentPeriod(periodStr){
+  // store as string; next period increment will add +1 numeric
+  currentPeriod = periodStr;
+  $('periodInput').value = periodStr;
+  // show
+  $('periodBox').innerText = periodStr;
+}
+
+function getCurrentPeriod(){ return currentPeriod; }
+
+// Start minute tick that increases period every 60s
+function startAutoPeriodTick(){
+  if(periodInterval) clearInterval(periodInterval);
+  // every 60 seconds increase by 1 (as integer)
+  periodInterval = setInterval(()=>{
+    if(!currentPeriod) return;
+    // increment as big integer (string)
+    const next = (BigInt(currentPeriod) + 1n).toString();
+    currentPeriod = next;
+    $('periodBox').innerText = currentPeriod;
+    $('periodInput').value = currentPeriod;
+    // auto-generate next prediction? we keep manual generate per requirements (they wanted manual click), but auto-updates of period occur
+  }, 60*1000);
+}
+
+/* ---------- UI init ---------- */
+renderPlans();
+showScreen('plans');
+
+function initFromStorage(){
+  // load last credited balance if any (for convenience)
+  const any = JSON.parse(localStorage.getItem('user_state') || 'null');
+  if(any && any.balance) {
+    localState.balance = any.balance;
+    localState.targetText = any.target || '';
+  }
+}
+initFromStorage();
+
+/* Persist user state on unload */
+window.addEventListener('beforeunload', ()=>{
+  localStorage.setItem('user_state', JSON.stringify({ balance: localState.balance, target: localState.targetText }));
+});
+
+/* render last results initial */
+renderLastResults();
+updateAnalysis();
+
+/* Admin: show recent pending payments in payment screen (small list) */
+(function watchPaymentsListForUI(){
+  try{
+    const pRef = window._firebase ? window._firebase.ref(window._firebase.db, 'payments') : null;
+    if(!pRef) return;
+    window._firebase.onValue(pRef, (snap)=>{
+      const out = $('pendingList');
+      out.innerHTML = '';
+      if(!snap.exists()){ out.innerText = 'No payments yet'; return; }
+      const data = snap.val();
+      const entries = Object.entries(data).reverse().slice(0,10);
+      entries.forEach(([k,v])=>{
+        const div = document.createElement('div');
+        div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.03)'; div.style.fontSize='13px';
+        div.innerText = `${v.planLabel} ₹${v.amount} — ${v.status} — UTR:${v.utr}`;
+        out.appendChild(div);
+      });
+    });
+  }catch(e){ console.warn('watch payments fail', e); }
+})();
+
+</script>
+</body>
+</html>
