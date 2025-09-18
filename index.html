@@ -1,710 +1,727 @@
 <!doctype html>
-<html lang="en">
+<html lang="hi">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Coin Predictions — App</title>
-
-<!-- particles -->
-<script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
-
+<title>Baba Tillu Pro Version — Prediction Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --neon:#00ff9d; --accent:#1dd3ff; --muted:#9fb0d6; --panel:rgba(255,255,255,0.03);
-  }
-  *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
-  body{margin:0;color:#eaf6ff;min-height:100vh;background:#07121a}
-  #tsparticles{position:fixed;inset:0;z-index:0;pointer-events:none}
-  .page{display:none;min-height:100vh;padding:28px;background-position:center;background-size:cover;background-repeat:no-repeat}
-  .show{display:block}
-  .wrap{max-width:1100px;margin:0 auto;position:relative;z-index:2}
-  .card{background:var(--panel);backdrop-filter:blur(6px);padding:18px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.6);margin-bottom:16px}
-  .top{display:flex;justify-content:space-between;align-items:center}
-  .btn{background:linear-gradient(90deg,var(--neon),var(--accent));color:#001;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
-  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px;border-radius:8px}
-  .small{font-size:13px;color:var(--muted)}
-  .plan{padding:12px;border-radius:10px;background:linear-gradient(180deg,#071425,#08172b);cursor:pointer;border:1px solid rgba(255,255,255,0.03)}
-  .grid{display:grid;grid-template-columns:1fr 340px;gap:18px}
-  input,select,textarea{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;width:100%}
-  table{width:100%;border-collapse:collapse;margin-top:12px}
-  th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.06);text-align:center}
-  .tag{padding:4px 8px;border-radius:6px;font-weight:700}
-  .big{background:#1dd3ff22;color:#1dd3ff}
-  .smalltag{background:#00ff9d22;color:#00ff9d}
-  .win{background:#00ff9d33;color:#002}
-  .loss{background:#ff4d4d33;color:#7a0000}
-  footer{color:var(--muted);text-align:center;margin-top:12px;font-size:13px}
-  audio{display:none}
-  @media (max-width:920px){ .grid{grid-template-columns:1fr} }
-
-/* Prediction popup animation */
-#predictionPopup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.2);
-  font-size: 40px;
-  font-weight: 900;
-  padding: 20px 40px;
-  border-radius: 12px;
-  opacity: 0;
-  z-index: 9999;
-  transition: all 0.5s ease-out;
+:root{
+  --bg:#060612;
+  --card: rgba(18,20,32,0.88);
+  --accent:#00d4c4;
+  --accent2:#6b5cff;
+  --muted:#9aa6d1;
+  --good:#18c964;
+  --bad:#ff4d4d;
+  --glass: rgba(255,255,255,0.03);
 }
-#predictionPopup.show {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
-}
-.bigPopup { background:#1dd3ff33; color:#1dd3ff; }
-.smallPopup { background:#00ff9d33; color:#00ff9d; }
-
+*{box-sizing:border-box;font-family:'Poppins',sans-serif}
+html,body{height:100%;margin:0;background:#051026;color:#eaf3ff}
+.container{max-width:1000px;margin:18px auto;padding:18px}
+.header{display:flex;align-items:center;gap:14px}
+.logo{width:64px;height:64px;border-radius:12px;overflow:hidden;border:2px solid rgba(255,255,255,0.06);background:#111}
+.logo img{width:100%;height:100%;object-fit:cover}
+.title{font-size:20px;font-weight:800;color:var(--accent2)}
+.subtitle{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:1fr 380px;gap:16px;margin-top:14px}
+@media(max-width:900px){ .grid{grid-template-columns:1fr} }
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+.platform-list{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.plat{padding:8px 12px;border-radius:10px;background:var(--glass);cursor:pointer;border:1px solid rgba(255,255,255,0.03)}
+.plat.active{box-shadow:0 8px 24px rgba(0,0,0,0.6);transform:translateY(-4px);border-color:var(--accent)}
+.btn{display:inline-block;padding:10px 14px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#012;font-weight:800;cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+.small{color:var(--muted);font-size:13px}
+.plan-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+@media(max-width:600px){ .plan-grid{grid-template-columns:1fr} }
+.plan{padding:12px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03)}
+.qr{width:220px;height:220px;border-radius:12px;display:block;margin:8px auto;border:2px solid rgba(255,255,255,0.03)}
+.input{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:inherit}
+.row{display:flex;gap:8px;align-items:center}
+.admin-cross{position:fixed;right:14px;bottom:14px;width:44px;height:44px;border-radius:10px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;cursor:pointer;z-index:9999;opacity:0.8}
+.admin-panel{display:none;margin-top:12px}
+.hidden{display:none !important}
+.stat-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.stat{padding:10px;border-radius:10px;background:#07102a;border:1px solid rgba(255,255,255,0.03);min-width:120px}
+.log{background:#071025;border-radius:10px;padding:10px;max-height:220px;overflow:auto;border:1px solid rgba(255,255,255,0.03)}
+.result-pill{display:inline-block;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.02);margin-right:6px}
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);visibility:hidden;opacity:0;transition:all .18s}
+.modal.show{visibility:visible;opacity:1}
+.modal-card{background:#071025;padding:16px;border-radius:10px;min-width:300px}
+footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+.history-list .item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,0.03)}
+.pill{padding:6px 10px;border-radius:999px;background:#08102a;border:1px solid rgba(255,255,255,0.03)}
+.center{text-align:center}
 </style>
 </head>
 <body>
-
-<!-- particles -->
-<div id="tsparticles"></div>
-
-<!-- Page 1: Plans (anime1.png) -->
-<section id="page1" class="page show" style="background-image:url('anime1.png')">
-  <div class="wrap">
-    <div class="top card">
-      <div style="font-weight:900;font-size:18px">Coin Predictions</div>
-      <div class="small">Wallet: <strong id="walletTop1">0</strong> coins</div>
+<div class="container">
+  <div class="header">
+    <div class="logo"><img id="logoImg" src="anime1.png" alt="logo"></div>
+    <div>
+      <div class="title">Baba Tillu — Prediction Portal</div>
+      <div class="subtitle">Choose platform → Choose plan → Scan & pay → Get prediction</div>
     </div>
-
-    <div class="card">
-      <h2 style="margin:0 0 8px 0">Choose a Plan</h2>
-      <div class="small">Min 100 — Max 4000. Rate: <b>2 coins = ₹1</b> (₹0.5 / coin).</div>
-
-      <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap" id="plansList">
-        <!-- injected -->
-      </div>
-
-      <div style="margin-top:12px" class="grid">
-        <div>
-          <label class="small">Or custom (100–4000)</label>
-          <input id="customQty" type="number" min="100" max="4000" value="100">
-          <div style="margin-top:12px">
-            <button id="toPaymentBtn" class="btn">Proceed to Payment</button>
-            <button id="toPredictionBtn" class="ghost">Go to Prediction</button>
-          </div>
-        </div>
-
-        <div>
-          <div class="card" style="padding:14px">
-            <div style="display:flex;align-items:center;gap:12px">
-              <div style="width:64px;height:64px;border-radius:50%;background:#000;display:flex;align-items:center;justify-content:center;font-weight:800;color:#00ff9d">BT</div>
-              <div>
-                <div style="font-weight:700">@BABA_TILLU</div>
-                <div class="small">Premium + secure</div>
-              </div>
-            </div>
-
-            <div style="margin-top:12px">
-              <div class="small">Customer Service</div>
-              <div style="margin-top:8px">
-                <button id="csBtn1" class="btn">Contact on Telegram</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="card" style="margin-top:12px;padding:14px">
-            <div class="small">Quick Links</div>
-            <div style="margin-top:8px;display:flex;gap:8px">
-              <button id="linkPayment" class="ghost">Payment</button>
-              <button id="linkAdmin" class="ghost">Admin</button>
-              <button id="linkPrediction" class="ghost">Prediction</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <footer>Files: <code>anime1.png, anime2.png, anime3.png, music.m4a, qr.png, click.mp3, hover.mp3</code></footer>
+    <div style="margin-left:auto" class="small">Server: <span id="serverStatus">Connecting...</span></div>
   </div>
-</section>
 
-<!-- Page 2: Payment (anime2.png) -->
-<section id="page2" class="page" style="background-image:url('anime2.png')">
-  <div class="wrap">
-    <div class="top card">
-      <div style="font-weight:900;font-size:18px">Payment</div>
-      <div class="small">Wallet: <strong id="walletTop2">0</strong> coins</div>
-    </div>
+  <div class="grid">
+    <!-- left column -->
+    <div>
+      <!-- VIEW: Platforms -->
+      <div id="view-platforms" class="card">
+        <h2>Choose Platform</h2>
+        <div class="small">Pick a platform (for display only).</div>
+        <div id="platforms" class="platform-list"></div>
+        <div style="margin-top:12px">
+          <button class="btn" onclick="goToPlans()">Continue →</button>
+        </div>
+      </div>
 
-    <div class="card grid">
-      <div>
-        <h2 style="margin:0 0 8px 0">Confirm Payment</h2>
-        <div class="small">Scan QR, pay the shown amount. After paying, enter 12-digit UTR and Confirm.</div>
+      <!-- VIEW: Plans -->
+      <div id="view-plans" class="card hidden">
+        <h2>Choose Plan</h2>
+        <div class="small">Select a target range. Price is one-time for this session.</div>
+
+        <div style="margin-top:12px" class="plan-grid" id="plansList"></div>
 
         <div style="margin-top:12px">
-          <label class="small">Selected Coins</label>
-          <input id="payCoins" readonly>
-          <label class="small" style="margin-top:8px">Amount (₹)</label>
-          <input id="payAmount" readonly>
-          <label class="small" style="margin-top:8px">Enter 12-digit UTR</label>
-          <input id="payUTR" maxlength="12" placeholder="123456789012">
-          <div style="margin-top:12px;display:flex;gap:10px">
-            <button id="submitPayBtn" class="btn">Confirm Payment</button>
-            <button id="cancelPayBtn" class="ghost">Cancel</button>
-          </div>
-          <div id="payMsg" class="small" style="margin-top:10px"></div>
+          <button class="btn ghost" onclick="goBackTo('view-platforms')">← Back</button>
         </div>
       </div>
 
-      <div>
-        <div class="card" style="padding:14px">
-          <div class="center">
-            <img id="qrImg" src="qr.png" alt="QR" style="max-width:260px;border-radius:10px">
-            <div class="small" style="margin-top:10px">Scan to pay (UPI)</div>
+      <!-- VIEW: Payment -->
+      <div id="view-payment" class="card hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <h2>Scan & Pay</h2>
+            <div class="small">Pay using UPI. After payment, enter the 12-digit UTR and submit. Admin will approve.</div>
           </div>
-
-          <div style="margin-top:12px">
-            <div class="small">Customer Service</div>
-            <div style="margin-top:8px">
-              <button id="csBtn2" class="btn">Contact on Telegram</button>
-            </div>
-            <div style="margin-top:10px" class="small">After processing, coins will be credited automatically (10s).</div>
-          </div>
+          <div class="pill">Plan: <span id="chosenPlanLabel">—</span></div>
         </div>
-      </div>
-    </div>
 
-  </div>
-</section>
+        <div class="center" style="margin-top:10px">
+          <img id="qrImg" class="qr" alt="QR">
+          <div class="small" style="margin-top:6px">UPI ID: <b id="upiId">perfect.k@ptaxis</b></div>
+        </div>
 
-<!-- Page 3: Prediction (anime3.png) -->
-<section id="page3" class="page" style="background-image:url('anime3.png')">
-  <div class="wrap">
-    <div class="top card">
-      <div style="font-weight:900;font-size:18px">Live Prediction</div>
-      <div class="small">Wallet: <strong id="walletTop3">0</strong> coins</div>
-    </div>
+        <div style="margin-top:12px">
+          <div class="small">Payable amount:</div>
+          <div style="font-weight:800;font-size:1.2rem;margin-top:6px">₹ <span id="payAmount">0</span></div>
+        </div>
 
-    <div class="card center">
-      <div style="font-weight:800;font-size:20px">Server Connected ✅</div>
-      <div class="small">Real-time period (admin-controlled)</div>
-    </div>
-
-    <div class="card center">
-      <div style="margin-bottom:8px"><strong>Period:</strong> <span id="periodDisplay">--</span></div>
-      <div><strong>Countdown:</strong> <span id="countdownDisplay">--</span></div>
-      <div style="margin-top:12px">
-        <button id="genPredBtn" class="btn">Generate Prediction (10 coins)</button>
-      </div>
-      <div id="lastPred" style="margin-top:12px" class="small"></div>
-    </div>
-
-    <div class="card">
-      <table>
-        <thead><tr><th>Period</th><th>Signal</th><th>Result</th><th>Action</th></tr></thead>
-        <tbody id="predHistory"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- background music -->
-  <audio id="bgMusic" src="music.m4a" loop></audio>
-</section>
-
-<!-- Page Admin (anime3.png) -->
-<section id="pageAdmin" class="page" style="background-image:url('anime3.png')">
-  <div class="wrap">
-    <div class="top card">
-      <div style="font-weight:900;font-size:18px">Admin Panel</div>
-      <div class="small">Control current period</div>
-    </div>
-
-    <div class="card center">
-      <div id="adminLoginBox">
-        <div class="small">Enter admin password to unlock</div>
-        <input id="adminPass" placeholder="Password" style="margin-top:8px">
         <div style="margin-top:8px">
-          <button id="adminUnlockBtn" class="btn">Unlock</button>
+          <input id="utrInput" class="input" maxlength="12" placeholder="Enter 12-digit UTR after payment">
         </div>
-        <div id="adminErr" class="small" style="color:#ff7b7b;margin-top:8px;display:none">Wrong password</div>
+        <div style="margin-top:8px">
+          <button class="btn" onclick="submitUTR()">Submit UTR & Wait for Approval</button>
+          <button class="btn ghost" onclick="goBackTo('view-plans')">← Back</button>
+        </div>
+
+        <div id="paymentStatus" style="margin-top:10px" class="small"></div>
       </div>
 
-      <div id="adminPanelBox" style="display:none;margin-top:12px;text-align:left">
-        <div>Current Period: <strong id="adminCurPeriod">--</strong></div>
-        <div style="margin-top:10px">
-          <label class="small">Set last 5 digits (00001–99999)</label>
-          <input id="adminLast5" type="number" min="1" max="99999" placeholder="e.g. 12069">
-          <div style="margin-top:8px">
-            <button id="adminSetBtn" class="btn">Set Period</button>
-            <button id="adminStartAuto" class="ghost">Start Auto-Increment</button>
-            <button id="adminStopAuto" class="ghost">Stop Auto-Increment</button>
+      <!-- VIEW: Prediction -->
+      <div id="view-predict" class="card hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <h2>Prediction — AI Advisor</h2>
+            <div class="small">Enter last 10 results (oldest → newest), then Generate. Use Win/Loss/Skip accordingly.</div>
+          </div>
+          <div style="text-align:right">
+            <div class="small">Active Plan:</div>
+            <div style="font-weight:800" id="planActiveLabel">—</div>
+            <div class="small" style="margin-top:4px">Balance: ₹<span id="balanceVal">0</span></div>
           </div>
         </div>
-        <div class="small" style="margin-top:12px">Auto increment increases last 3 digits every 60s (999 → 001).</div>
+
+        <div style="margin-top:12px">
+          <label class="small">Enter last 10 results (B for Big, S for Small):</label>
+          <div id="lastInputs" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"></div>
+          <div style="margin-top:8px">
+            <button class="btn" onclick="saveLastResults()">Save Last Results</button>
+            <button class="btn ghost" onclick="clearLastResults()">Clear</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px" class="two">
+          <div>
+            <label class="small">Enter period (manual):</label>
+            <input id="periodManual" class="input" placeholder="e.g. 20250914100011151">
+            <div class="small" style="margin-top:8px">Auto-increment next period each minute? <label><input id="autoPeriod" type="checkbox"> Auto</label></div>
+          </div>
+          <div>
+            <label class="small">Confidence & Bet suggestion</label>
+            <div class="stat-row">
+              <div class="stat"><div class="small">Prediction</div><div id="predLabel" style="font-weight:800">--</div></div>
+              <div class="stat"><div class="small">Confidence</div><div id="confLabel" style="font-weight:800">--</div></div>
+              <div class="stat"><div class="small">Suggested Bet</div><div id="betLabel" style="font-weight:800">--</div></div>
+            </div>
+            <div style="margin-top:10px">
+              <button class="btn" onclick="generatePrediction()">Generate</button>
+              <button class="btn ghost" onclick="doSkip()">Skip</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="small">Live:</div>
+          <div id="liveBox" class="small">Manual generate only — Auto disabled</div>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+          <button class="btn" onclick="markResult('win')">Win</button>
+          <button class="btn ghost" onclick="markResult('loss')">Loss</button>
+          <button class="btn ghost" onclick="markResult('skip')">Skip</button>
+          <div style="margin-left:auto;text-align:right" class="small">
+            <div id="statsText">Wins: 0 • Losses: 0 • Accuracy: 0%</div>
+            <div id="lastCount" class="small" style="margin-top:6px">(Last 0)</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div style="font-weight:700;margin-bottom:6px">Last results (latest first)</div>
+          <div id="resultsList" class="log"></div>
+        </div>
+
+        <div style="margin-top:12px">
+          <button class="btn ghost" onclick="endSession()">End Session & Back</button>
+        </div>
       </div>
+
     </div>
 
+    <!-- right column -->
+    <div>
+      <div class="card">
+        <h3>Quick Stats</h3>
+        <div class="stat-row">
+          <div class="stat"><div class="small">Wins</div><div id="statWins" class="value">0</div></div>
+          <div class="stat"><div class="small">Losses</div><div id="statLosses" class="value">0</div></div>
+          <div class="stat"><div class="small">Accuracy</div><div id="statAcc" class="value">0%</div></div>
+        </div>
+
+        <div style="margin-top:12px" id="sessionInfo">
+          <div class="small">No active session.</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3 class="small">Admin (hidden)</h3>
+        <div class="small">Hidden admin cross is at bottom-right. Click it and enter admin password to open admin panel. (Password: <b>456</b>)</div>
+
+        <div id="adminPanel" class="admin-panel">
+          <h4 style="margin-top:10px">Admin — UTR Approvals</h4>
+          <div id="pendingList" style="max-height:220px;overflow:auto;border-radius:8px;padding:8px;background:#051026;margin-top:8px"></div>
+          <div style="margin-top:8px">
+            <button class="btn ghost" onclick="closeAdmin()">Close Admin</button>
+          </div>
+
+          <hr style="margin:12px 0;border:0;border-top:1px solid rgba(255,255,255,0.03)">
+
+          <h4>Assets</h4>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="bgSelect" class="input">
+              <option value="anime1.png">anime1.png</option>
+              <option value="anime2.png">anime2.png</option>
+              <option value="anime3.png">anime3.png</option>
+            </select>
+            <button class="btn" onclick="applyBackground()">Apply</button>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+            <input id="musicFile" class="input" placeholder="music.m4a" value="music.m4a">
+            <button class="btn" onclick="applyMusic()">Apply Music</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </div>
-</section>
 
-<!-- UI audio -->
-<audio id="sndClick" src="click.mp3"></audio>
-<audio id="sndHover" src="hover.mp3"></audio>
+  <footer>Made for you — Background files: <code>anime1.png</code>, <code>anime2.png</code>, <code>anime3.png</code></footer>
+</div>
 
+<div class="admin-cross" id="adminCross">❌</div>
+
+<!-- audio -->
+<audio id="bgAudio" src="music.m4a" loop preload="auto"></audio>
+
+<!-- modal -->
+<div id="modal" class="modal"><div class="modal-card"><div id="modalTitle" style="font-weight:800;color:var(--accent2)"></div><div id="modalSub" class="small" style="margin-top:8px"></div><div style="margin-top:12px;text-align:right"><button class="btn" onclick="closeModal()">OK</button></div></div></div>
+
+<!-- Firebase SDK (modular v9) -->
 <script type="module">
-/* =========================
-   Firebase imports & init
-   ========================= */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import {
-  getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc,
-  serverTimestamp, updateDoc, runTransaction, query, where, orderBy
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+  // --- FIREBASE CONFIG: use your config here (you provided) ---
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getDatabase, ref, push, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
-  authDomain: "terminal-xxrr.firebaseapp.com",
-  databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "terminal-xxrr",
-  storageBucket: "terminal-xxrr.appspot.com",
-  messagingSenderId: "722753278120",
-  appId: "1:722753278120:web:bfa37aab39635a4e57f29d",
-  measurementId: "G-E3MZH3E1K5"
-};
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-/* =========================
-   Particles + sounds init
-   ========================= */
-tsParticles.load("tsparticles", {
-  fpsLimit: 60,
-  particles: {
-    number: { value: 40 },
-    color: { value: "#00ff9d" },
-    shape: { type: "circle" },
-    opacity: { value: 0.8, random: true },
-    size: { value: { min: 1, max: 4 } },
-    links: { enable: true, distance: 140, color: "#00ff9d", opacity: 0.12, width: 1 },
-    move: { enable: true, speed: 0.9 }
-  },
-  detectRetina: true
-});
-const sndClick = document.getElementById('sndClick');
-function playClick(){ try{ sndClick.currentTime=0; sndClick.play(); }catch(e){} }
-
-/* =========================
-   Pages & Navigation
-   ========================= */
-const pages = {
-  page1: document.getElementById('page1'),
-  page2: document.getElementById('page2'),
-  page3: document.getElementById('page3'),
-  pageAdmin: document.getElementById('pageAdmin')
-};
-function show(id){
-  Object.values(pages).forEach(p=>p.classList.remove('show'));
-  if(pages[id]) pages[id].classList.add('show');
-  // music control
-  if(id==='page3'){ try{ document.getElementById('bgMusic').play(); }catch(e){} }
-  else { try{ document.getElementById('bgMusic').pause(); document.getElementById('bgMusic').currentTime = 0 }catch(e){} }
-}
-
-/* attach nav buttons (safe) */
-document.getElementById('toPaymentBtn').addEventListener('click', ()=>{
-  const q = parseInt(document.getElementById('customQty').value||'0',10);
-  if(isNaN(q) || q < 100){ alert('Minimum 100 coins'); return; }
-  if(q > 4000){ alert('Maximum 4000 coins'); return; }
-  localStorage.setItem('pendingPlan', String(q));
-  populatePaymentFromPlan(q);
-  playClick();
-  show('page2');
-});
-document.getElementById('toPredictionBtn').addEventListener('click', ()=>{ playClick(); show('page3'); });
-document.getElementById('linkPayment').addEventListener('click', ()=>{ playClick(); show('page2'); });
-document.getElementById('linkAdmin').addEventListener('click', ()=>{ playClick(); show('pageAdmin'); });
-document.getElementById('linkPrediction').addEventListener('click', ()=>{ playClick(); show('page3'); });
-document.getElementById('csBtn1').addEventListener('click', ()=>{ playClick(); window.open('https://t.me/Nskskssiwi','_blank'); });
-document.getElementById('csBtn2').addEventListener('click', ()=>{ playClick(); window.open('https://t.me/Nskskssiwi','_blank'); });
-
-/* Plans render */
-const presets = [100,200,500,1000,2000,4000];
-const plansEl = document.getElementById('plansList');
-presets.forEach(p=>{
-  const d = document.createElement('div');
-  d.className='plan';
-  d.style.minWidth='160px';
-  d.innerHTML = `<div style="font-weight:800">${p} coins</div><div class="small">₹${(p/2).toFixed(0)}</div>`;
-  d.onclick = ()=>{
-    document.getElementById('customQty').value = p;
-    // visual
-    Array.from(plansEl.children).forEach(c=>c.style.boxShadow='none');
-    d.style.boxShadow = '0 8px 30px rgba(0,255,157,0.07)';
-    playClick();
+  const firebaseConfig = {
+    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+    authDomain: "terminal-xxrr.firebaseapp.com",
+    databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
+    projectId: "terminal-xxrr",
+    storageBucket: "terminal-xxrr.appspot.com",
+    messagingSenderId: "722753278120",
+    appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
   };
-  d.addEventListener('mouseenter', ()=>{});
-  plansEl.appendChild(d);
-});
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-/* =========================
-   Auth & user doc
-   ========================= */
-let currentUser = null;
-signInAnonymously(auth).catch(()=>{/* ignore errors */});
-onAuthStateChanged(auth, async user=>{
-  if(user){
-    currentUser = user;
-    await ensureUserDoc(user.uid);
-    subscribeUserDoc(user.uid);
-    subscribeUserPredictions(user.uid);
-  } else {
-    currentUser = null;
-  }
-});
+  // --- App state ---
+  const PLATFORMS = ["Tashan win","Jalwa game","Daman","DM win","51 game","OK win","Tashan X"];
+  const PLANS = [
+    {id:'p1', label:'100 → 300', min:100, max:300, price:50},
+    {id:'p2', label:'200 → 1000', min:200, max:1000, price:120},
+    {id:'p3', label:'500 → 5000', min:500, max:5000, price:300},
+    {id:'p4', label:'1000 → 15000', min:1000, max:15000, price:600},
+    {id:'p5', label:'2000 → 30000', min:2000, max:30000, price:1200},
+    // premium
+    {id:'pr1', label:'1000 → 50000 (Premium)', min:1000, max:50000, price:1500},
+    {id:'pr2', label:'2000 → 100000 (Premium)', min:2000, max:100000, price:3000},
+    {id:'pr3', label:'5000 → 500000 (Premium)', min:5000, max:500000, price:10000}
+  ];
+  const UPI_ID = 'perfect.k@ptaxis';
+  let selectedPlatform = null;
+  let selectedPlan = null;
+  let sessionActive = false;
+  let balance = 0;
+  let level = 1; // 1,2,3 -> 15/30/55
+  let lastResults = []; // oldest -> newest, length up to 10
+  let resultsHistory = []; // newest first
+  let pendingUTRKey = null;
+  let autoPeriodTimer = null;
+  let periodBase = null;
 
-async function ensureUserDoc(uid){
-  const uRef = doc(db,'users',uid);
-  const snap = await getDoc(uRef);
-  if(!snap.exists()){
-    await setDoc(uRef,{ wallet: 0, createdAt: serverTimestamp() }, { merge:true });
-  }
-}
+  // --- Dom refs ---
+  const platformsEl = document.getElementById('platforms');
+  const plansList = document.getElementById('plansList');
+  const qrImg = document.getElementById('qrImg');
+  const payAmountEl = document.getElementById('payAmount');
+  const chosenPlanLabel = document.getElementById('chosenPlanLabel');
+  const paymentStatus = document.getElementById('paymentStatus');
+  const serverStatus = document.getElementById('serverStatus');
+  const adminPanelEl = document.getElementById('adminPanel');
+  const pendingList = document.getElementById('pendingList');
 
-/* subscribe user doc to update wallet UI */
-let unsubUser = null;
-function subscribeUserDoc(uid){
-  const uRef = doc(db,'users',uid);
-  if(unsubUser) unsubUser(); // not a function in modular; onSnapshot returns unsubscribe function
-  unsubUser = onSnapshot(uRef, snap=>{
-    const data = snap.exists()? snap.data() : null;
-    const w = data ? (data.wallet || 0) : 0;
-    // set wallet on all pages
-    document.getElementById('walletTop1').innerText = w;
-    document.getElementById('walletTop2').innerText = w;
-    document.getElementById('walletTop3').innerText = w;
-  });
-}
-
-/* =========================
-   Payment flow
-   ========================= */
-function populatePaymentFromPlan(coins){
-  const c = Number(coins);
-  document.getElementById('payCoins').value = c;
-  document.getElementById('payAmount').value = (c * 0.5).toFixed(2); // ₹0.5/coin
-  document.getElementById('payMsg').innerText = '';
-}
-const stored = localStorage.getItem('pendingPlan');
-if(stored) populatePaymentFromPlan(Number(stored));
-
-document.getElementById('cancelPayBtn').addEventListener('click', ()=> { playClick(); show('page1'); });
-
-document.getElementById('submitPayBtn').addEventListener('click', async ()=>{
-  playClick();
-  const utr = (document.getElementById('payUTR').value||'').trim();
-  if(!/^[0-9]{12}$/.test(utr)){ document.getElementById('payMsg').innerText = 'Enter valid 12-digit UTR'; return; }
-  const coins = Number(document.getElementById('payCoins').value||0);
-  const amount = Number(document.getElementById('payAmount').value||0);
-  if(!currentUser){ alert('Not signed in — reload page'); return; }
-
-  document.getElementById('payMsg').innerText = 'Admin Approval Processing… Wait';
-
-  // store a payment record (processing)
-  let payDocRef = null;
-  try{
-    payDocRef = await addDoc(collection(db,'payments'), {
-      utr, coins, amount, userId: currentUser.uid, status: 'processing', ts: serverTimestamp()
+  // render platforms
+  function renderPlatforms(){
+    platformsEl.innerHTML='';
+    PLATFORMS.forEach(p=>{
+      const d = document.createElement('div');
+      d.className='plat';
+      d.textContent=p;
+      d.onclick = ()=>{
+        document.querySelectorAll('.plat').forEach(x=>x.classList.remove('active'));
+        d.classList.add('active');
+        selectedPlatform = p;
+      };
+      platformsEl.appendChild(d);
     });
-  }catch(e){
-    console.warn('payments write failed', e);
   }
 
-  // after 10s, credit user's wallet via transaction
-  setTimeout( async ()=>{
+  // render plans
+  function renderPlans(){
+    plansList.innerHTML='';
+    PLANS.forEach(pl=>{
+      const el = document.createElement('div');
+      el.className='plan';
+      el.innerHTML = `<div style="font-weight:800">${pl.label}</div>
+        <div class="small">Session price: ₹${pl.price}</div>
+        <div style="margin-top:8px"><button class="btn" onclick="choosePlan('${pl.id}')">Choose</button></div>`;
+      plansList.appendChild(el);
+    });
+  }
+
+  // navigation helpers
+  function showView(id){
+    document.querySelectorAll('#view-platforms,#view-plans,#view-payment,#view-predict').forEach(x=>x.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+  }
+  window.goToPlans = ()=>{
+    if(!selectedPlatform){ alert('Pick a platform first.'); return; }
+    showView('view-plans');
+  };
+  window.goBackTo = (view)=> showView(view);
+
+  // choose plan
+  window.choosePlan = (id)=>{
+    selectedPlan = PLANS.find(p=>p.id===id);
+    chosenPlanLabel.innerText = selectedPlan.label;
+    payAmountEl.innerText = selectedPlan.price;
+    // generate UPI QR
+    const upiUrl = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent('Baba Tillu')}&am=${encodeURIComponent(selectedPlan.price)}&cu=INR`;
+    qrImg.src = 'https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=' + encodeURIComponent(upiUrl);
+    showView('view-payment');
+  };
+
+  // submit utr -> push to firebase pendingUTRs
+  window.submitUTR = async ()=>{
+    const utr = document.getElementById('utrInput').value.trim();
+    if(!/^\d{12}$/.test(utr)){ alert('Enter 12-digit UTR'); return; }
+    if(!selectedPlan){ alert('Plan missing'); return; }
+    const payload = {
+      utr,
+      plan: selectedPlan,
+      platform: selectedPlatform,
+      amount: selectedPlan.price,
+      ts: Date.now(),
+      status: 'pending'
+    };
     try{
-      // credit wallet in transaction
-      const uRef = doc(db,'users',currentUser.uid);
-      await runTransaction(db, async tx=>{
-        const uSnap = await tx.get(uRef);
-        let cur = 0;
-        if(uSnap.exists()) cur = uSnap.data().wallet || 0;
-        tx.update(uRef, { wallet: cur + Number(coins) });
+      const nodeRef = push(ref(db, 'pendingUTRs'));
+      await set(nodeRef, payload);
+      pendingUTRKey = nodeRef.key;
+      paymentStatus.innerText = 'UTR submitted. Waiting for admin approval...';
+      // listen for approval
+      onValue(ref(db, `approved/${utr}`), (snap)=>{
+        if(snap.exists()){
+          const info = snap.val();
+          // approved
+          paymentStatus.innerText = '✅ Approved — Opening prediction...';
+          // start session after small delay
+          setTimeout(()=> initSessionWithApproval(info), 900);
+        }
       });
-      // update payment doc to approved (if we have ref)
-      if(payDocRef){
-        await updateDoc(payDocRef, { status:'approved', approvedAt: serverTimestamp(), autoApproved: true });
-      } else {
-        // fallback: create approved record
-        await addDoc(collection(db,'payments'), { utr, coins, amount, userId: currentUser.uid, status:'approved', approvedAt: serverTimestamp(), autoApproved:true });
-      }
-      document.getElementById('payMsg').innerText = coins + ' coins credited to your wallet ✅';
-      localStorage.removeItem('pendingPlan');
-      // small wait then redirect to prediction page
-      setTimeout(()=> show('page3'), 1200);
-    }catch(e){
-      console.error('credit failed', e);
-      document.getElementById('payMsg').innerText = 'Credit failed: ' + (e.message || e);
+    }catch(err){
+      console.error(err);
+      alert('Firebase error: ' + err.message);
     }
-  }, 10000);
-});
+  };
 
-/* =========================
-   Wallet credit helper (used elsewhere if needed)
-   ========================= */
-async function creditWallet(uid, coins){
-  const uRef = doc(db,'users',uid);
-  await runTransaction(db, async tx=>{
-    const s = await tx.get(uRef);
-    if(!s.exists()) tx.set(uRef, { wallet: coins }, { merge:true });
-    else {
-      const cur = s.data().wallet || 0;
-      tx.update(uRef, { wallet: cur + Number(coins) });
+  // when approved -> move to prediction
+  function initSessionWithApproval(info){
+    // set balance equal to plan.min for simplicity (you can change)
+    balance = (selectedPlan && selectedPlan.min) ? selectedPlan.min : 100;
+    level = 1;
+    sessionActive = true;
+    document.getElementById('balanceVal').innerText = balance;
+    document.getElementById('planActiveLabel').innerText = selectedPlan.label;
+    showView('view-predict');
+    // watch server status
+    serverStatus.innerText = 'Connected';
+    // play audio
+    tryPlayAudio();
+    loadSavedResultsToUI();
+  }
+
+  // admin hidden cross handling
+  document.getElementById('adminCross').addEventListener('click', ()=>{
+    const pw = prompt('Enter admin key:');
+    if(pw === null) return;
+    if(pw === '456'){
+      adminPanelEl.style.display = 'block';
+      document.getElementById('adminPanel').style.display = 'block';
+      showModal('Admin unlocked','You can approve pending UTRs here.');
+      loadPendingFromFirebase();
+    } else {
+      alert('Wrong key.');
     }
   });
-}
+  window.closeAdmin = ()=>{ adminPanelEl.style.display = 'none'; document.getElementById('adminPanel').style.display='none'; };
 
-/* =========================
-   System period (admin-controlled) subscribe
-   ========================= */
-const periodRef = doc(db,'system','period');
-let currentPeriodStr = null;
-let periodTs = null;
-
-onSnapshot(periodRef, snap=>{
-  if(snap.exists()){
-    const d = snap.data();
-    currentPeriodStr = d.number || null;
-    periodTs = d.ts ? d.ts.toDate() : new Date();
-    document.getElementById('periodDisplay').innerText = currentPeriodStr || '--';
-    document.getElementById('adminCurPeriod').innerText = currentPeriodStr || '--';
-  } else {
-    // if not exists, initialize with today's prefix and 001
-    (async ()=>{
-      const now = new Date();
-      const YYYY = now.getFullYear().toString();
-      const MM = String(now.getMonth()+1).padStart(2,'0');
-      const DD = String(now.getDate()).padStart(2,'0');
-      const prefix = `${YYYY}${MM}${DD}1000`;
-      const defaultNum = prefix + '001';
-      try{ await setDoc(periodRef, { number: defaultNum, ts: serverTimestamp() }); }catch(e){}
-    })();
-  }
-});
-
-
-
-
-/* Countdown based only on seconds */
-function updateCountdownOnly(){
-  const now = new Date();
-  const sec = now.getSeconds();
-  const countdown = 60 - sec;
-  document.getElementById("countdownDisplay").innerText = countdown + "s";
-}
-setInterval(updateCountdownOnly, 1000);
-updateCountdownOnly();
-
-/* =========================
-   Generate prediction logic
-   ========================= */
-document.getElementById('genPredBtn').addEventListener('click', async ()=>{
-  playClick();
-  if(!currentUser){ alert('Not signed in — reload'); return; }
-  // check wallet
-  const uRef = doc(db,'users',currentUser.uid);
-  const uSnap = await getDoc(uRef);
-  const curWallet = uSnap.exists() ? (uSnap.data().wallet || 0) : 0;
-  if(curWallet < 10){ alert('Not enough coins'); return; }
-
-  // run transaction: deduct 10 coins and create prediction doc atomically
-  try{
-    await runTransaction(db, async tx=>{
-      const userSnap = await tx.get(uRef);
-      const cur = userSnap.exists() ? (userSnap.data().wallet || 0) : 0;
-      if(cur < 10) throw new Error('Insufficient coins');
-      tx.update(uRef, { wallet: cur - 10 });
-
-      // create prediction doc
-      const predRef = doc(collection(db,'predictions'));
-      const signal = Math.random() > 0.5 ? 'BIG' : 'SMALL';
-      tx.set(predRef, {
-        userId: currentUser.uid,
-        period: currentPeriodStr || ('unknown'),
-        signal,
-        result: '',
-        ts: serverTimestamp()
+  // load pending UTRs
+  function loadPendingFromFirebase(){
+    pendingList.innerHTML = 'Loading...';
+    onValue(ref(db,'pendingUTRs'), snap=>{
+      pendingList.innerHTML = '';
+      const val = snap.val();
+      if(!val){ pendingList.innerHTML = '<div class="small">No pending UTRs</div>'; return; }
+      Object.entries(val).forEach(([k,v])=>{
+        const div = document.createElement('div');
+        div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.03)';
+        div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>${v.platform} • ₹${v.amount}</strong><div class="small">UTR: ${v.utr} • ${new Date(v.ts).toLocaleString()}</div></div>
+          <div style="text-align:right">
+            <button class="btn" onclick="approveUTR('${v.utr}','${k}')">Approve</button>
+            <button class="btn ghost" onclick="rejectUTR('${k}')">Reject</button>
+          </div>
+        </div>`;
+        pendingList.appendChild(div);
       });
-      // call popup function
-      showPredictionPopup(signal);
-
     });
-    document.getElementById('lastPred').innerText = 'Prediction generated — check history below';
-  }catch(e){
-    alert('Generate failed: ' + (e.message || e));
   }
-});
 
-/* =========================
-   User predictions subscription & history UI
-   ========================= */
-import { onSnapshot as onSnapCollection, orderBy as orderByFn } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-let unsubPreds = null;
-function subscribeUserPredictions(uid){
-  if(!uid) return;
-  const q = query(collection(db,'predictions'), where('userId','==',uid), orderBy('ts','desc'));
-  if(unsubPreds) unsubPreds();
-  unsubPreds = onSnapshot(q, snap=>{
-    const rows = [];
-    snap.forEach(docSnap=>{
-      rows.push({ id: docSnap.id, ...docSnap.data() });
+  // admin approve/reject
+  window.approveUTR = async (utr, pendingKey)=>{
+    if(!confirm('Approve UTR ' + utr + ' ?')) return;
+    // write under approved/<utr>
+    await set(ref(db, `approved/${utr}`), { utr, approvedAt: Date.now() });
+    // remove pending node
+    await remove(ref(db, `pendingUTRs/${pendingKey}`));
+    showModal('Approved', 'UTR approved and user will be notified.');
+  };
+  window.rejectUTR = async (pendingKey)=>{
+    if(!confirm('Reject this submission?')) return;
+    await remove(ref(db, `pendingUTRs/${pendingKey}`));
+    showModal('Rejected', 'Pending UTR removed.');
+  };
+
+  // --- Prediction logic & UI ---
+
+  // last 10 inputs render
+  function renderLastInputs(){
+    const container = document.getElementById('lastInputs');
+    container.innerHTML = '';
+    for(let i=0;i<10;i++){
+      const v = lastResults[i] || '';
+      const btnB = document.createElement('button');
+      btnB.className='result-pill';
+      btnB.textContent='B';
+      btnB.onclick = ()=> { lastResults[i]='B'; renderLastInputs(); };
+      const btnS = document.createElement('button');
+      btnS.className='result-pill';
+      btnS.textContent='S';
+      btnS.onclick = ()=> { lastResults[i]='S'; renderLastInputs(); };
+      const wrapper = document.createElement('div');
+      wrapper.style.display='inline-block'; wrapper.style.marginRight='6px';
+      const label = document.createElement('div');
+      label.style.fontSize='12px'; label.style.marginBottom='6px'; label.style.opacity='0.7';
+      label.textContent = i+1;
+      wrapper.appendChild(label);
+      // show current
+      const cur = document.createElement('div');
+      cur.style.display='flex'; cur.style.gap='6px';
+      cur.appendChild(btnB); cur.appendChild(btnS);
+      // mark active selection visually
+      if(lastResults[i]==='B'){ btnB.style.background='#103227'; btnB.style.color='#9ff0d0'; }
+      if(lastResults[i]==='S'){ btnS.style.background='#20140b'; btnS.style.color='#ffd59b'; }
+      wrapper.appendChild(cur);
+      container.appendChild(wrapper);
+    }
+  }
+  window.saveLastResults = ()=>{
+    // ensure 10 entries
+    lastResults = lastResults.slice(0,10);
+    while(lastResults.length<10) lastResults.unshift('');
+    // save locally
+    localStorage.setItem('bt_last10', JSON.stringify(lastResults));
+    showModal('Saved', 'Last results saved.');
+  };
+  window.clearLastResults = ()=>{
+    lastResults = [];
+    localStorage.removeItem('bt_last10');
+    renderLastInputs();
+  };
+
+  // load saved
+  function loadSavedResultsToUI(){
+    const s = localStorage.getItem('bt_last10');
+    if(s){ try{ lastResults = JSON.parse(s); }catch(e){ lastResults=[]; } }
+    renderLastInputs();
+    // results history
+    const r = localStorage.getItem('bt_results');
+    if(r) resultsHistory = JSON.parse(r);
+    updateResultsUI();
+  }
+
+  // compute prediction (heuristic)
+  function analyzeLast10(){
+    const arr = lastResults.filter(Boolean);
+    if(arr.length < 4){
+      return {pred:null,confidence:0,reason:'Not enough data (enter at least 4)'}; // require at least 4 for some signal
+    }
+    // frequency
+    const freq = {B:0,S:0};
+    arr.forEach(x=>{ if(x==='B') freq.B++; if(x==='S') freq.S++; });
+    const total = freq.B + freq.S;
+    const pB = freq.B/total;
+    const pS = freq.S/total;
+    // streak detection (last few)
+    let streak = 1;
+    for(let i=arr.length-1;i>0;i--){
+      if(arr[i]===arr[i-1]) streak++; else break;
+    }
+    // trend: count of transitions up/down (treat B as up)
+    const trendScore = pB - pS; // positive favors B
+    // confidence baseline from frequency and streak
+    let confidence = Math.round(Math.max(pB,pS)*100);
+    // streak bonus
+    if(streak>=3) confidence += 10;
+    // trend strength add
+    confidence = Math.min(95, confidence);
+    const pred = pB > pS ? 'BIG' : 'SMALL';
+    const reason = `Freq B:${freq.B} S:${freq.S} • streak:${streak} • trend:${(trendScore>0?'B':'S')}`;
+    return {pred,confidence,reason,pB,pS,streak};
+  }
+
+  // bet calc
+  function calcBet(currentBalance){
+    if(level===1) return Math.max(1, Math.round(currentBalance * 0.15));
+    if(level===2) return Math.max(1, Math.round(currentBalance * 0.30));
+    if(level===3) return Math.max(1, Math.round(currentBalance * 0.55));
+    return Math.max(1, Math.round(currentBalance * 0.15));
+  }
+
+  // generate prediction action
+  window.generatePrediction = ()=>{
+    if(!sessionActive){ alert('No active session — finish payment & approval first.'); return; }
+    // ensure lastResults filled
+    const arr = lastResults.filter(Boolean);
+    if(arr.length < 4){ showModal('Need past results','Enter at least 4 last results for better analysis.'); return; }
+    // period
+    const period = document.getElementById('periodManual').value.trim();
+    if(!period){ showModal('Enter period','Enter period number manually.'); return; }
+    periodBase = period; // base
+    // analyze
+    const res = analyzeLast10();
+    document.getElementById('predLabel').innerText = res.pred || '--';
+    document.getElementById('confLabel').innerText = (res.confidence) ? res.confidence + '%' : '--';
+    // suggested bet only if confidence >=80 else suggest skip
+    const conf = res.confidence;
+    if(conf >= 80){
+      const suggested = calcBet(balance);
+      document.getElementById('betLabel').innerText = '₹' + suggested + ` (L${level})`;
+      document.getElementById('liveBox').innerText = `Predicted ${res.pred} • ${res.reason}`;
+      // store current suggested bet & pred in local temp
+      window._currentPrediction = { period, pred: res.pred, confidence: res.confidence, bet:suggested, ts: Date.now() };
+    } else {
+      document.getElementById('betLabel').innerText = '-- (skip advised)';
+      document.getElementById('liveBox').innerText = `Low confidence (${res.confidence}%) — Skip recommended. ${res.reason}`;
+      window._currentPrediction = { period, pred:null, confidence: res.confidence, bet:0, ts: Date.now() };
+    }
+
+    // if autoPeriod checked, start auto increment (one minute)
+    if(document.getElementById('autoPeriod').checked){
+      if(autoPeriodTimer) clearInterval(autoPeriodTimer);
+      autoPeriodTimer = setInterval(()=>{
+        if(!periodBase) return;
+        // attempt to increment last numeric tail by 1
+        // find trailing digits and increment
+        const m = periodBase.match(/(.*?)(\d+)$/);
+        if(m){
+          const prefix = m[1], digits = m[2];
+          const next = (BigInt(digits) + 1n).toString().padStart(digits.length,'0');
+          periodBase = prefix + next;
+          document.getElementById('periodManual').value = periodBase;
+        } else {
+          // fallback: append 1
+          periodBase = periodBase + '1';
+          document.getElementById('periodManual').value = periodBase;
+        }
+      }, 60*1000);
+    }
+  };
+
+  // skip action
+  window.doSkip = ()=>{
+    document.getElementById('liveBox').innerText = 'Skipped this round by user.';
+    // record skip into history as 'skip'
+    const rec = { period: document.getElementById('periodManual').value || '', pred: null, result: 'skip', ts: Date.now() };
+    resultsHistory.unshift(rec);
+    resultsHistory = resultsHistory.slice(0,50);
+    localStorage.setItem('bt_results', JSON.stringify(resultsHistory));
+    updateResultsUI();
+  };
+
+  // mark result
+  window.markResult = (r)=>{
+    if(!window._currentPrediction && r!=='skip'){ alert('Generate prediction first.'); return; }
+    const period = document.getElementById('periodManual').value || '';
+    const pred = (window._currentPrediction && window._currentPrediction.pred) ? window._currentPrediction.pred : null;
+    const bet = (window._currentPrediction && window._currentPrediction.bet) ? window._currentPrediction.bet : 0;
+    let resultLabel = r.toUpperCase();
+    // update balance & levels
+    if(r==='win'){
+      // assume 1:1 payout
+      balance = Math.round(balance + bet);
+      level = 1;
+    } else if(r==='loss'){
+      balance = Math.max(0, Math.round(balance - bet));
+      level = (level < 3) ? level + 1 : 1;
+    } else if(r==='skip'){
+      // do nothing to balance
+    }
+    // store result
+    const rec = { period, pred, bet, result: resultLabel, ts: Date.now() };
+    resultsHistory.unshift(rec);
+    resultsHistory = resultsHistory.slice(0,50);
+    localStorage.setItem('bt_results', JSON.stringify(resultsHistory));
+    // update UI
+    document.getElementById('balanceVal').innerText = balance;
+    updateResultsUI();
+    // reset current prediction
+    window._currentPrediction = null;
+    // if target completion (balance >= selectedPlan.max), show congrats and end
+    if(selectedPlan && balance >= selectedPlan.max){
+      showModal('🎉 Target Complete', 'Congratulations — target achieved. Returning to start.', ()=>{
+        endSession();
+      });
+    }
+  };
+
+  function updateResultsUI(){
+    const list = document.getElementById('resultsList');
+    list.innerHTML = '';
+    let wins=0, losses=0;
+    resultsHistory.slice(0,20).forEach(r=>{
+      const div = document.createElement('div');
+      div.className='item';
+      div.style.display='flex'; div.style.justifyContent='space-between';
+      const left = document.createElement('div');
+      left.innerHTML = `<div style="font-weight:700">${r.period || '--'}</div><div class="small">${r.pred || ''} • ${r.result}</div>`;
+      const right = document.createElement('div');
+      right.style.textAlign='right'; right.innerHTML = `<div class="small">${new Date(r.ts).toLocaleTimeString()}</div><div class="small">Bet: ₹${r.bet||0}</div>`;
+      div.appendChild(left); div.appendChild(right);
+      list.appendChild(div);
+      if(r.result==='WIN' || r.result==='win') wins++;
+      if(r.result==='LOSS' || r.result==='loss') losses++;
     });
-    renderHistory(rows);
-  });
-}
-
-function renderHistory(rows){
-  const tbody = document.getElementById('predHistory');
-  tbody.innerHTML = '';
-  let wins = 0, total = 0;
-  rows.forEach(r=>{
-    total += (r.result ? 1 : 0) ? 0 : 0; // we'll count wins/loss below
-    const tr = document.createElement('tr');
-    const signalClass = (r.signal === 'BIG') ? 'big' : 'smalltag';
-    const resultLabel = r.result ? (r.result==='win' ? `<span class="tag win">WIN</span>` : `<span class="tag loss">LOSS</span>`) : '-';
-    tr.innerHTML = `<td>${r.period}</td>
-      <td><span class="tag ${signalClass}">${r.signal}</span></td>
-      <td id="res-${r.id}">${resultLabel}</td>
-      <td>
-        <button class="ghost" onclick="markResult('${r.id}','win')">Win</button>
-        <button class="ghost" onclick="markResult('${r.id}','loss')">Loss</button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-
-  let done = 0, winCount = 0;
-  rows.forEach(r=>{
-    if(r.result === 'win'){ done++; winCount++; }
-    else if(r.result === 'loss'){ done++; }
-  });
-  const acc = done ? ((winCount/done)*100).toFixed(1) : 0;
-}
-
-/* global function to mark result (used by buttons) */
-window.markResult = async (id, res) => {
-  try{
-    await updateDoc(doc(db,'predictions',id), { result: res, resolvedAt: serverTimestamp() });
-  }catch(e){ alert('Mark failed: '+ (e.message || e)); }
-};
-
-
-// Show popup animation with generated signal
-function showPredictionPopup(signal){
-  const popup = document.getElementById('predictionPopup');
-  popup.innerText = signal;
-  popup.className = ''; // reset
-  popup.classList.add(signal === 'BIG' ? 'bigPopup' : 'smallPopup');
-  popup.classList.add('show');
-  // hide after 5s
-  setTimeout(()=> popup.classList.remove('show'), 5000);
-}
-
-/* =========================
-   Admin actions
-   ========================= */
-const encodedPass = "NDU3"; // base64('457')
-function getAdminPass(){ try{ return atob(encodedPass); }catch(e){ return '457'; } }
-
-document.getElementById('adminUnlockBtn').addEventListener('click', ()=>{
-  const v = (document.getElementById('adminPass').value||'').trim();
-  if(v === getAdminPass()){
-    document.getElementById('adminLoginBox').style.display = 'none';
-    document.getElementById('adminPanelBox').style.display = 'block';
-    // show current period
-    onSnapshot(periodRef, snap=>{
-      if(snap.exists()) document.getElementById('adminCurPeriod').innerText = snap.data().number || '--';
-    });
-  } else {
-    document.getElementById('adminErr').style.display = 'block';
-    setTimeout(()=> document.getElementById('adminErr').style.display = 'none', 2400);
-  }
-});
-
-let adminAutoId = null;
-document.getElementById('adminSetBtn').addEventListener('click', async ()=>{
-  const last5 = Number(document.getElementById('adminLast5').value||0);
-  if(isNaN(last5) || last5 < 1 || last5 > 99999){ 
-    alert('Enter 1–99999'); 
-    return; 
+    const total = wins+losses;
+    const acc = total ? Math.round((wins/total)*100) : 0;
+    document.getElementById('statWins').innerText = wins;
+    document.getElementById('statLosses').innerText = losses;
+    document.getElementById('statAcc').innerText = acc + '%';
+    document.getElementById('statsText').innerText = `Wins: ${wins} • Losses: ${losses} • Accuracy: ${acc}%`;
+    document.getElementById('lastCount').innerText = `(Last ${Math.min(20,resultsHistory.length)})`;
   }
 
-  // prefix ko purane period ke hisaab se nikalna hai (last 5 digits hata ke)
-  let prefix = null;
-  if(currentPeriodStr && currentPeriodStr.length > 5) {
-    prefix = currentPeriodStr.slice(0,-5);
-  } else {
-    const now = new Date();
-    const YYYY = now.getFullYear().toString();
-    const MM = String(now.getMonth()+1).padStart(2,'0');
-    const DD = String(now.getDate()).padStart(2,'0');
-    prefix = `${YYYY}${MM}${DD}1000`;
-  }
+  // session end
+  window.endSession = ()=>{
+    if(!confirm('End session and return to start?')) return;
+    sessionActive=false;
+    balance=0; level=1; selectedPlan=null;
+    document.getElementById('utrInput').value='';
+    document.getElementById('periodManual').value='';
+    showView('view-platforms');
+    stopAudio();
+  };
 
-  const newNum = prefix + String(last5).padStart(5,'0');
-  try{
-    await setDoc(periodRef, { number: newNum, ts: serverTimestamp() });
-    document.getElementById('adminCurPeriod').innerText = newNum;
-    alert('Period set: ' + newNum);
-  }catch(e){ 
-    alert('Set failed: '+ (e.message||e)); 
-  }
-});
-    
+  // background / audio admin
+  window.applyBackground = ()=>{
+    const sel = document.getElementById('bgSelect').value || 'anime1.png';
+    document.body.style.backgroundImage = `url('${sel}')`;
+    document.getElementById('logoImg').src = sel;
+    showModal('Background applied', sel);
+  };
+  window.applyMusic = ()=>{
+    const f = document.getElementById('musicFile').value || 'music.m4a';
+    const a = document.getElementById('bgAudio');
+    a.src = f; a.load();
+    showModal('Music set', f);
+  };
+  function tryPlayAudio(){ const a=document.getElementById('bgAudio'); a.volume=0.6; a.play().catch(()=>{}); }
+  function stopAudio(){ const a=document.getElementById('bgAudio'); try{ a.pause(); a.currentTime=0;}catch(e){} }
+  window.tryPlayAudio = tryPlayAudio;
+  window.stopAudio = stopAudio;
 
-document.getElementById('adminStartAuto').addEventListener('click', ()=>{
-  if(adminAutoId) return alert('Auto already running');
-  adminAutoId = setInterval(async ()=>{
-    try{
-      const snap = await getDoc(periodRef);
-      if(!snap.exists()) return;
-      const curr = snap.data().number;
-      const prefix = curr.slice(0,curr.length-5);
-      let last5 = curr.slice(-5);
-      let high2 = last5.slice(0,2);
-      let last3 = parseInt(last5.slice(-3),10) || 0;
-      last3 = last3 >= 999 ? 1 : last3 + 1;
-      const next = prefix + high2 + String(last3).padStart(3,'0');
-      await setDoc(periodRef,{ number: next, ts: serverTimestamp() });
-    }catch(e){ console.warn('auto increment err', e); }
-  }, 60000);
-  alert('Auto-increment started');
-});
+  // modal util
+  function showModal(t,s){ document.getElementById('modalTitle').innerText=t; document.getElementById('modalSub').innerText=s||''; document.getElementById('modal').classList.add('show'); }
+  window.closeModal = ()=>{ document.getElementById('modal').classList.remove('show'); }
 
-document.getElementById('adminStopAuto').addEventListener('click', ()=>{
-  if(adminAutoId){ clearInterval(adminAutoId); adminAutoId = null; alert('Auto stopped'); } else alert('Auto not running');
-});
-
-/* =========================
-   Init & small helpers
-   ========================= */
-function init(){
-  const p = localStorage.getItem('pendingPlan');
-  if(p) populatePaymentFromPlan(Number(p));
-  // attach plan click behavior: when page loads, ensure payment button uses pendingPlan
-  document.querySelectorAll('.plan').forEach(el=>{
-    el.addEventListener('click', ()=> {
-      localStorage.setItem('pendingPlan', el.querySelector('div').innerText.replace(/\D/g,'') || el.getAttribute('data-coins'));
-      // update payment fields
-      populatePaymentFromPlan(Number(document.getElementById('customQty').value||100));
-    });
-  });
-}
-init();
-
-/* play sound on interactive controls */
-document.querySelectorAll('.btn, .ghost, .plan').forEach(el=>{
-  el.addEventListener('mousedown', playClick);
-});
+  // On load
+  (function init(){
+    renderPlatforms();
+    renderPlans();
+    showView('view-platforms');
+    serverStatus.innerText = 'Connected';
+    // restore last results and history if present
+    loadSavedResultsToUI();
+    // set default BG
+    document.body.style.backgroundImage = "url('anime1.png')";
+    document.getElementById('logoImg').src = 'anime1.png';
+  })();
 
 </script>
-<div id="predictionPopup"></div>
 </body>
 </html>
