@@ -1,725 +1,511 @@
 <!doctype html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Baba Tillu Pro Version — Prediction Portal</title>
+<title>Baba Tillu Pro — Prediction Portal (Firebase & Admin)</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#060612;
-  --card: rgba(18,20,32,0.88);
-  --accent:#00d4c4;
-  --accent2:#6b5cff;
-  --muted:#9aa6d1;
-  --good:#18c964;
-  --bad:#ff4d4d;
+  --bg:#04060a; --card:#0b1116; --muted:#9fb0d6; --accent:#00d2a8;
   --glass: rgba(255,255,255,0.03);
 }
-*{box-sizing:border-box;font-family:'Poppins',sans-serif}
-html,body{height:100%;margin:0;background:#051026;color:#eaf3ff}
-.container{max-width:1000px;margin:18px auto;padding:18px}
+*{box-sizing:border-box;font-family:'Poppins',system-ui,Arial,sans-serif}
+body{margin:0;background:linear-gradient(180deg,#020306,#071022);color:#eaf6ff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.app{width:100%;max-width:1100px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border-radius:12px;padding:18px;box-shadow:0 30px 80px rgba(0,0,0,0.6)}
 .header{display:flex;align-items:center;gap:14px}
-.logo{width:64px;height:64px;border-radius:12px;overflow:hidden;border:2px solid rgba(255,255,255,0.06);background:#111}
+.logo{width:64px;height:64px;border-radius:8px;overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,0.04)}
 .logo img{width:100%;height:100%;object-fit:cover}
-.title{font-size:20px;font-weight:800;color:var(--accent2)}
-.subtitle{color:var(--muted);font-size:13px}
-.grid{display:grid;grid-template-columns:1fr 380px;gap:16px;margin-top:14px}
-@media(max-width:900px){ .grid{grid-template-columns:1fr} }
-.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
-.platform-list{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
-.plat{padding:8px 12px;border-radius:10px;background:var(--glass);cursor:pointer;border:1px solid rgba(255,255,255,0.03)}
-.plat.active{box-shadow:0 8px 24px rgba(0,0,0,0.6);transform:translateY(-4px);border-color:var(--accent)}
-.btn{display:inline-block;padding:10px 14px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#012;font-weight:800;cursor:pointer}
-.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-.small{color:var(--muted);font-size:13px}
-.plan-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
-@media(max-width:600px){ .plan-grid{grid-template-columns:1fr} }
-.plan{padding:12px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03)}
-.qr{width:220px;height:220px;border-radius:12px;display:block;margin:8px auto;border:2px solid rgba(255,255,255,0.03)}
-.input{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:inherit}
+.title{font-weight:700;font-size:20px;color:var(--accent)}
+.subtitle{color:#bcd6ea;font-size:13px}
+.main{display:grid;grid-template-columns:1fr 420px;gap:18px;margin-top:16px}
+@media(max-width:980px){.main{grid-template-columns:1fr}}
+.card{background:var(--card);padding:14px;border-radius:10px;min-height:220px}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.plan{padding:12px;border-radius:8px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.03)}
+.plan b{display:block}
+.btn{padding:10px 12px;border-radius:8px;border:none;background:linear-gradient(90deg,var(--accent),#00a6ff);color:#001;font-weight:800;cursor:pointer}
+.link{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px;border-radius:8px;color:#9fb0d6;cursor:pointer}
+.small{color:#9fb0d6;font-size:13px}
+.input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;margin-top:8px}
 .row{display:flex;gap:8px;align-items:center}
-.admin-cross{position:fixed;right:14px;bottom:14px;width:44px;height:44px;border-radius:10px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;cursor:pointer;z-index:9999;opacity:0.8}
-.admin-panel{display:none;margin-top:12px}
-.hidden{display:none !important}
-.stat-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-.stat{padding:10px;border-radius:10px;background:#07102a;border:1px solid rgba(255,255,255,0.03);min-width:120px}
-.log{background:#071025;border-radius:10px;padding:10px;max-height:220px;overflow:auto;border:1px solid rgba(255,255,255,0.03)}
-.result-pill{display:inline-block;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.02);margin-right:6px}
-.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);visibility:hidden;opacity:0;transition:all .18s}
+.admin-cross{position:fixed;right:14px;bottom:14px;width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;cursor:pointer;z-index:9999;opacity:0.7}
+.admin-cross:hover{opacity:1;transform:scale(1.02)}
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:999;visibility:hidden;opacity:0;transition:all .18s}
 .modal.show{visibility:visible;opacity:1}
-.modal-card{background:#071025;padding:16px;border-radius:10px;min-width:300px}
-footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
-.history-list .item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,0.03)}
-.pill{padding:6px 10px;border-radius:999px;background:#08102a;border:1px solid rgba(255,255,255,0.03)}
-.center{text-align:center}
+.modal-card{background:#071122;padding:16px;border-radius:10px;min-width:320px}
+.prediction-box{display:flex;flex-direction:column;gap:8px}
+.box{display:inline-block;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.04);min-width:90px;text-align:center;font-weight:700}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+.results-list{max-height:220px;overflow:auto;padding:8px;border-radius:8px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.03)}
+.footer{margin-top:12px;color:#9fb0d6;font-size:13px;text-align:center}
 </style>
 </head>
 <body>
-<div class="container">
+<div class="app">
   <div class="header">
     <div class="logo"><img id="logoImg" src="anime1.png" alt="logo"></div>
     <div>
-      <div class="title">Baba Tillu — Prediction Portal</div>
-      <div class="subtitle">Choose platform → Choose plan → Scan & pay → Get prediction</div>
+      <div class="title">Baba Tillu Pro</div>
+      <div class="subtitle">Advanced predictions — simple flow</div>
     </div>
-    <div style="margin-left:auto" class="small">Server: <span id="serverStatus">Connecting...</span></div>
   </div>
 
-  <div class="grid">
-    <!-- left column -->
-    <div>
-      <!-- VIEW: Platforms -->
-      <div id="view-platforms" class="card">
-        <h2>Choose Platform</h2>
-        <div class="small">Pick a platform (for display only).</div>
-        <div id="platforms" class="platform-list"></div>
-        <div style="margin-top:12px">
-          <button class="btn" onclick="goToPlans()">Continue →</button>
+  <div class="main">
+    <!-- LEFT: plans -> payment -> prediction -->
+    <div class="card">
+      <h3>Select Plan</h3>
+      <div class="small">Choose a plan — payment via QR + UTR. Admin approval required to unlock predictions.</div>
+
+      <div class="plans" id="plansContainer" style="margin-top:12px"></div>
+
+      <hr style="margin:12px 0;border:0;border-top:1px solid rgba(255,255,255,0.03)">
+
+      <div id="paymentSection" style="display:none">
+        <h4>Payment — Scan & Submit UTR</h4>
+        <div class="small">Scan QR, pay the exact amount shown and then enter 12-digit UTR below.</div>
+        <img id="qrImg" src="" alt="QR" style="width:200px;height:200px;display:block;margin-top:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)">
+        <input id="utrInput" class="input" placeholder="Enter 12-digit UTR" maxlength="12">
+        <div style="margin-top:8px" class="row">
+          <button class="btn" id="submitPaymentBtn">Submit for Approval</button>
+          <button class="link" id="cancelPaymentBtn">Cancel</button>
         </div>
+        <div id="paymentStatus" class="small" style="margin-top:8px"></div>
       </div>
 
-      <!-- VIEW: Plans -->
-      <div id="view-plans" class="card hidden">
-        <h2>Choose Plan</h2>
-        <div class="small">Select a target range. Price is one-time for this session.</div>
+      <div id="predictionSection" style="display:none;margin-top:14px">
+        <h3>Prediction</h3>
+        <div class="small">Enter last 10 results (Big/Small) once, then click GENERATE. AI analyses trend, frequency & psychology to recommend a side and bet amount.</div>
 
-        <div style="margin-top:12px" class="plan-grid" id="plansList"></div>
-
-        <div style="margin-top:12px">
-          <button class="btn ghost" onclick="goBackTo('view-platforms')">← Back</button>
-        </div>
-      </div>
-
-      <!-- VIEW: Payment -->
-      <div id="view-payment" class="card hidden">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <h2>Scan & Pay</h2>
-            <div class="small">Pay using UPI. After payment, enter the 12-digit UTR and submit. Admin will approve.</div>
-          </div>
-          <div class="pill">Plan: <span id="chosenPlanLabel">—</span></div>
-        </div>
-
-        <div class="center" style="margin-top:10px">
-          <img id="qrImg" class="qr" alt="QR">
-          <div class="small" style="margin-top:6px">UPI ID: <b id="upiId">perfect.k@ptaxis</b></div>
-        </div>
-
-        <div style="margin-top:12px">
-          <div class="small">Payable amount:</div>
-          <div style="font-weight:800;font-size:1.2rem;margin-top:6px">₹ <span id="payAmount">0</span></div>
+        <div style="margin-top:8px">
+          <label class="small">Your Balance (plan-based):</label>
+          <div style="font-weight:800;font-size:1.1rem" id="balanceDisplay">₹0</div>
         </div>
 
         <div style="margin-top:8px">
-          <input id="utrInput" class="input" maxlength="12" placeholder="Enter 12-digit UTR after payment">
-        </div>
-        <div style="margin-top:8px">
-          <button class="btn" onclick="submitUTR()">Submit UTR & Wait for Approval</button>
-          <button class="btn ghost" onclick="goBackTo('view-plans')">← Back</button>
-        </div>
-
-        <div id="paymentStatus" style="margin-top:10px" class="small"></div>
-      </div>
-
-      <!-- VIEW: Prediction -->
-      <div id="view-predict" class="card hidden">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <h2>Prediction — AI Advisor</h2>
-            <div class="small">Enter last 10 results (oldest → newest), then Generate. Use Win/Loss/Skip accordingly.</div>
-          </div>
-          <div style="text-align:right">
-            <div class="small">Active Plan:</div>
-            <div style="font-weight:800" id="planActiveLabel">—</div>
-            <div class="small" style="margin-top:4px">Balance: ₹<span id="balanceVal">0</span></div>
+          <label class="small">Last 10 rounds (enter B or S, left->oldest, right->latest):</label>
+          <div class="row" style="margin-top:8px">
+            <input id="historyInput" class="input" placeholder="e.g. B,B,S,B,B,S,B,B,S,B" />
+            <button class="btn" id="applyHistoryBtn">Apply</button>
           </div>
         </div>
 
-        <div style="margin-top:12px">
-          <label class="small">Enter last 10 results (B for Big, S for Small):</label>
-          <div id="lastInputs" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"></div>
-          <div style="margin-top:8px">
-            <button class="btn" onclick="saveLastResults()">Save Last Results</button>
-            <button class="btn ghost" onclick="clearLastResults()">Clear</button>
+        <div style="margin-top:10px" class="prediction-box">
+          <div>PERIOD: <span id="periodDisplay" class="box">--</span></div>
+          <div>SUGGESTION: <span id="suggestionBox" class="box">--</span></div>
+          <div>CONFIDENCE: <span id="confidenceBox" class="box">--</span></div>
+          <div>BET AMOUNT: <span id="betBox" class="box">--</span></div>
+          <div style="margin-top:8px" class="controls">
+            <button class="btn" id="generateBtn">Generate Prediction</button>
+            <button class="link" id="skipBtn">Skip (if unclear)</button>
           </div>
-        </div>
 
-        <div style="margin-top:12px" class="two">
-          <div>
-            <label class="small">Enter period (manual):</label>
-            <input id="periodManual" class="input" placeholder="e.g. 20250914100011151">
-            <div class="small" style="margin-top:8px">Auto-increment next period each minute? <label><input id="autoPeriod" type="checkbox"> Auto</label></div>
-          </div>
-          <div>
-            <label class="small">Confidence & Bet suggestion</label>
-            <div class="stat-row">
-              <div class="stat"><div class="small">Prediction</div><div id="predLabel" style="font-weight:800">--</div></div>
-              <div class="stat"><div class="small">Confidence</div><div id="confLabel" style="font-weight:800">--</div></div>
-              <div class="stat"><div class="small">Suggested Bet</div><div id="betLabel" style="font-weight:800">--</div></div>
-            </div>
-            <div style="margin-top:10px">
-              <button class="btn" onclick="generatePrediction()">Generate</button>
-              <button class="btn ghost" onclick="doSkip()">Skip</button>
+          <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+            <button class="btn" id="markWinBtn">Win</button>
+            <button class="link" id="markLossBtn">Loss</button>
+            <div style="margin-left:auto;text-align:right">
+              <div id="statsText" class="small">Wins: 0 • Losses: 0 • Accuracy: 0%</div>
+              <div id="lastCount" class="small">(Last 0)</div>
             </div>
           </div>
         </div>
 
         <div style="margin-top:12px">
-          <div class="small">Live:</div>
-          <div id="liveBox" class="small">Manual generate only — Auto disabled</div>
-        </div>
-
-        <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
-          <button class="btn" onclick="markResult('win')">Win</button>
-          <button class="btn ghost" onclick="markResult('loss')">Loss</button>
-          <button class="btn ghost" onclick="markResult('skip')">Skip</button>
-          <div style="margin-left:auto;text-align:right" class="small">
-            <div id="statsText">Wins: 0 • Losses: 0 • Accuracy: 0%</div>
-            <div id="lastCount" class="small" style="margin-top:6px">(Last 0)</div>
-          </div>
-        </div>
-
-        <div style="margin-top:12px">
-          <div style="font-weight:700;margin-bottom:6px">Last results (latest first)</div>
-          <div id="resultsList" class="log"></div>
-        </div>
-
-        <div style="margin-top:12px">
-          <button class="btn ghost" onclick="endSession()">End Session & Back</button>
+          <div style="font-weight:700;margin-bottom:6px">Recent results (latest first)</div>
+          <div id="resultsList" class="results-list"></div>
         </div>
       </div>
 
     </div>
 
-    <!-- right column -->
-    <div>
-      <div class="card">
-        <h3>Quick Stats</h3>
-        <div class="stat-row">
-          <div class="stat"><div class="small">Wins</div><div id="statWins" class="value">0</div></div>
-          <div class="stat"><div class="small">Losses</div><div id="statLosses" class="value">0</div></div>
-          <div class="stat"><div class="small">Accuracy</div><div id="statAcc" class="value">0%</div></div>
-        </div>
+    <!-- RIGHT: admin + info -->
+    <div class="card">
+      <h3>Admin & Info</h3>
+      <div class="small">Admin panel is hidden (❌). Click the bottom-right cross to open (admin key required).</div>
 
-        <div style="margin-top:12px" id="sessionInfo">
-          <div class="small">No active session.</div>
-        </div>
+      <div style="margin-top:12px">
+        <div class="small" style="font-weight:700">Server status:</div>
+        <div id="serverStatus" class="small" style="margin-top:6px">Not connected</div>
       </div>
 
-      <div class="card" style="margin-top:12px">
-        <h3 class="small">Admin (hidden)</h3>
-        <div class="small">Hidden admin cross is at bottom-right. Click it and enter admin password to open admin panel. (Password: <b>456</b>)</div>
+      <div style="margin-top:12px">
+        <div class="small" style="font-weight:700">Pending payments</div>
+        <div id="pendingList" class="results-list" style="margin-top:8px;min-height:120px">No pending</div>
+      </div>
 
-        <div id="adminPanel" class="admin-panel">
-          <h4 style="margin-top:10px">Admin — UTR Approvals</h4>
-          <div id="pendingList" style="max-height:220px;overflow:auto;border-radius:8px;padding:8px;background:#051026;margin-top:8px"></div>
-          <div style="margin-top:8px">
-            <button class="btn ghost" onclick="closeAdmin()">Close Admin</button>
-          </div>
-
-          <hr style="margin:12px 0;border:0;border-top:1px solid rgba(255,255,255,0.03)">
-
-          <h4>Assets</h4>
-          <div style="display:flex;gap:8px;align-items:center">
-            <select id="bgSelect" class="input">
-              <option value="anime1.png">anime1.png</option>
-              <option value="anime2.png">anime2.png</option>
-              <option value="anime3.png">anime3.png</option>
-            </select>
-            <button class="btn" onclick="applyBackground()">Apply</button>
-          </div>
-          <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
-            <input id="musicFile" class="input" placeholder="music.m4a" value="music.m4a">
-            <button class="btn" onclick="applyMusic()">Apply Music</button>
-          </div>
+      <div style="margin-top:12px">
+        <div class="small" style="font-weight:700">Admin actions</div>
+        <div style="margin-top:8px" id="adminControlsArea">
+          <div class="small">(Hidden until admin unlock)</div>
         </div>
-
       </div>
     </div>
+
   </div>
 
-  <footer>Made for you — Background files: <code>anime1.png</code>, <code>anime2.png</code>, <code>anime3.png</code></footer>
+  <div class="footer">Background images: anime1.png, anime2.png, anime3.png — change assets in the same folder.</div>
 </div>
 
+<!-- hidden admin cross -->
 <div class="admin-cross" id="adminCross">❌</div>
 
-<!-- audio -->
-<audio id="bgAudio" src="music.m4a" loop preload="auto"></audio>
-
 <!-- modal -->
-<div id="modal" class="modal"><div class="modal-card"><div id="modalTitle" style="font-weight:800;color:var(--accent2)"></div><div id="modalSub" class="small" style="margin-top:8px"></div><div style="margin-top:12px;text-align:right"><button class="btn" onclick="closeModal()">OK</button></div></div></div>
+<div id="modal" class="modal"><div class="modal-card">
+  <div id="modalTitle" style="font-weight:800;color:var(--accent)"></div>
+  <div id="modalSub" class="small" style="margin-top:8px"></div>
+  <div style="margin-top:12px"><button class="btn" id="modalOkBtn">OK</button></div>
+</div></div>
 
-<!-- Firebase SDK (modular v9) -->
+<!-- Firebase + app script -->
 <script type="module">
-  // --- FIREBASE CONFIG: use your config here (you provided) ---
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { getDatabase, ref, push, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
+  // Firebase modular SDK imports
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getDatabase, ref, push, set, onValue, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+  // -- replace with your firebase config (already provided) --
   const firebaseConfig = {
     apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
     authDomain: "terminal-xxrr.firebaseapp.com",
-    databaseURL: "https://terminal-xxrr-default-rtdb.firebaseio.com",
+    databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "terminal-xxrr",
-    storageBucket: "terminal-xxrr.appspot.com",
+    storageBucket: "terminal-xxrr.firebasestorage.app",
     messagingSenderId: "722753278120",
-    appId: "1:722753278120:web:bfa37aab39635a4e57f29d"
+    appId: "1:722753278120:web:bfa37aab39635a4e57f29d",
+    measurementId: "G-E3MZH3E1K5"
   };
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // --- App state ---
-  const PLATFORMS = ["Tashan win","Jalwa game","Daman","DM win","51 game","OK win","Tashan X"];
+  // Plans definition
   const PLANS = [
-    {id:'p1', label:'100 → 300', min:100, max:300, price:50},
-    {id:'p2', label:'200 → 1000', min:200, max:1000, price:120},
-    {id:'p3', label:'500 → 5000', min:500, max:5000, price:300},
-    {id:'p4', label:'1000 → 15000', min:1000, max:15000, price:600},
-    {id:'p5', label:'2000 → 30000', min:2000, max:30000, price:1200},
+    { id: 'p1', label: '100 → 300', min:100, max:300, price:40 },
+    { id: 'p2', label: '200 → 1000', min:200, max:1000, price:150 },
+    { id: 'p3', label: '500 → 5000', min:500, max:5000, price:400 },
+    { id: 'p4', label: '1000 → 15000', min:1000, max:15000, price:900 },
+    { id: 'p5', label: '2000 → 30000', min:2000, max:30000, price:1700 },
     // premium
-    {id:'pr1', label:'1000 → 50000 (Premium)', min:1000, max:50000, price:1500},
-    {id:'pr2', label:'2000 → 100000 (Premium)', min:2000, max:100000, price:3000},
-    {id:'pr3', label:'5000 → 500000 (Premium)', min:5000, max:500000, price:10000}
+    { id: 'p6', label: '1000 → 50000 (Premium)', min:1000, max:50000, price:2500 },
+    { id: 'p7', label: '2000 → 100000 (Premium)', min:2000, max:100000, price:4500 },
+    { id: 'p8', label: '5000 → 500000 (Premium)', min:5000, max:500000, price:12000 }
   ];
-  const UPI_ID = 'perfect.k@ptaxis';
-  let selectedPlatform = null;
-  let selectedPlan = null;
-  let sessionActive = false;
-  let balance = 0;
-  let level = 1; // 1,2,3 -> 15/30/55
-  let lastResults = []; // oldest -> newest, length up to 10
-  let resultsHistory = []; // newest first
-  let pendingUTRKey = null;
-  let autoPeriodTimer = null;
-  let periodBase = null;
 
-  // --- Dom refs ---
-  const platformsEl = document.getElementById('platforms');
-  const plansList = document.getElementById('plansList');
+  // UI refs
+  const plansContainer = document.getElementById('plansContainer');
+  const paymentSection = document.getElementById('paymentSection');
+  const predictionSection = document.getElementById('predictionSection');
   const qrImg = document.getElementById('qrImg');
-  const payAmountEl = document.getElementById('payAmount');
-  const chosenPlanLabel = document.getElementById('chosenPlanLabel');
+  const utrInput = document.getElementById('utrInput');
+  const submitPaymentBtn = document.getElementById('submitPaymentBtn');
+  const cancelPaymentBtn = document.getElementById('cancelPaymentBtn');
   const paymentStatus = document.getElementById('paymentStatus');
+  const balanceDisplay = document.getElementById('balanceDisplay');
+  const applyHistoryBtn = document.getElementById('applyHistoryBtn');
+  const historyInput = document.getElementById('historyInput');
+  const generateBtn = document.getElementById('generateBtn');
+  const suggestionBox = document.getElementById('suggestionBox');
+  const confidenceBox = document.getElementById('confidenceBox');
+  const betBox = document.getElementById('betBox');
+  const periodDisplay = document.getElementById('periodDisplay');
+  const resultsList = document.getElementById('resultsList');
+  const statsText = document.getElementById('statsText');
+  const lastCount = document.getElementById('lastCount');
+  const markWinBtn = document.getElementById('markWinBtn');
+  const markLossBtn = document.getElementById('markLossBtn');
   const serverStatus = document.getElementById('serverStatus');
-  const adminPanelEl = document.getElementById('adminPanel');
   const pendingList = document.getElementById('pendingList');
 
-  // render platforms
-  function renderPlatforms(){
-    platformsEl.innerHTML='';
-    PLATFORMS.forEach(p=>{
-      const d = document.createElement('div');
-      d.className='plat';
-      d.textContent=p;
-      d.onclick = ()=>{
-        document.querySelectorAll('.plat').forEach(x=>x.classList.remove('active'));
-        d.classList.add('active');
-        selectedPlatform = p;
-      };
-      platformsEl.appendChild(d);
-    });
-  }
+  // state
+  let selectedPlan = null;
+  let pendingPaymentId = null;
+  let activeUnlocked = false;
+  let balance = 0;
+  let level = 1; // 1 -> 15% , 2 -> 30% , 3 -> 55%
+  let lastResults = []; // latest-first
+  let historyArr = []; // persisted results
+  let wins = 0, losses = 0;
 
   // render plans
   function renderPlans(){
-    plansList.innerHTML='';
-    PLANS.forEach(pl=>{
-      const el = document.createElement('div');
-      el.className='plan';
-      el.innerHTML = `<div style="font-weight:800">${pl.label}</div>
-        <div class="small">Session price: ₹${pl.price}</div>
-        <div style="margin-top:8px"><button class="btn" onclick="choosePlan('${pl.id}')">Choose</button></div>`;
-      plansList.appendChild(el);
+    plansContainer.innerHTML = '';
+    PLANS.forEach(p=>{
+      const div = document.createElement('div');
+      div.className = 'plan';
+      div.innerHTML = `<b>${p.label}</b>
+        <div class="small">Price: ₹${p.price}</div>
+        <div style="margin-top:8px">Target range: <span class="small">₹${p.min} → ₹${p.max}</span></div>
+        <div style="margin-top:10px"><button class="btn" data-id="${p.id}" data-price="${p.price}">Choose</button></div>`;
+      plansContainer.appendChild(div);
+    });
+    // attach listeners
+    [...plansContainer.querySelectorAll('button')].forEach(b=>{
+      b.addEventListener('click', ()=> {
+        const id = b.dataset.id;
+        const plan = PLANS.find(x=>x.id===id);
+        openPaymentForPlan(plan);
+      });
     });
   }
 
-  // navigation helpers
-  function showView(id){
-    document.querySelectorAll('#view-platforms,#view-plans,#view-payment,#view-predict').forEach(x=>x.classList.add('hidden'));
-    document.getElementById(id).classList.remove('hidden');
+  function openPaymentForPlan(plan){
+    selectedPlan = plan;
+    paymentSection.style.display = 'block';
+    predictionSection.style.display = 'none';
+    paymentStatus.innerText = '';
+    const upi = `upi://pay?pa=yourupi@bank&pn=BabaTillu&am=${encodeURIComponent(plan.price)}&cu=INR`;
+    qrImg.src = 'https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=' + encodeURIComponent(upi);
+    paymentSection.scrollIntoView({behavior:'smooth'});
   }
-  window.goToPlans = ()=>{
-    if(!selectedPlatform){ alert('Pick a platform first.'); return; }
-    showView('view-plans');
-  };
-  window.goBackTo = (view)=> showView(view);
 
-  // choose plan
-  window.choosePlan = (id)=>{
-    selectedPlan = PLANS.find(p=>p.id===id);
-    chosenPlanLabel.innerText = selectedPlan.label;
-    payAmountEl.innerText = selectedPlan.price;
-    // generate UPI QR
-    const upiUrl = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent('Baba Tillu')}&am=${encodeURIComponent(selectedPlan.price)}&cu=INR`;
-    qrImg.src = 'https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=' + encodeURIComponent(upiUrl);
-    showView('view-payment');
-  };
+  cancelPaymentBtn.addEventListener('click', ()=>{
+    paymentSection.style.display = 'none';
+    utrInput.value = '';
+    paymentStatus.innerText = '';
+  });
 
-  // submit utr -> push to firebase pendingUTRs
-  window.submitUTR = async ()=>{
-    const utr = document.getElementById('utrInput').value.trim();
-    if(!/^\d{12}$/.test(utr)){ alert('Enter 12-digit UTR'); return; }
-    if(!selectedPlan){ alert('Plan missing'); return; }
-    const payload = {
-      utr,
-      plan: selectedPlan,
-      platform: selectedPlatform,
-      amount: selectedPlan.price,
-      ts: Date.now(),
-      status: 'pending'
-    };
+  // submit payment -> write to firebase realtime db under /payments
+  submitPaymentBtn.addEventListener('click', async ()=>{
+    const utr = (utrInput.value||'').trim();
+    if(!selectedPlan){ alert('Select a plan first'); return; }
+    if(!/^[0-9]{12}$/.test(utr)){ paymentStatus.innerText='Enter valid 12-digit UTR'; return; }
+    submitPaymentBtn.disabled = true;
+    paymentStatus.innerText = 'Submitting...';
     try{
-      const nodeRef = push(ref(db, 'pendingUTRs'));
-      await set(nodeRef, payload);
-      pendingUTRKey = nodeRef.key;
-      paymentStatus.innerText = 'UTR submitted. Waiting for admin approval...';
-      // listen for approval
-      onValue(ref(db, `approved/${utr}`), (snap)=>{
-        if(snap.exists()){
-          const info = snap.val();
-          // approved
-          paymentStatus.innerText = '✅ Approved — Opening prediction...';
-          // start session after small delay
-          setTimeout(()=> initSessionWithApproval(info), 900);
+      const paymentsRef = ref(db, 'payments');
+      const newRef = push(paymentsRef);
+      const payload = {
+        planId: selectedPlan.id,
+        planLabel: selectedPlan.label,
+        price: selectedPlan.price,
+        utr,
+        status: 'pending',
+        createdAt: Date.now()
+      };
+      await set(newRef, payload);
+      pendingPaymentId = newRef.key;
+      paymentStatus.innerText = 'Submitted — awaiting admin approval';
+      const thisRef = ref(db, 'payments/' + pendingPaymentId);
+      onValue(thisRef, (snap)=>{
+        const data = snap.val();
+        if(!data) return;
+        if(data.status === 'approved'){
+          paymentStatus.innerText = 'Approved — unlocking...';
+          unlockUserWithPlan(data);
+        } else if(data.status === 'rejected'){
+          paymentStatus.innerText = 'Rejected by admin';
         }
       });
     }catch(err){
       console.error(err);
-      alert('Firebase error: ' + err.message);
-    }
-  };
+      paymentStatus.innerText = 'Error: ' + (err.message||err);
+    } finally { submitPaymentBtn.disabled = false; }
+  });
 
-  // when approved -> move to prediction
-  function initSessionWithApproval(info){
-    // set balance equal to plan.min for simplicity (you can change)
-    balance = (selectedPlan && selectedPlan.min) ? selectedPlan.min : 100;
+  function unlockUserWithPlan(data){
+    balance = selectedPlan ? selectedPlan.min : 100;
+    balanceDisplay.innerText = '₹' + balance;
     level = 1;
-    sessionActive = true;
-    document.getElementById('balanceVal').innerText = balance;
-    document.getElementById('planActiveLabel').innerText = selectedPlan.label;
-    showView('view-predict');
-    // watch server status
-    serverStatus.innerText = 'Connected';
-    // play audio
-    tryPlayAudio();
-    loadSavedResultsToUI();
+    activeUnlocked = true;
+    predictionSection.style.display = 'block';
+    paymentSection.style.display = 'none';
+    historyArr = [];
+    renderHistoryUI();
   }
 
-  // admin hidden cross handling
-  document.getElementById('adminCross').addEventListener('click', ()=>{
+  // ADMIN: hidden cross opens prompt for password
+  const adminCross = document.getElementById('adminCross');
+  adminCross.addEventListener('click', async ()=>{
     const pw = prompt('Enter admin key:');
     if(pw === null) return;
     if(pw === '456'){
-      adminPanelEl.style.display = 'block';
-      document.getElementById('adminPanel').style.display = 'block';
-      showModal('Admin unlocked','You can approve pending UTRs here.');
-      loadPendingFromFirebase();
+      showModal('Admin unlocked','You can approve/reject payments from the right panel.');
+      setupAdminPanel();
     } else {
-      alert('Wrong key.');
+      alert('Wrong admin key');
     }
   });
-  window.closeAdmin = ()=>{ adminPanelEl.style.display = 'none'; document.getElementById('adminPanel').style.display='none'; };
 
-  // load pending UTRs
-  function loadPendingFromFirebase(){
-    pendingList.innerHTML = 'Loading...';
-    onValue(ref(db,'pendingUTRs'), snap=>{
-      pendingList.innerHTML = '';
-      const val = snap.val();
-      if(!val){ pendingList.innerHTML = '<div class="small">No pending UTRs</div>'; return; }
-      Object.entries(val).forEach(([k,v])=>{
-        const div = document.createElement('div');
-        div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.03)';
-        div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>${v.platform} • ₹${v.amount}</strong><div class="small">UTR: ${v.utr} • ${new Date(v.ts).toLocaleString()}</div></div>
-          <div style="text-align:right">
-            <button class="btn" onclick="approveUTR('${v.utr}','${k}')">Approve</button>
-            <button class="btn ghost" onclick="rejectUTR('${k}')">Reject</button>
-          </div>
-        </div>`;
-        pendingList.appendChild(div);
-      });
+  // admin panel: listen to /payments pending and render
+  function setupAdminPanel(){
+    serverStatus.innerText = 'Connected (Firebase)';
+    const paymentsRef = ref(db, 'payments');
+    onValue(paymentsRef, (snap)=>{
+      const val = snap.val() || {};
+      const entries = Object.entries(val).filter(([k,v])=>v.status === 'pending');
+      if(entries.length === 0){
+        pendingList.innerHTML = '<div class="small">No pending payments</div>';
+      } else {
+        pendingList.innerHTML = '';
+        entries.reverse().forEach(([key, payment])=>{
+          const div = document.createElement('div');
+          div.style.padding='8px';
+          div.style.borderBottom='1px solid rgba(255,255,255,0.03)';
+          div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:800">${payment.planLabel} — ₹${payment.price}</div>
+              <div class="small">UTR: ${payment.utr} • ${new Date(payment.createdAt).toLocaleString()}</div>
+            </div>
+            <div style="text-align:right">
+              <button class="btn" data-id="${key}" data-act="approve">Approve</button>
+              <button class="link" data-id="${key}" data-act="reject">Reject</button>
+            </div>
+          </div>`;
+          pendingList.appendChild(div);
+        });
+        [...pendingList.querySelectorAll('button')].forEach(b=>{
+          b.onclick = async ()=> {
+            const id = b.dataset.id;
+            const act = b.dataset.act;
+            if(act === 'approve'){
+              await update(ref(db, 'payments/' + id), { status: 'approved', approvedAt: Date.now() });
+            } else {
+              await update(ref(db, 'payments/' + id), { status: 'rejected', approvedAt: Date.now() });
+            }
+          };
+        });
+      }
     });
   }
 
-  // admin approve/reject
-  window.approveUTR = async (utr, pendingKey)=>{
-    if(!confirm('Approve UTR ' + utr + ' ?')) return;
-    // write under approved/<utr>
-    await set(ref(db, `approved/${utr}`), { utr, approvedAt: Date.now() });
-    // remove pending node
-    await remove(ref(db, `pendingUTRs/${pendingKey}`));
-    showModal('Approved', 'UTR approved and user will be notified.');
-  };
-  window.rejectUTR = async (pendingKey)=>{
-    if(!confirm('Reject this submission?')) return;
-    await remove(ref(db, `pendingUTRs/${pendingKey}`));
-    showModal('Rejected', 'Pending UTR removed.');
-  };
+  // Prediction: apply user-entered history
+  applyHistoryBtn.addEventListener('click', ()=>{
+    const txt = (historyInput.value || '').trim();
+    if(!txt){ showModal('No input','Enter last 10 results separated by comma (B or S).'); return; }
+    const parts = txt.split(',').map(s=>s.trim().toUpperCase()).filter(Boolean).slice(-10);
+    lastResults = parts.map(p => (p.startsWith('B')? 'BIG' : 'SMALL'));
+    lastResults = lastResults.reverse();
+    showModal('History applied','Last rounds stored for analysis.');
+  });
 
-  // --- Prediction logic & UI ---
-
-  // last 10 inputs render
-  function renderLastInputs(){
-    const container = document.getElementById('lastInputs');
-    container.innerHTML = '';
-    for(let i=0;i<10;i++){
-      const v = lastResults[i] || '';
-      const btnB = document.createElement('button');
-      btnB.className='result-pill';
-      btnB.textContent='B';
-      btnB.onclick = ()=> { lastResults[i]='B'; renderLastInputs(); };
-      const btnS = document.createElement('button');
-      btnS.className='result-pill';
-      btnS.textContent='S';
-      btnS.onclick = ()=> { lastResults[i]='S'; renderLastInputs(); };
-      const wrapper = document.createElement('div');
-      wrapper.style.display='inline-block'; wrapper.style.marginRight='6px';
-      const label = document.createElement('div');
-      label.style.fontSize='12px'; label.style.marginBottom='6px'; label.style.opacity='0.7';
-      label.textContent = i+1;
-      wrapper.appendChild(label);
-      // show current
-      const cur = document.createElement('div');
-      cur.style.display='flex'; cur.style.gap='6px';
-      cur.appendChild(btnB); cur.appendChild(btnS);
-      // mark active selection visually
-      if(lastResults[i]==='B'){ btnB.style.background='#103227'; btnB.style.color='#9ff0d0'; }
-      if(lastResults[i]==='S'){ btnS.style.background='#20140b'; btnS.style.color='#ffd59b'; }
-      wrapper.appendChild(cur);
-      container.appendChild(wrapper);
-    }
-  }
-  window.saveLastResults = ()=>{
-    // ensure 10 entries
-    lastResults = lastResults.slice(0,10);
-    while(lastResults.length<10) lastResults.unshift('');
-    // save locally
-    localStorage.setItem('bt_last10', JSON.stringify(lastResults));
-    showModal('Saved', 'Last results saved.');
-  };
-  window.clearLastResults = ()=>{
-    lastResults = [];
-    localStorage.removeItem('bt_last10');
-    renderLastInputs();
-  };
-
-  // load saved
-  function loadSavedResultsToUI(){
-    const s = localStorage.getItem('bt_last10');
-    if(s){ try{ lastResults = JSON.parse(s); }catch(e){ lastResults=[]; } }
-    renderLastInputs();
-    // results history
-    const r = localStorage.getItem('bt_results');
-    if(r) resultsHistory = JSON.parse(r);
-    updateResultsUI();
-  }
-
-  // compute prediction (heuristic)
-  function analyzeLast10(){
-    const arr = lastResults.filter(Boolean);
-    if(arr.length < 4){
-      return {pred:null,confidence:0,reason:'Not enough data (enter at least 4)'}; // require at least 4 for some signal
-    }
-    // frequency
-    const freq = {B:0,S:0};
-    arr.forEach(x=>{ if(x==='B') freq.B++; if(x==='S') freq.S++; });
-    const total = freq.B + freq.S;
-    const pB = freq.B/total;
-    const pS = freq.S/total;
-    // streak detection (last few)
-    let streak = 1;
-    for(let i=arr.length-1;i>0;i--){
-      if(arr[i]===arr[i-1]) streak++; else break;
-    }
-    // trend: count of transitions up/down (treat B as up)
-    const trendScore = pB - pS; // positive favors B
-    // confidence baseline from frequency and streak
-    let confidence = Math.round(Math.max(pB,pS)*100);
-    // streak bonus
-    if(streak>=3) confidence += 10;
-    // trend strength add
-    confidence = Math.min(95, confidence);
-    const pred = pB > pS ? 'BIG' : 'SMALL';
-    const reason = `Freq B:${freq.B} S:${freq.S} • streak:${streak} • trend:${(trendScore>0?'B':'S')}`;
-    return {pred,confidence,reason,pB,pS,streak};
-  }
-
-  // bet calc
-  function calcBet(currentBalance){
-    if(level===1) return Math.max(1, Math.round(currentBalance * 0.15));
-    if(level===2) return Math.max(1, Math.round(currentBalance * 0.30));
-    if(level===3) return Math.max(1, Math.round(currentBalance * 0.55));
-    return Math.max(1, Math.round(currentBalance * 0.15));
-  }
-
-  // generate prediction action
-  window.generatePrediction = ()=>{
-    if(!sessionActive){ alert('No active session — finish payment & approval first.'); return; }
-    // ensure lastResults filled
-    const arr = lastResults.filter(Boolean);
-    if(arr.length < 4){ showModal('Need past results','Enter at least 4 last results for better analysis.'); return; }
-    // period
-    const period = document.getElementById('periodManual').value.trim();
-    if(!period){ showModal('Enter period','Enter period number manually.'); return; }
-    periodBase = period; // base
-    // analyze
-    const res = analyzeLast10();
-    document.getElementById('predLabel').innerText = res.pred || '--';
-    document.getElementById('confLabel').innerText = (res.confidence) ? res.confidence + '%' : '--';
-    // suggested bet only if confidence >=80 else suggest skip
-    const conf = res.confidence;
-    if(conf >= 80){
-      const suggested = calcBet(balance);
-      document.getElementById('betLabel').innerText = '₹' + suggested + ` (L${level})`;
-      document.getElementById('liveBox').innerText = `Predicted ${res.pred} • ${res.reason}`;
-      // store current suggested bet & pred in local temp
-      window._currentPrediction = { period, pred: res.pred, confidence: res.confidence, bet:suggested, ts: Date.now() };
+  // generate prediction (heuristic AI)
+  generateBtn.addEventListener('click', ()=>{
+    if(!activeUnlocked){ showModal('Locked','Complete payment & admin approval to unlock predictions.'); return; }
+    if(lastResults.length < 3){ showModal('Insufficient history','Enter at least 3 last results (10 recommended).'); return; }
+    const period = generateAutoPeriod();
+    periodDisplay.innerText = period;
+    const resultCounts = lastResults.reduce((acc, r)=>{
+      acc[r] = (acc[r] || 0) + 1; return acc;
+    }, {});
+    const bigCount = resultCounts['BIG'] || 0;
+    const smallCount = resultCounts['SMALL'] || 0;
+    const total = bigCount + smallCount;
+    const bigProb = Math.round((bigCount/total)*100);
+    const smallProb = Math.round((smallCount/total)*100);
+    const last5 = lastResults.slice(0,5).reverse();
+    const trend = last5.filter(x=>x==='BIG').length > last5.filter(x=>x==='SMALL').length ? 'BIG' : (last5.filter(x=>x==='SMALL').length > last5.filter(x=>x==='BIG').length ? 'SMALL' : 'NEUTRAL');
+    const alternation = detectAlternation(lastResults);
+    const longRun = detectLongRun(lastResults);
+    let baseConfidence = Math.max(bigProb, smallProb);
+    if(trend !== 'NEUTRAL' && trend === (bigProb>smallProb ? 'BIG' : 'SMALL')) baseConfidence += 10;
+    if(alternation) baseConfidence -= 15;
+    if(longRun) baseConfidence -= 10;
+    baseConfidence = Math.max(10, Math.min(95, baseConfidence));
+    let suggestion = 'SKIP';
+    if(baseConfidence >= 80){
+      suggestion = bigProb > smallProb ? 'BIG' : 'SMALL';
     } else {
-      document.getElementById('betLabel').innerText = '-- (skip advised)';
-      document.getElementById('liveBox').innerText = `Low confidence (${res.confidence}%) — Skip recommended. ${res.reason}`;
-      window._currentPrediction = { period, pred:null, confidence: res.confidence, bet:0, ts: Date.now() };
+      suggestion = 'SKIP';
     }
+    const betAmount = computeBetAmount(balance, level);
+    suggestionBox.innerText = suggestion;
+    confidenceBox.innerText = baseConfidence + '%';
+    betBox.innerText = '₹' + betAmount;
+  });
 
-    // if autoPeriod checked, start auto increment (one minute)
-    if(document.getElementById('autoPeriod').checked){
-      if(autoPeriodTimer) clearInterval(autoPeriodTimer);
-      autoPeriodTimer = setInterval(()=>{
-        if(!periodBase) return;
-        // attempt to increment last numeric tail by 1
-        // find trailing digits and increment
-        const m = periodBase.match(/(.*?)(\d+)$/);
-        if(m){
-          const prefix = m[1], digits = m[2];
-          const next = (BigInt(digits) + 1n).toString().padStart(digits.length,'0');
-          periodBase = prefix + next;
-          document.getElementById('periodManual').value = periodBase;
-        } else {
-          // fallback: append 1
-          periodBase = periodBase + '1';
-          document.getElementById('periodManual').value = periodBase;
-        }
-      }, 60*1000);
-    }
-  };
-
-  // skip action
-  window.doSkip = ()=>{
-    document.getElementById('liveBox').innerText = 'Skipped this round by user.';
-    // record skip into history as 'skip'
-    const rec = { period: document.getElementById('periodManual').value || '', pred: null, result: 'skip', ts: Date.now() };
-    resultsHistory.unshift(rec);
-    resultsHistory = resultsHistory.slice(0,50);
-    localStorage.setItem('bt_results', JSON.stringify(resultsHistory));
-    updateResultsUI();
-  };
-
-  // mark result
-  window.markResult = (r)=>{
-    if(!window._currentPrediction && r!=='skip'){ alert('Generate prediction first.'); return; }
-    const period = document.getElementById('periodManual').value || '';
-    const pred = (window._currentPrediction && window._currentPrediction.pred) ? window._currentPrediction.pred : null;
-    const bet = (window._currentPrediction && window._currentPrediction.bet) ? window._currentPrediction.bet : 0;
-    let resultLabel = r.toUpperCase();
-    // update balance & levels
-    if(r==='win'){
-      // assume 1:1 payout
-      balance = Math.round(balance + bet);
-      level = 1;
-    } else if(r==='loss'){
-      balance = Math.max(0, Math.round(balance - bet));
-      level = (level < 3) ? level + 1 : 1;
-    } else if(r==='skip'){
-      // do nothing to balance
-    }
-    // store result
-    const rec = { period, pred, bet, result: resultLabel, ts: Date.now() };
-    resultsHistory.unshift(rec);
-    resultsHistory = resultsHistory.slice(0,50);
-    localStorage.setItem('bt_results', JSON.stringify(resultsHistory));
-    // update UI
-    document.getElementById('balanceVal').innerText = balance;
-    updateResultsUI();
-    // reset current prediction
-    window._currentPrediction = null;
-    // if target completion (balance >= selectedPlan.max), show congrats and end
-    if(selectedPlan && balance >= selectedPlan.max){
-      showModal('🎉 Target Complete', 'Congratulations — target achieved. Returning to start.', ()=>{
-        endSession();
-      });
-    }
-  };
-
-  function updateResultsUI(){
-    const list = document.getElementById('resultsList');
-    list.innerHTML = '';
-    let wins=0, losses=0;
-    resultsHistory.slice(0,20).forEach(r=>{
-      const div = document.createElement('div');
-      div.className='item';
-      div.style.display='flex'; div.style.justifyContent='space-between';
-      const left = document.createElement('div');
-      left.innerHTML = `<div style="font-weight:700">${r.period || '--'}</div><div class="small">${r.pred || ''} • ${r.result}</div>`;
-      const right = document.createElement('div');
-      right.style.textAlign='right'; right.innerHTML = `<div class="small">${new Date(r.ts).toLocaleTimeString()}</div><div class="small">Bet: ₹${r.bet||0}</div>`;
-      div.appendChild(left); div.appendChild(right);
-      list.appendChild(div);
-      if(r.result==='WIN' || r.result==='win') wins++;
-      if(r.result==='LOSS' || r.result==='loss') losses++;
-    });
-    const total = wins+losses;
-    const acc = total ? Math.round((wins/total)*100) : 0;
-    document.getElementById('statWins').innerText = wins;
-    document.getElementById('statLosses').innerText = losses;
-    document.getElementById('statAcc').innerText = acc + '%';
-    document.getElementById('statsText').innerText = `Wins: ${wins} • Losses: ${losses} • Accuracy: ${acc}%`;
-    document.getElementById('lastCount').innerText = `(Last ${Math.min(20,resultsHistory.length)})`;
+  function computeBetAmount(balanceVal, lvl){
+    if(lvl === 1) return Math.max(1, Math.round(balanceVal * 0.15));
+    if(lvl === 2) return Math.max(1, Math.round(balanceVal * 0.30));
+    if(lvl === 3) return Math.max(1, Math.round(balanceVal * 0.55));
+    return Math.max(1, Math.round(balanceVal * 0.15));
   }
 
-  // session end
-  window.endSession = ()=>{
-    if(!confirm('End session and return to start?')) return;
-    sessionActive=false;
-    balance=0; level=1; selectedPlan=null;
-    document.getElementById('utrInput').value='';
-    document.getElementById('periodManual').value='';
-    showView('view-platforms');
-    stopAudio();
-  };
+  function detectAlternation(arr){
+    const seq = arr.slice(0,6);
+    if(seq.length < 4) return false;
+    let alt = true;
+    for(let i=2;i<seq.length;i++){
+      if(seq[i] === seq[i-2]) { alt = false; break; }
+    }
+    return alt;
+  }
+  function detectLongRun(arr){
+    if(arr.length < 4) return false;
+    const last4 = arr.slice(0,4);
+    return last4.every(x=>x===last4[0]);
+  }
 
-  // background / audio admin
-  window.applyBackground = ()=>{
-    const sel = document.getElementById('bgSelect').value || 'anime1.png';
-    document.body.style.backgroundImage = `url('${sel}')`;
-    document.getElementById('logoImg').src = sel;
-    showModal('Background applied', sel);
-  };
-  window.applyMusic = ()=>{
-    const f = document.getElementById('musicFile').value || 'music.m4a';
-    const a = document.getElementById('bgAudio');
-    a.src = f; a.load();
-    showModal('Music set', f);
-  };
-  function tryPlayAudio(){ const a=document.getElementById('bgAudio'); a.volume=0.6; a.play().catch(()=>{}); }
-  function stopAudio(){ const a=document.getElementById('bgAudio'); try{ a.pause(); a.currentTime=0;}catch(e){} }
-  window.tryPlayAudio = tryPlayAudio;
-  window.stopAudio = stopAudio;
+  function generateAutoPeriod(){
+    const now = new Date();
+    const YYYY = now.getFullYear().toString().padStart(4,'0');
+    const MM = (now.getMonth()+1).toString().padStart(2,'0');
+    const DD = now.getDate().toString().padStart(2,'0');
+    const hh = now.getHours().toString().padStart(2,'0');
+    const mm = now.getMinutes().toString().padStart(2,'0');
+    const counter = String(now.getSeconds()).padStart(2,'0') + String(Math.floor(Math.random()*90)+10);
+    return `${YYYY}${MM}${DD}${hh}${mm}${counter}`;
+  }
+
+  markWinBtn.addEventListener('click', ()=> markResult('win'));
+  markLossBtn.addEventListener('click', ()=> markResult('loss'));
+  function markResult(type){
+    const period = periodDisplay.innerText;
+    const suggestion = suggestionBox.innerText;
+    if(!period || period === '--'){ showModal('No prediction','Generate a prediction first'); return; }
+    const signal = suggestion === 'SKIP' ? 'SKIP' : suggestion;
+    const ts = Date.now();
+    const res = { period, signal, result: type.toUpperCase(), ts };
+    historyArr.unshift(res);
+    historyArr = historyArr.slice(0,50);
+    localStorage.setItem('bt_history', JSON.stringify(historyArr));
+    if(type === 'win') wins++; else losses++;
+    const total = wins + losses;
+    const acc = total ? Math.round((wins/total)*100) : 0;
+    statsText.innerText = `Wins: ${wins} • Losses: ${losses} • Accuracy: ${acc}%`;
+    lastCount.innerText = `(Last ${Math.min(historyArr.length,10)})`;
+    const bet = computeBetAmount(balance, level);
+    if(type === 'win'){
+      balance = balance + bet;
+      level = 1;
+    } else {
+      balance = Math.max(0, balance - bet);
+      level = Math.min(3, level + 1);
+    }
+    balanceDisplay.innerText = '₹' + balance;
+    renderHistoryUI();
+  }
+
+  function renderHistoryUI(){
+    resultsList.innerHTML = '';
+    const arr = historyArr.slice(0,10);
+    arr.forEach(r=>{
+      const d = document.createElement('div');
+      d.style.padding='8px'; d.style.borderBottom='1px solid rgba(255,255,255,0.03)';
+      d.innerHTML = `<div style="display:flex;justify-content:space-between">
+        <div><strong>${r.period}</strong><div class="small">${r.signal} • ${r.result}</div></div>
+        <div class="small">${new Date(r.ts).toLocaleTimeString()}</div>
+      </div>`;
+      resultsList.appendChild(d);
+    });
+  }
 
   // modal util
-  function showModal(t,s){ document.getElementById('modalTitle').innerText=t; document.getElementById('modalSub').innerText=s||''; document.getElementById('modal').classList.add('show'); }
-  window.closeModal = ()=>{ document.getElementById('modal').classList.remove('show'); }
+  const modal = document.getElementById('modal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalSub = document.getElementById('modalSub');
+  const modalOkBtn = document.getElementById('modalOkBtn');
+  function showModal(title, sub=''){ modalTitle.innerText = title; modalSub.innerText = sub; modal.classList.add('show'); }
+  function closeModal(){ modal.classList.remove('show'); }
+  modalOkBtn.addEventListener('click', closeModal);
 
-  // On load
-  (function init(){
-    renderPlatforms();
-    renderPlans();
-    showView('view-platforms');
-    serverStatus.innerText = 'Connected';
-    // restore last results and history if present
-    loadSavedResultsToUI();
-    // set default BG
-    document.body.style.backgroundImage = "url('anime1.png')";
-    document.getElementById('logoImg').src = 'anime1.png';
+  // init
+  renderPlans();
+  serverStatus.innerText = 'Connected (Firebase ready)';
+  (function loadLocal(){
+    try{
+      const h = JSON.parse(localStorage.getItem('bt_history')||'[]');
+      historyArr = Array.isArray(h) ? h : [];
+      wins = historyArr.filter(x=>x.result==='WIN').length;
+      losses = historyArr.filter(x=>x.result==='LOSS').length;
+      renderHistoryUI();
+    }catch(e){}
   })();
 
 </script>
