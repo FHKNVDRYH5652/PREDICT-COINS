@@ -3,476 +3,783 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>CoinPredict — Big/Small (50 free coins)</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<title>Prediction — Coins • Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg1:#071022; --bg2:#071a2a;
-    --card:#0f1724; --muted:#9fb0d6;
-    --accent:#00d2a8; --accent2:#00a6ff;
-    --pink:#ff6b6b; --glass: rgba(255,255,255,0.02);
+    --bg1:#071021;
+    --card: rgba(15,20,30,0.75);
+    --accent:#2fe7c1;
+    --accent2:#4ad0ff;
+    --muted:#9aa6b2;
+    --danger:#ff6b6b;
   }
-  *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Arial;}
-  body{margin:0;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:#eaf6ff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:22px}
-  .wrap{width:1100px;max-width:98%;display:grid;grid-template-columns:360px 1fr;gap:20px}
-  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:18px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 10px 30px rgba(0,0,0,0.6)}
-  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#021}
-  h1{margin:0;font-size:18px}
+  *{box-sizing:border-box;font-family:'Inter',system-ui,Arial,sans-serif}
+  body{margin:0;min-height:100vh;background:linear-gradient(180deg,#021224 0%, #061426 60%);color:#dfeff5;display:flex;align-items:center;justify-content:center;padding:20px;background-image:url('anime.png');background-size:cover;background-position:center;}
+  .app{width:100%;max-width:920px;background:linear-gradient(180deg, rgba(3,6,12,0.65), rgba(6,9,14,0.8));border-radius:14px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,0.6);backdrop-filter: blur(6px)}
+  header{display:flex;gap:12px;align-items:center}
+  .logo{width:56px;height:56px;border-radius:10px;overflow:hidden;background:#0b1220;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.04)}
+  .title{font-size:20px;font-weight:800;color:var(--accent)}
+  .subtitle{color:var(--muted);font-size:13px}
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:18px}
+  @media(max-width:920px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 24px rgba(0,0,0,0.5)}
+  .wallet-row{display:flex;align-items:center;gap:12px}
+  .big-coin{font-size:22px;font-weight:800;color:var(--accent)}
   .muted{color:var(--muted);font-size:13px}
-  .wallet{display:flex;align-items:center;justify-content:space-between;gap:8px}
-  .coin-badge{background:linear-gradient(90deg,#ffd166,#ffb703);color:#002;padding:8px 10px;border-radius:999px;font-weight:800;box-shadow:0 6px 18px rgba(255,183,3,0.08)}
-  .btn{background:linear-gradient(90deg,var(--accent),var(--accent2));border:none;color:#001;padding:10px 12px;border-radius:9px;font-weight:800;cursor:pointer}
-  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-  .small{font-size:13px;color:var(--muted)}
-  .input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
-  .center{display:flex;align-items:center;justify-content:center}
-  .prediction-area{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .pred-box{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));padding:14px;border-radius:10px;text-align:center;border:1px solid rgba(255,255,255,0.03)}
-  .period{font-weight:800;font-size:14px}
-  .result-big{color:#7fe8a7;font-weight:900;font-size:26px}
-  .result-small{color:#ffb6b6;font-weight:900;font-size:26px}
-  .numbers{font-weight:900;font-size:22px;margin-top:8px}
-  .anim-bar{height:6px;background:linear-gradient(90deg,#003,#0ff);border-radius:6px;overflow:hidden;margin-top:12px}
-  .progress{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#8afcff)}
-  .history-list{max-height:220px;overflow:auto;padding:6px;border-radius:8px;background:rgba(0,0,0,0.18)}
-  .hitem{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)}
-  .green{color:#9be3ff}
-  .pink{color:#ffb6b6}
-  .big-pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(123,227,255,0.06);color:#9be3ff;font-weight:800}
-  .small-pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,107,107,0.04);color:#ffb6b6;font-weight:800}
-  /* Buy modal */
-  .modal {position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);visibility:hidden;opacity:0;transition:all .18s;z-index:9999}
-  .modal.show{visibility:visible;opacity:1}
-  .modal-card{background:#071022;padding:18px;border-radius:10px;min-width:320px;border:1px solid rgba(255,255,255,0.03)}
-  /* small responsive */
-  @media(max-width:1000px){ .wrap{grid-template-columns:1fr} .prediction-area{grid-template-columns:1fr} }
+  input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:#fff}
+  button{padding:10px 14px;border-radius:10px;border:0;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#022126;font-weight:700;cursor:pointer}
+  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:#fff}
+  .small{font-size:13px}
+  .center{text-align:center}
+  .progress{height:8px;background:rgba(255,255,255,0.06);border-radius:8px;overflow:hidden}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 0.3s ease}
+  .pred-box{display:flex;flex-direction:column;gap:12px;align-items:center;padding:18px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.2));width:100%}
+  .pred-value{font-size:44px;font-weight:900;color:var(--accent)}
+  .pred-num{font-size:28px;font-weight:800;color:#fff}
+  .history-list{max-height:320px;overflow:auto;margin-top:8px;padding-right:8px}
+  .history-item{padding:10px;border-radius:8px;background:rgba(0,0,0,0.25);display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .claim-btn{background:linear-gradient(90deg,#ffd166,#ff8fab);color:#211718}
+  .qr-preview{width:100%;height:auto;border-radius:10px;border:1px solid rgba(255,255,255,0.04)}
+  .admin-cross{position:fixed;right:18px;bottom:18px;width:48px;height:48px;border-radius:10px;background:var(--danger);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;z-index:9999;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,0.6)}
+  .note{font-size:13px;color:var(--muted)}
+  .flex{display:flex;gap:8px;align-items:center}
+  .badge{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:8px;font-weight:700}
+  .logs{margin-top:10px;background:rgba(0,0,0,0.28);padding:10px;border-radius:8px;max-height:180px;overflow:auto}
+  .analysis-line{font-family:monospace;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));padding:8px;border-radius:6px;margin-bottom:6px}
 </style>
 </head>
 <body>
-  <div style="width:1100px;max-width:98%;margin:auto">
-    <header>
-      <div class="logo">CP</div>
-      <div>
-        <h1>CoinPredict — Big/Small</h1>
-        <div class="muted">50 free coins on signup • 10 coins per prediction • 1 coin = ₹0.5 • Min buy 100 coins</div>
-      </div>
-    </header>
-
-    <div class="wrap">
-      <!-- LEFT: wallet / buy / history -->
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div>
-            <div class="muted">Your Wallet</div>
-            <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
-              <div class="coin-badge" id="coinCount">0</div>
-              <div>
-                <div style="font-weight:800">Coins</div>
-                <div class="small">1 coin = ₹0.5</div>
-              </div>
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <button class="btn" id="buyBtn">Buy Coins</button>
-            <button class="btn ghost" id="refill50">Claim 50 Free</button>
-          </div>
-        </div>
-
-        <hr style="border:0;border-top:1px solid rgba(255,255,255,0.03)">
-
-        <div style="margin-top:12px">
-          <div class="muted">Quick actions</div>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button class="btn" id="openPredict">Open Prediction</button>
-            <button class="btn ghost" id="openHistory">History</button>
-          </div>
-        </div>
-
-        <div style="margin-top:14px">
-          <div class="muted">Purchase history (local demo)</div>
-          <div class="history-list" id="purchaseHistory"></div>
-        </div>
-      </div>
-
-      <!-- RIGHT: Prediction main -->
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div class="muted">Prediction Panel</div>
-            <div style="font-weight:900;font-size:16px">Enter period → Generate prediction</div>
-          </div>
-          <div class="muted">Cost per prediction: <strong>10 coins</strong></div>
-        </div>
-
-        <div style="margin-top:12px" class="prediction-area">
-          <div>
-            <div class="pred-box">
-              <div class="muted">Current Period</div>
-              <div class="period" id="periodDisplay">—</div>
-
-              <div style="margin-top:12px">
-                <input id="periodInput" class="input" placeholder="Enter period (e.g. 20250914100011151)">
-              </div>
-
-              <div style="display:flex;gap:8px;margin-top:12px">
-                <button class="btn" id="generateBtn">Generate Prediction</button>
-                <button class="btn ghost" id="autoInc">Auto-inc ON</button>
-              </div>
-
-              <div class="anim-bar" style="margin-top:12px">
-                <div class="progress" id="progressBar"></div>
-              </div>
-
-              <div style="margin-top:12px" id="predictionResult" class="center">
-                <!-- result displayed here -->
-                <div style="width:100%">
-                  <div id="predLabel" style="font-size:14px" class="muted center">No prediction yet</div>
-                  <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
-                    <div id="predSign" style="min-width:120px"></div>
-                  </div>
-                  <div id="predNums" class="numbers" style="margin-top:8px"></div>
-                </div>
-              </div>
-
-              <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
-                <button class="btn" id="markWin" style="background:#2fb27f">Mark Win</button>
-                <button class="btn" id="markLoss" style="background:#ff6b6b">Mark Loss</button>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div class="pred-box">
-              <div class="muted">Summary</div>
-              <div style="display:flex;justify-content:space-between;gap:8px;margin-top:8px">
-                <div><div class="small">Predictions made</div><div id="madeCount" style="font-weight:800">0</div></div>
-                <div><div class="small">Wins</div><div id="winsCount" style="font-weight:800">0</div></div>
-                <div><div class="small">Losses</div><div id="lossCount" style="font-weight:800">0</div></div>
-              </div>
-
-              <div style="margin-top:12px">
-                <div class="small muted">History (latest first)</div>
-                <div class="history-list" id="predHistory"></div>
-              </div>
-            </div>
-
-            <div class="pred-box" style="margin-top:12px">
-              <div class="muted">Design & Animation</div>
-              <div style="margin-top:8px" class="small">Smooth generator animation, neon accents & incremental period auto-increment after each successful generation (if Auto-inc ON).</div>
-            </div>
-          </div>
-        </div>
-
-      </div>
+<div class="app">
+  <header>
+    <div class="logo"><img src="anime.png" style="width:100%;height:100%;object-fit:cover" alt="logo"></div>
+    <div>
+      <div class="title">Baba Tillu — Predictions</div>
+      <div class="subtitle">50 free coins • 1 coin = ₹0.5 • 10 coins per prediction</div>
     </div>
+  </header>
 
-    <div style="height:12px"></div>
-    <div class="muted center">This is a frontend demo. Replace payment/UTR handling with secure backend before going live.</div>
-  </div>
-
-  <!-- Buy modal -->
-  <div class="modal" id="buyModal">
-    <div class="modal-card">
+  <div class="grid">
+    <!-- LEFT: main prediction -->
+    <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-weight:800">Buy Coins</div>
-        <div class="small muted">Min 100 coins</div>
-      </div>
-
-      <div style="margin-top:12px">
-        <label class="small">How many coins?</label>
-        <input id="buyCount" class="input" placeholder="100">
-        <div class="small muted" style="margin-top:6px">Price: <span id="buyPrice">₹0</span></div>
-      </div>
-
-      <div style="margin-top:12px">
-        <label class="small">Scan & Pay (QR)</label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <div style="width:100px;height:100px;border-radius:8px;background:linear-gradient(90deg,#111,#222);display:flex;align-items:center;justify-content:center;color:var(--muted)">QR.png</div>
-          <div>
-            <div class="small muted">Scan this QR in your UPI app and pay the amount.</div>
-            <input id="buyUTR" class="input" placeholder="Enter 12-digit UTR after payment" style="margin-top:8px">
+        <div>
+          <div class="muted">Your wallet</div>
+          <div class="wallet-row" style="margin-top:8px">
+            <div class="big-coin" id="coinCount">—</div>
+            <div style="margin-left:auto">
+              <button onclick="openBuyModal()">Buy Coins</button>
+              <button class="ghost" onclick="syncWallet()">Sync</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-        <button class="btn ghost" id="buyCancel">Cancel</button>
-        <button class="btn" id="buyConfirm">Confirm Purchase</button>
+      <hr style="border:0;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0">
+
+      <!-- Free claim -->
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+        <div style="flex:1">
+          <div class="muted">Free claim (one-time per device)</div>
+          <div style="margin-top:8px"><button id="claimBtn" class="claim-btn" onclick="claimFreeCoins()">Claim 50 coins</button></div>
+        </div>
+        <div style="width:120px;text-align:right">
+          <div class="muted">Period</div>
+          <div style="font-weight:800;margin-top:6px" id="currentPeriod">—</div>
+        </div>
       </div>
+
+      <!-- Prediction UI -->
+      <div class="pred-box">
+        <div style="width:100%;display:flex;gap:8px">
+          <input id="periodInput" placeholder="Enter period (e.g. 20250914100011153)">
+          <button id="genBtn" onclick="startPrediction()">Generate Prediction</button>
+        </div>
+
+        <div class="progress" aria-hidden><i id="progressBar"></i></div>
+
+        <div class="center">
+          <div class="muted">Prediction</div>
+          <div class="pred-value" id="predSide">—</div>
+          <div class="pred-num" id="predNum">— / —</div>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button style="background:#23c552" onclick="markResult('win')">Mark Win</button>
+          <button style="background:#ff6b6b" onclick="markResult('loss')">Mark Loss</button>
+          <div style="margin-left:auto" class="muted">Cost: 10 coins</div>
+        </div>
+
+        <div class="logs" id="logs">
+          <div class="muted">Analysis logs appear here</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px" class="note">Design: dark premium • background animations subtle • QR used in payment modal.</div>
+    </div>
+
+    <!-- RIGHT: wallet, buy, history -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div class="muted">Wallet</div>
+          <div style="font-weight:800;font-size:22px" id="walletLabel">0 coins</div>
+          <div class="muted small">₹0.00</div>
+        </div>
+        <div style="text-align:right">
+          <div class="muted">Purchase</div>
+          <div style="margin-top:8px"><button onclick="openBuyModal()">Buy coins</button></div>
+        </div>
+      </div>
+
+      <hr style="border:0;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0">
+
+      <div class="muted">Payment & history</div>
+      <div id="paymentsBox" style="margin-top:8px"></div>
+
+      <hr style="border:0;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0">
+
+      <div class="muted">Prediction history (latest first)</div>
+      <div id="history" class="history-list"></div>
     </div>
   </div>
+</div>
 
-<script>
-/* ---------- Storage keys ---------- */
-const KEY_COINS = 'cp_coins_v1';
-const KEY_PURCHASES = 'cp_purchases_v1';
-const KEY_PREDH = 'cp_predhist_v1';
-const KEY_FREE_CLAIMED = 'cp_free50_v1';
+<!-- Admin cross -->
+<div class="admin-cross" id="adminCross" title="Admin (hidden)">❌</div>
 
-/* ---------- Initial state ---------- */
-function getCoins(){ return parseInt(localStorage.getItem(KEY_COINS) || '0', 10); }
-function setCoins(v){ localStorage.setItem(KEY_COINS, String(v)); updateCoinUI(); }
-function addCoins(v){ setCoins(getCoins() + v); }
-function addPurchaseRecord(rec){
-  const arr = JSON.parse(localStorage.getItem(KEY_PURCHASES) || '[]');
-  arr.unshift(rec);
-  localStorage.setItem(KEY_PURCHASES, JSON.stringify(arr.slice(0,200)));
-  renderPurchases();
-}
-function addPredictionRecord(rec){
-  const arr = JSON.parse(localStorage.getItem(KEY_PREDH) || '[]');
-  arr.unshift(rec);
-  localStorage.setItem(KEY_PREDH, JSON.stringify(arr.slice(0,200)));
-  renderPredHistory();
-}
-function getPredHistory(){ return JSON.parse(localStorage.getItem(KEY_PREDH) || '[]'); }
+<!-- Buy modal (simple) -->
+<div id="buyModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:9998">
+  <div style="width:420px;max-width:92%;background:rgba(2,6,12,0.95);padding:18px;border-radius:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-weight:800">Buy Coins</div>
+      <div style="font-size:13px;color:var(--muted)">1 coin = ₹0.5 • min 100 coins</div>
+    </div>
+    <hr style="border:0;border-top:1px solid rgba(255,255,255,0.03);margin:8px 0">
+    <div style="margin-top:8px">
+      <label class="muted small">Choose coins</label>
+      <select id="buyAmount">
+        <option value="100">100 coins — ₹50</option>
+        <option value="200">200 coins — ₹100</option>
+        <option value="500">500 coins — ₹250</option>
+        <option value="1000">1000 coins — ₹500</option>
+      </select>
+    </div>
 
-/* ---------- Init on first visit: give 50 free coins if not claimed ---------- */
-if(!localStorage.getItem(KEY_COINS)){
-  localStorage.setItem(KEY_COINS, '50'); // initial 50 coins
-}
-updateCoinUI();
-renderPurchases();
-renderPredHistory();
+    <div style="margin-top:8px">
+      <label class="muted small">Scan QR to pay</label>
+      <img src="qr.png" class="qr-preview" alt="QR">
+    </div>
 
-/* ---------- UI helpers ---------- */
-function updateCoinUI(){
-  document.getElementById('coinCount').innerText = getCoins();
-}
-document.getElementById('refill50').addEventListener('click', ()=>{
-  if(localStorage.getItem(KEY_FREE_CLAIMED)){ alert('Free 50 already claimed'); return; }
-  addCoins(50);
-  localStorage.setItem(KEY_FREE_CLAIMED, '1');
-  addPurchaseRecord({type:'free', coins:50, ts:Date.now(), note:'50 free coins'});
-  alert('50 coins added to your wallet');
-});
+    <div style="margin-top:8px;display:flex;gap:8px">
+      <input id="utrInput" placeholder="Enter 12-digit UTR / Txn ID">
+      <button onclick="submitPayment()">Submit</button>
+      <button class="ghost" onclick="closeBuyModal()">Close</button>
+    </div>
 
-/* Purchase modal */
-const buyModal = document.getElementById('buyModal');
-document.getElementById('buyBtn').addEventListener('click', ()=>{
-  buyModal.classList.add('show');
-  document.getElementById('buyCount').value = '100';
-  updateBuyPrice();
-});
-document.getElementById('buyCancel').addEventListener('click', ()=> buyModal.classList.remove('show'));
-document.getElementById('buyCount').addEventListener('input', updateBuyPrice);
+    <div style="margin-top:10px" class="muted small">After submit, admin will approve payment. You will see update in purchases area and wallet will be credited.</div>
+  </div>
+</div>
 
-function updateBuyPrice(){
-  const c = parseInt(document.getElementById('buyCount').value || '0',10);
-  const price = Math.max(0, c) * 0.5;
-  document.getElementById('buyPrice').innerText = '₹' + price.toFixed(2);
-}
-
-/* Confirm purchase (demo: credits immediately) */
-document.getElementById('buyConfirm').addEventListener('click', ()=>{
-  const c = parseInt(document.getElementById('buyCount').value || '0',10);
-  if(isNaN(c) || c < 100){ alert('Minimum 100 coins'); return; }
-  const utr = document.getElementById('buyUTR').value.trim();
-  if(!/^\d{6,18}$/.test(utr)){ if(!confirm('UTR looks empty/invalid. Continue as demo and credit coins immediately?')) return; }
-  // In real scenario: create a pending purchase record and wait admin/payment gateway confirmation
-  addCoins(c);
-  addPurchaseRecord({type:'buy', coins:c, price: c*0.5, utr: utr||'demo', ts:Date.now()});
-  buyModal.classList.remove('show');
-  alert('Purchase confirmed (demo). Coins added.');
-});
-
-/* Render purchases (left panel) */
-function renderPurchases(){
-  const arr = JSON.parse(localStorage.getItem(KEY_PURCHASES) || '[]');
-  const el = document.getElementById('purchaseHistory');
-  el.innerHTML = '';
-  if(arr.length === 0){ el.innerHTML = '<div class="small">No purchases</div>'; return; }
-  arr.slice(0,10).forEach(p=>{
-    const d = document.createElement('div');
-    d.style.padding = '8px';
-    d.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
-    d.innerHTML = `<div style="display:flex;justify-content:space-between"><div style="font-weight:700">${p.type}</div><div class="small muted">${new Date(p.ts).toLocaleString()}</div></div>
-      <div class="small muted">Coins: ${p.coins} • Price: ₹${(p.price||p.coins*0.5).toFixed(2)} ${p.utr?('• UTR:'+p.utr):''}</div>`;
-    el.appendChild(d);
-  });
-}
-
-/* ---------- Prediction logic UI ---------- */
-const progressBar = document.getElementById('progressBar');
-let generatorRunning = false;
-let autoInc = true;
-document.getElementById('autoInc').addEventListener('click', ()=>{
-  autoInc = !autoInc;
-  document.getElementById('autoInc').innerText = autoInc ? 'Auto-inc ON' : 'Auto-inc OFF';
-});
-
-/* Generate prediction event */
-document.getElementById('generateBtn').addEventListener('click', async ()=>{
-  if(generatorRunning) return;
-  const periodStr = (document.getElementById('periodInput').value || '').trim();
-  if(!periodStr){ alert('Enter a period number (e.g. 20250914100011151)'); return; }
-  const coins = getCoins();
-  if(coins < 10){ if(confirm('Not enough coins. Buy now?')) document.getElementById('buyBtn').click(); return; }
-
-  // debit 10 coins now
-  setCoins(coins - 10);
-
-  generatorRunning = true;
-  // animate progress over ~1.3-1.8s with random split
-  progressBar.style.width = '0%';
-  document.getElementById('predLabel').innerText = 'Analyzing...';
-  document.getElementById('predSign').innerHTML = '';
-  document.getElementById('predNums').innerText = '';
-  let totalMs = 1200 + Math.random()*900;
-  let t=0;
-  const step = 40;
-  while(t < totalMs){
-    await new Promise(r=>setTimeout(r, step));
-    t += step;
-    const pct = Math.min(100, Math.round((t/totalMs)*100));
-    progressBar.style.width = pct + '%';
-  }
-
-  // Decide prediction: random 50/50 (user asked for random)
-  const pred = Math.random() < 0.5 ? 'Small' : 'Big';
-  // numbers generation
-  let a = 0, b = 0;
-  if(pred === 'Small'){ a = randInt(0,4); b = randInt(0,4); }
-  else { a = randInt(5,9); b = randInt(5,9); }
-
-  // show result with animation
-  const predSignEl = document.getElementById('predSign');
-  predSignEl.innerHTML = pred === 'Big' ? `<div class="result-big">BIG</div>` : `<div class="result-small">SMALL</div>`;
-  document.getElementById('predNums').innerText = `${a} / ${b}`;
-  document.getElementById('predLabel').innerText = 'Prediction';
-
-  // record history
-  const rec = { period: periodStr, pred, nums:[a,b], ts: Date.now() };
-  addPredictionRecord(rec);
-  incrementCounters();
-
-  // auto-increment period if ON
-  if(autoInc){
-    const next = incrementPeriodString(periodStr);
-    document.getElementById('periodInput').value = next;
-    document.getElementById('periodDisplay').innerText = next;
-  } else {
-    document.getElementById('periodDisplay').innerText = periodStr;
-  }
-
-  progressBar.style.width = '100%';
-  generatorRunning = false;
-});
-
-/* Mark win/loss */
-document.getElementById('markWin').addEventListener('click', ()=>{
-  const hist = getPredHistory();
-  if(!hist || hist.length===0){ alert('No predictions to mark'); return; }
-  // mark last prediction result as win
-  const last = hist[0];
-  last.result = 'WIN';
-  last.markedTs = Date.now();
-  localStorage.setItem(KEY_PREDH, JSON.stringify(hist));
-  renderPredHistory();
-  incrementWinLoss(true);
-});
-document.getElementById('markLoss').addEventListener('click', ()=>{
-  const hist = getPredHistory();
-  if(!hist || hist.length===0){ alert('No predictions to mark'); return; }
-  const last = hist[0];
-  last.result = 'LOSS';
-  last.markedTs = Date.now();
-  localStorage.setItem(KEY_PREDH, JSON.stringify(hist));
-  renderPredHistory();
-  incrementWinLoss(false);
-});
-
-/* counters */
-function incrementCounters(){
-  const meta = JSON.parse(localStorage.getItem('cp_meta_v1') || '{}');
-  meta.made = (meta.made||0) + 1;
-  localStorage.setItem('cp_meta_v1', JSON.stringify(meta));
-  renderCounters();
-}
-function incrementWinLoss(win){
-  const meta = JSON.parse(localStorage.getItem('cp_meta_v1') || '{}');
-  meta.wins = (meta.wins||0) + (win?1:0);
-  meta.losses = (meta.losses||0) + (win?0:1);
-  localStorage.setItem('cp_meta_v1', JSON.stringify(meta));
-  renderCounters();
-}
-function renderCounters(){
-  const meta = JSON.parse(localStorage.getItem('cp_meta_v1') || '{}');
-  document.getElementById('madeCount').innerText = meta.made||0;
-  document.getElementById('winsCount').innerText = meta.wins||0;
-  document.getElementById('lossCount').innerText = meta.losses||0;
-}
-renderCounters();
-
-/* render pred history */
-function renderPredHistory(){
-  const arr = getPredHistory();
-  const el = document.getElementById('predHistory');
-  el.innerHTML = '';
-  if(arr.length === 0){ el.innerHTML = '<div class="small muted">No predictions yet</div>'; return; }
-  arr.slice(0,30).forEach(it=>{
-    const div = document.createElement('div');
-    div.className = 'hitem';
-    div.innerHTML = `<div>
-        <div style="font-weight:800">${it.period}</div>
-        <div class="small muted">${new Date(it.ts).toLocaleString()}</div>
+<!-- Admin modal -->
+<div id="adminModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:9999">
+  <div style="width:780px;max-width:96%;background:rgba(2,6,12,0.98);padding:18px;border-radius:12px;color:#fff">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="font-weight:800">Admin Panel</div>
+      <div>
+        <button class="ghost" onclick="closeAdmin()">Close</button>
       </div>
-      <div style="text-align:right">
-        <div style="margin-bottom:6px">${it.pred === 'Big' ? '<span class="big-pill">BIG</span>' : '<span class="small-pill">SMALL</span>'}</div>
-        <div class="small muted">${it.nums ? it.nums.join(' / ') : ''} ${it.result ? ('• ' + it.result) : ''}</div>
-      </div>`;
-    el.appendChild(div);
+    </div>
+    <hr style="border:0;border-top:1px solid rgba(255,255,255,0.03);margin:8px 0">
+    <div>
+      <div class="muted">Pending payments</div>
+      <div id="pendingPayments" style="margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDKs (modular) -->
+<script type="module">
+  // --- FIREBASE CONFIG: use your provided config ---
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getDatabase, ref, push, set, onValue, child, get, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+    authDomain: "terminal-xxrr.firebaseapp.com",
+    databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "terminal-xxrr",
+    storageBucket: "terminal-xxrr.firebasestorage.app",
+    messagingSenderId: "722753278120",
+    appId: "1:722753278120:web:bfa37aab39635a4e57f29d",
+    measurementId: "G-E3MZH3E1K5"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // --- Simple local user identity ---
+  let userId = localStorage.getItem('bt_user_id');
+  if(!userId){
+    userId = 'u_' + Math.random().toString(36).slice(2,12);
+    localStorage.setItem('bt_user_id', userId);
+  }
+
+  // --- UI references ---
+  const coinCountEl = document.getElementById('coinCount');
+  const walletLabelEl = document.getElementById('walletLabel');
+  const claimBtn = document.getElementById('claimBtn');
+  const currentPeriodEl = document.getElementById('currentPeriod');
+  const historyEl = document.getElementById('history');
+  const predSideEl = document.getElementById('predSide');
+  const predNumEl = document.getElementById('predNum');
+  const logsEl = document.getElementById('logs');
+  const paymentsBoxEl = document.getElementById('paymentsBox');
+  const pendingPaymentsEl = document.getElementById('pendingPayments');
+  const progressBar = document.getElementById('progressBar');
+
+  // --- Local state ---
+  let localWallet = { coins: 0 };
+  const FREE_CLAIM_KEY = 'bt_free_claim_v1';
+  const PRED_COST = 10;
+
+  // --- Init UI and listeners ---
+  function init(){
+    // load wallet locally then try to read from firebase users/<userId>
+    loadLocalWallet();
+    listenUserWallet();
+    listenPaymentsForUser();
+    listenAllPendingPayments(); // admin list
+    // set period from localStorage if exists, else sample starting period
+    const p = localStorage.getItem('bt_period') || generateSamplePeriod();
+    document.getElementById('periodInput').value = p;
+    currentPeriodEl.textContent = p;
+    renderWalletUI();
+    renderPaymentsUI();
+    renderHistoryUI();
+  }
+
+  function generateSamplePeriod(){
+    // create a pseudo current period based on date & a counter
+    const d = new Date();
+    const dateStr = d.toISOString().slice(0,10).replace(/-/g,''); // YYYYMMDD
+    const hhmm = String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0');
+    const counter = Math.floor(Math.random()*9000)+1000;
+    const p = `${dateStr}${hhmm}${counter}`;
+    localStorage.setItem('bt_period', p);
+    return p;
+  }
+
+  // --- Wallet persistence locally + firebase listen ---
+  function loadLocalWallet(){
+    try{
+      const s = JSON.parse(localStorage.getItem('bt_wallet_'+userId) || '{}');
+      if(s && typeof s.coins === 'number') localWallet = s;
+    }catch(e){}
+    renderWalletUI();
+  }
+  function saveLocalWallet(){
+    localStorage.setItem('bt_wallet_'+userId, JSON.stringify(localWallet));
+    renderWalletUI();
+  }
+  function renderWalletUI(){
+    coinCountEl.textContent = localWallet.coins + ' coins';
+    walletLabelEl.textContent = localWallet.coins + ' coins';
+    const rupee = (localWallet.coins * 0.5).toFixed(2);
+    document.querySelector('.card .muted + .wallet-row .muted');
+    // update wallet label small
+    const small = document.querySelector('.grid .card + .card .muted');
+    // update main coin text
+    if(localWallet.coins < PRED_COST) {
+      document.getElementById('genBtn').disabled = true;
+      document.getElementById('genBtn').style.opacity = '0.6';
+    } else {
+      document.getElementById('genBtn').disabled = false;
+      document.getElementById('genBtn').style.opacity = '1';
+    }
+  }
+
+  // Listen to remote user wallet (if admin credits via Firebase)
+  function listenUserWallet(){
+    const uref = ref(db, 'users/' + userId + '/coins');
+    onValue(uref, snap => {
+      const val = snap.val();
+      if(typeof val === 'number'){
+        localWallet.coins = val;
+        saveLocalWallet();
+      }
+    });
+  }
+
+  // --- Free claim ---
+  function claimFreeCoins(){
+    if(localStorage.getItem(FREE_CLAIM_KEY)){
+      alert('Free coins already claimed on this device.');
+      return;
+    }
+    // credit 50 locally and push to firebase small record
+    localWallet.coins = (localWallet.coins || 0) + 50;
+    saveLocalWallet();
+    localStorage.setItem(FREE_CLAIM_KEY, '1');
+
+    // write a small claim record for admin trace (optional)
+    const claimRef = push(ref(db, 'claims'));
+    set(claimRef, {
+      userId,
+      type: 'free_claim',
+      coins: 50,
+      ts: Date.now()
+    });
+    log('Claimed 50 free coins (device)');
+  }
+
+  // --- Buy coins flow ---
+  function openBuyModal(){ document.getElementById('buyModal').style.display='flex'; }
+  function closeBuyModal(){ document.getElementById('buyModal').style.display='none'; }
+  async function submitPayment(){
+    const sel = document.getElementById('buyAmount');
+    const coins = parseInt(sel.value,10);
+    const utr = document.getElementById('utrInput').value.trim();
+    if(!utr || utr.length < 6){ alert('Enter UTR/Txn ID'); return; }
+    // create payment record in firebase
+    const paymentsRef = push(ref(db, 'payments'));
+    const rec = {
+      userId,
+      coins,
+      amount: coins * 0.5,
+      utr,
+      status: 'pending',
+      ts: Date.now()
+    };
+    await set(paymentsRef, rec);
+    closeBuyModal();
+    log('Payment submitted — waiting admin approval');
+    renderPaymentsUI();
+  }
+
+  // --- Listen to payments created by this user (to show in UI) ---
+  function listenPaymentsForUser(){
+    const r = ref(db, 'payments');
+    onValue(r, snapshot=>{
+      const val = snapshot.val() || {};
+      const list = Object.keys(val).map(k=>({ id:k, ...val[k] })).filter(x=>x.userId === userId);
+      // render
+      paymentsBoxEl.innerHTML = '';
+      if(list.length === 0){
+        paymentsBoxEl.innerHTML = '<div class="muted small">No purchases yet.</div>';
+      } else {
+        list.sort((a,b)=>b.ts - a.ts);
+        list.forEach(p=>{
+          const el = document.createElement('div');
+          el.className = 'history-item';
+          el.innerHTML = `<div>
+              <div style="font-weight:700">${p.coins} coins • ₹${(p.amount||0).toFixed(2)}</div>
+              <div class="muted small">UTR: ${p.utr} • ${new Date(p.ts).toLocaleString()}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="badge">${(p.status||'pending').toUpperCase()}</div>
+            </div>`;
+          paymentsBoxEl.appendChild(el);
+        });
+      }
+    });
+  }
+
+  // --- Admin: listen all pending payments (for admin UI) ---
+  function listenAllPendingPayments(){
+    const r = ref(db, 'payments');
+    onValue(r, snapshot=>{
+      const val = snapshot.val() || {};
+      const list = Object.keys(val).map(k=>({ id:k, ...val[k] })).filter(x=>x.status === 'pending');
+      pendingPaymentsEl.innerHTML = '';
+      if(list.length === 0){
+        pendingPaymentsEl.innerHTML = '<div class="muted small">No pending payments</div>';
+      } else {
+        list.sort((a,b)=>b.ts - a.ts);
+        list.forEach(p=>{
+          const div = document.createElement('div');
+          div.className = 'history-item';
+          div.innerHTML = `<div>
+              <div style="font-weight:800">${p.coins} coins • ₹${(p.amount||0).toFixed(2)}</div>
+              <div class="muted small">UTR: ${p.utr} • ${new Date(p.ts).toLocaleString()}</div>
+              <div class="muted small">User: ${p.userId}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+              <button onclick="approvePayment('${p.id}', ${p.coins})">Approve</button>
+              <button class="ghost" onclick="rejectPayment('${p.id}')">Reject</button>
+            </div>`;
+          pendingPaymentsEl.appendChild(div);
+        });
+      }
+    });
+  }
+
+  // --- Admin actions ---
+  async function approvePayment(id, coins){
+    if(!confirm('Approve payment and credit coins?')) return;
+    const pRef = ref(db, 'payments/' + id);
+    await update(pRef, { status: 'approved', approvedAt: Date.now() });
+    // credit to user's wallet in DB (use get to avoid overwrite)
+    const snap = await get(ref(db, 'payments/' + id));
+    const rec = snap.val();
+    if(rec && rec.userId){
+      const userCoinsRef = ref(db, 'users/' + rec.userId + '/coins');
+      // get existing
+      const s2 = await get(userCoinsRef);
+      const cur = Number(s2.val() || 0);
+      await set(userCoinsRef, cur + rec.coins);
+    }
+    log('Payment approved and credited.');
+  }
+  async function rejectPayment(id){ if(!confirm('Reject payment?')) return; await update(ref(db, 'payments/' + id), { status:'rejected', rejectedAt: Date.now() }); log('Payment rejected.'); }
+
+  // --- Hidden admin open/close ---
+  document.getElementById('adminCross').addEventListener('click', ()=>{
+    const pw = prompt('Enter admin password:');
+    if(!pw) return;
+    if(pw.trim() === '456'){
+      document.getElementById('adminModal').style.display = 'flex';
+    } else {
+      alert('Wrong password');
+    }
   });
-}
+  function closeAdmin(){ document.getElementById('adminModal').style.display = 'none'; }
 
-/* purchases history render already done earlier */
+  // --- Prediction logic & history ---
+  function log(msg){
+    const div = document.createElement('div');
+    div.className = 'analysis-line';
+    div.textContent = (new Date()).toLocaleTimeString() + ' — ' + msg;
+    logsEl.prepend(div);
+  }
 
-/* Utility: random int inclusive */
-function randInt(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+  function renderHistoryUI(){
+    const arr = JSON.parse(localStorage.getItem('bt_history_'+userId) || '[]');
+    historyEl.innerHTML = '';
+    arr.slice(0,50).forEach(h=>{
+      const d = document.createElement('div');
+      d.className = 'history-item';
+      d.innerHTML = `<div>
+        <div style="font-weight:800">${h.period} • ${h.side} • ${h.num}</div>
+        <div class="muted small">${new Date(h.ts).toLocaleString()}</div>
+      </div>
+      <div style="text-align:right">${h.result?('<div class="badge">'+h.result.toUpperCase()+'</div>'):'<div class="muted small">pending</div>'}</div>`;
+      historyEl.appendChild(d);
+    });
+  }
 
-/* Increment period string by +1 on its numeric suffix
-   If period has trailing digits, increment those preserving length.
-   Else append '1' */
-function incrementPeriodString(s){
-  if(!s) return '';
-  // find trailing numeric sequence
-  const m = s.match(/(.*?)(\d+)$/);
-  if(!m) return s + '1';
-  const prefix = m[1];
-  const num = m[2];
-  const len = num.length;
-  const n = BigInt(num) + 1n;
-  let ns = n.toString();
-  // preserve leading zeros if length stays same, else let it grow
-  if(ns.length < len) ns = ns.padStart(len, '0');
-  return prefix + ns;
-}
+  function saveHistoryItem(item){
+    const arr = JSON.parse(localStorage.getItem('bt_history_'+userId) || '[]');
+    arr.unshift(item);
+    localStorage.setItem('bt_history_'+userId, JSON.stringify(arr.slice(0,200)));
+    renderHistoryUI();
+    // optionally push to firebase history for server side aggregation:
+    const hRef = push(ref(db, 'history/' + userId));
+    set(hRef, item);
+  }
 
-/* Open/close panels shortcuts */
-document.getElementById('openPredict').addEventListener('click', ()=> {
-  document.getElementById('periodInput').focus();
-});
-document.getElementById('openHistory').addEventListener('click', ()=> {
-  document.getElementById('predHistory').scrollIntoView({behavior:'smooth'});
-});
+  // Utility: auto-increment period
+  function nextPeriod(p){
+    // find trailing numeric sequence and increment by 1
+    const m = p.match(/(.*?)(\d+)$/);
+    if(!m) return String(Number(p)+1);
+    const base = m[1];
+    const num = m[2];
+    const inc = String(Number(num) + 1).padStart(num.length, '0');
+    return base + inc;
+  }
 
-/* Render purchase and pred history initial */
-renderPurchases();
-renderPredHistory();
+  // Simulated multi-module analysis (10–15s) - produces side and number
+  async function startPrediction(){
+    const pInput = document.getElementById('periodInput');
+    let period = pInput.value.trim();
+    if(!period){ alert('Enter period number first.'); return; }
+    // check coins
+    if(localWallet.coins < PRED_COST){ alert('Not enough coins — buy some.'); return; }
+    // consume coins immediately
+    localWallet.coins -= PRED_COST;
+    saveLocalWallet();
 
-/* If period display empty fill with sample */
-if(!document.getElementById('periodInput').value) {
-  document.getElementById('periodInput').value = '20250914100011151';
-  document.getElementById('periodDisplay').innerText = document.getElementById('periodInput').value;
-}
+    // disable UI while analyzing
+    const genBtn = document.getElementById('genBtn');
+    genBtn.disabled = true;
+    genBtn.style.opacity = '0.6';
+    pInput.disabled = true;
+    log('Starting deep analysis (modules running) ...');
 
-/* Simple keyboard: Enter to generate */
-document.getElementById('periodInput').addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter') document.getElementById('generateBtn').click();
-});
+    // run simulated modules over 10-15s
+    const modules = [
+      {name:'frequency', run: moduleFrequency},
+      {name:'runLength', run: moduleRunLength},
+      {name:'recentBias', run: moduleRecentBias},
+      {name:'momentum', run: moduleMomentum},
+      {name:'zigzag', run: moduleZigZag},
+      {name:'patternMatch', run: modulePatternMatch},
+      {name:'psychologyOpposite', run: modulePsychology},
+      {name:'entropy', run: moduleEntropy},
+      {name:'frequency2', run: moduleFrequency2},
+      {name:'finalize', run: moduleFinalize}
+    ];
 
-/* End of script */
+    // progress bar animation
+    progressBar.style.width = '0%';
+    let prog = 0;
+    const progTimer = setInterval(()=>{ prog = Math.min(100, prog + (Math.random()*6 + 4)); progressBar.style.width = prog + '%'; }, 700);
+
+    // collect module votes
+    const context = { history: getLocalHistoryArray().slice(0,50) }; // pass history to modules
+    const moduleResults = [];
+    for(let i=0;i<modules.length;i++){
+      const m = modules[i];
+      const t0 = performance.now();
+      const res = await m.run(context);
+      const t1 = performance.now();
+      moduleResults.push({ module: m.name, result: res, time: ((t1-t0)/1000).toFixed(2) });
+      log(`Module ${m.name} — ${JSON.stringify(res)} (${((t1-t0)/1000).toFixed(2)}s)`);
+      // small delay between modules
+      await new Promise(r => setTimeout(r, 600 + Math.random()*600));
+    }
+
+    clearInterval(progTimer);
+    progressBar.style.width = '100%';
+
+    // Combine modules to final score
+    const final = combineModuleResults(moduleResults);
+    // show prediction (side + number)
+    predSideEl.textContent = final.side === 'B' ? 'BIG' : 'SMALL';
+    const num = final.side === 'B' ? (5 + Math.floor(Math.random()*5)) : (Math.floor(Math.random()*5));
+    predNumEl.textContent = num + '  /  ' + (final.confidence + '%');
+    // save prediction to history local & firebase
+    const rec = { period, side: final.side === 'B' ? 'BIG' : 'SMALL', num, confidence: final.confidence, modules: moduleResults, ts: Date.now() };
+    saveHistoryItem(rec);
+    // update period auto-inc in input
+    const next = nextPeriod(period);
+    pInput.value = next;
+    currentPeriodEl.textContent = next;
+    localStorage.setItem('bt_period', next);
+
+    // re-enable UI
+    genBtn.disabled = false; genBtn.style.opacity = '1';
+    pInput.disabled = false;
+
+    log(`Prediction finished — ${rec.side} ${rec.num} at ${final.confidence}%`);
+  }
+
+  // --- Module implementations (analysis heuristics) ---
+  function getLocalHistoryArray(){
+    // returns array of last results (latest first)
+    const arr = JSON.parse(localStorage.getItem('bt_history_'+userId) || '[]');
+    return arr;
+  }
+
+  // module: frequency (counts)
+  async function moduleFrequency(ctx){
+    const h = ctx.history.slice(0,50);
+    const counts = {B:0,S:0};
+    h.forEach(it => { if(it.side === 'BIG' || it.side === 'B') counts.B++; else counts.S++; });
+    const total = counts.B + counts.S || 1;
+    const pB = Math.round((counts.B/total)*100);
+    const pS = Math.round((counts.S/total)*100);
+    // prefer the opposite of majority (psychology)
+    const prefer = counts.B > counts.S ? 'S' : (counts.S > counts.B ? 'B' : (Math.random()<0.5?'B':'S'));
+    return {counts, prefer, pB, pS};
+  }
+
+  // module: run-length (long streaks)
+  async function moduleRunLength(ctx){
+    const h = ctx.history.slice(0,50).map(x=>x.side[0]||'B'); // B or S
+    // compute max consecutive runs
+    let maxB=0,maxS=0,cur=h[0],len=0;
+    for(let i=0;i<h.length;i++){
+      if(i===0 || h[i]===cur){ len++; } else { if(cur==='B') maxB=Math.max(maxB,len); else maxS=Math.max(maxS,len); cur=h[i]; len=1; }
+    }
+    if(cur==='B') maxB=Math.max(maxB,len); else maxS=Math.max(maxS,len);
+    const prefer = maxB > maxS ? 'S' : (maxS > maxB ? 'B' : (Math.random()<0.5?'B':'S'));
+    return {maxB,maxS,prefer};
+  }
+
+  // module: recentBias (last 7)
+  async function moduleRecentBias(ctx){
+    const h = ctx.history.slice(0,7);
+    const counts = {B:0,S:0};
+    h.forEach(it => { if(it.side === 'BIG') counts.B++; else counts.S++; });
+    const prefer = counts.B > counts.S ? 'S' : (counts.S > counts.B ? 'B' : (Math.random()<0.5?'B':'S'));
+    return {counts,prefer};
+  }
+
+  // module: momentum (simple weighted moving)
+  async function moduleMomentum(ctx){
+    const hist = ctx.history.slice(0,10);
+    let score = 0;
+    for(let i=0;i<hist.length;i++){
+      const val = hist[i].side === 'BIG' ? 1 : -1;
+      const w = (hist.length - i) / hist.length;
+      score += val * w;
+    }
+    const prefer = score > 0 ? 'B' : (score < 0 ? 'S' : (Math.random()<0.5?'B':'S'));
+    return {score: score.toFixed(2), prefer};
+  }
+
+  // module: zigzag detection
+  async function moduleZigZag(ctx){
+    const h = ctx.history.slice(0,12).map(x=>x.side[0]||'B');
+    let zig=0;
+    for(let i=1;i<h.length;i++) if(h[i]!==h[i-1]) zig++;
+    const prefer = zig > (h.length/2) ? (Math.random()<0.5?'B':'S') : (h[h.length-1] === 'B' ? 'S' : 'B');
+    return {zig,prefer};
+  }
+
+  // module: patternMatch (detect repeating sequences)
+  async function modulePatternMatch(ctx){
+    const seq = ctx.history.slice(0,20).map(x=>x.side[0]||'B').join('');
+    // naive search for short patterns
+    for(let len=4; len>=2; len--){
+      const pat = seq.slice(0,len);
+      if(seq.includes(pat + pat)){
+        // prefer opposite of predicted repeat
+        const next = pat[pat.length-1] === 'B' ? 'S' : 'B';
+        return {pattern:pat,prefer:next};
+      }
+    }
+    return {pattern:null,prefer: (Math.random()<0.5?'B':'S')};
+  }
+
+  // module: psychology (opposite-majority)
+  async function modulePsychology(ctx){
+    // estimate where naive users will put bets: assume they follow last-10 frequency
+    const last10 = ctx.history.slice(0,10);
+    const counts = {B:0,S:0}; last10.forEach(x=>{ if(x.side==='BIG') counts.B++; else counts.S++; });
+    const prefer = counts.B > counts.S ? 'S' : (counts.S > counts.B ? 'B' : (Math.random()<0.5?'B':'S'));
+    return {counts,prefer};
+  }
+
+  // module: entropy (how unpredictable recent sequence is)
+  async function moduleEntropy(ctx){
+    const seq = ctx.history.slice(0,15).map(x=>x.side[0]||'B').join('');
+    const pB = (seq.match(/B/g)||[]).length / (seq.length||1);
+    const pS = 1 - pB;
+    const e = -((pB>0? pB*Math.log2(pB):0) + (pS>0? pS*Math.log2(pS):0));
+    const prefer = e > 0.95 ? (Math.random()<0.5?'B':'S') : (pB > pS ? 'S' : 'B');
+    return {entropy: e.toFixed(2),prefer};
+  }
+
+  // module: frequency2 (another frequency angle)
+  async function moduleFrequency2(ctx){
+    const h = ctx.history.slice(0,30);
+    const counts = {B:0,S:0}; h.forEach(it=>{ if(it.side==='BIG') counts.B++; else counts.S++; });
+    const prefer = counts.B > counts.S ? 'S' : 'B';
+    return {counts,prefer};
+  }
+
+  // finalize module: combine simple heuristics
+  async function moduleFinalize(ctx){
+    // small placeholder — will be combined outside
+    return {note:'finalize'};
+  }
+
+  // combine module results into final side & confidence
+  function combineModuleResults(modResults){
+    // count module prefers
+    const tally = {B:0,S:0};
+    modResults.forEach(m=>{
+      const r = m.result;
+      if(r && r.prefer) {
+        const p = (r.prefer === 'B' || r.prefer === 'BIG') ? 'B' : 'S';
+        tally[p]++;
+      }
+    });
+    // also factor frequency
+    // compute confidence as % of modules favoring chosen side
+    const total = tally.B + tally.S || 1;
+    const side = tally.B > tally.S ? 'B' : (tally.S > tally.B ? 'S' : (Math.random()<0.5?'B':'S'));
+    const conf = Math.min(95, Math.round((tally[side] / total) * 100));
+    return { side, confidence: conf };
+  }
+
+  // --- Mark result as Win/Loss (user reports) ---
+  function markResult(result){
+    // find latest predicted item in history that has no result flagged and mark it
+    const arr = JSON.parse(localStorage.getItem('bt_history_'+userId) || '[]');
+    if(arr.length === 0){ alert('No predictions in history to mark.'); return; }
+    // find first where result is undefined
+    let idx = arr.findIndex(x=>!x.result);
+    if(idx === -1) idx = 0; // mark latest if none pending
+    arr[idx].result = result;
+    localStorage.setItem('bt_history_'+userId, JSON.stringify(arr));
+    // push update to firebase (optional)
+    saveLocalWallet(); renderHistoryUI();
+    // If marked loss, activate "tighten" behavior: give next prediction higher opposite bias (this is already in modules by opposite majority)
+    if(result === 'loss'){
+      log('User reported LOSS — modules will tighten next predictions.');
+    } else {
+      log('User reported WIN — history updated.');
+    }
+    renderHistoryUI();
+  }
+
+  // --- Render payments UI helper ---
+  function renderPaymentsUI(){
+    // paymentsBoxEl updated by listener. nothing else needed here.
+  }
+
+  // --- Sync wallet (force read from firebase) ---
+  async function syncWallet(){
+    const s = await get(ref(db, 'users/' + userId + '/coins'));
+    if(s.exists()){
+      localWallet.coins = Number(s.val()) || 0;
+      saveLocalWallet();
+      log('Wallet synced from server.');
+    } else {
+      // if no server wallet, create one using local
+      await set(ref(db, 'users/' + userId + '/coins'), localWallet.coins || 0);
+      log('Server wallet initialized.');
+    }
+  }
+
+  // --- Init app ---
+  init();
+
+  // --- Expose some functions to global for buttons ---
+  window.claimFreeCoins = claimFreeCoins;
+  window.openBuyModal = openBuyModal;
+  window.closeBuyModal = closeBuyModal;
+  window.submitPayment = submitPayment;
+  window.startPrediction = startPrediction;
+  window.markResult = markResult;
+  window.approvePayment = approvePayment;
+  window.rejectPayment = rejectPayment;
+  window.closeAdmin = closeAdmin;
+  window.syncWallet = syncWallet;
+
+  // small helper to update UI when firebase values change
+  function updateLocalFromServerCoins(coins){
+    localWallet.coins = coins;
+    saveLocalWallet();
+  }
+
+  // helper for approvePayment wrapper that was called earlier but defined later in top scope
+  async function approvePayment(id, coins){
+    // wrapper: call the function defined above
+    await (window).approvePaymentShim ? (window).approvePaymentShim(id, coins) : approvePaymentInternal(id, coins);
+  }
+
+  // Because of function hoisting in modules we define approvePaymentInternal as same as earlier approve
+  async function approvePaymentInternal(id, coins){
+    await approvePayment(id, coins); // actual defined above
+  }
+
+  // small safety: if wallet absent, init server record
+  (async ()=>{
+    const s = await get(ref(db, 'users/' + userId + '/coins'));
+    if(!s.exists()){
+      await set(ref(db, 'users/' + userId + '/coins'), localWallet.coins || 0);
+    } else {
+      const val = Number(s.val() || 0);
+      localWallet.coins = val;
+      saveLocalWallet();
+    }
+  })();
+
 </script>
 </body>
 </html>
