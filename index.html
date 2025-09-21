@@ -3,570 +3,476 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>DeepPredict — Advanced Big/Small Analyzer</title>
-
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<title>CoinPredict — Big/Small (50 free coins)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#071021;
-    --card:#0f1724;
-    --accent:#00d2a8;
-    --accent2:#7be3ff;
-    --muted:#9fb0d6;
-    --glass: rgba(255,255,255,0.03);
+    --bg1:#071022; --bg2:#071a2a;
+    --card:#0f1724; --muted:#9fb0d6;
+    --accent:#00d2a8; --accent2:#00a6ff;
+    --pink:#ff6b6b; --glass: rgba(255,255,255,0.02);
   }
-  *{box-sizing:border-box;font-family:Inter,Segoe UI,Arial,sans-serif}
-  body{margin:0;background:linear-gradient(180deg,#041021,#07142a);color:#eaf6ff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-  .wrap{width:1100px;max-width:98%;margin:auto}
-  header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
-  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#012}
-  h1{margin:0;font-size:20px}
-  .grid{display:grid;grid-template-columns:360px 1fr;gap:16px}
-  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
-  label{display:block;color:var(--muted);font-size:13px;margin-bottom:6px}
-  textarea, input[type=text]{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
-  .btn{padding:10px 12px;border-radius:8px;border:none;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#001;font-weight:800;cursor:pointer}
+  *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Arial;}
+  body{margin:0;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:#eaf6ff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:22px}
+  .wrap{width:1100px;max-width:98%;display:grid;grid-template-columns:360px 1fr;gap:20px}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:18px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#021}
+  h1{margin:0;font-size:18px}
   .muted{color:var(--muted);font-size:13px}
+  .wallet{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .coin-badge{background:linear-gradient(90deg,#ffd166,#ffb703);color:#002;padding:8px 10px;border-radius:999px;font-weight:800;box-shadow:0 6px 18px rgba(255,183,3,0.08)}
+  .btn{background:linear-gradient(90deg,var(--accent),var(--accent2));border:none;color:#001;padding:10px 12px;border-radius:9px;font-weight:800;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
   .small{font-size:13px;color:var(--muted)}
-  .row{display:flex;gap:8px;align-items:center}
-  .result-pill{display:inline-block;padding:6px 10px;border-radius:999px;margin:4px;border:1px solid rgba(255,255,255,0.04)}
-  .pill-B{background:rgba(115,220,255,0.08);color:#9be3ff}
-  .pill-S{background:rgba(255,160,160,0.06);color:#ffb6b6}
-  .analysis-box{margin-top:10px;padding:10px;border-radius:10px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.02)}
-  .legend{display:flex;gap:8px;align-items:center;margin-top:8px}
-  .legend .dot{width:12px;height:12px;border-radius:3px}
-  .conf{font-weight:900;font-size:22px;color:var(--accent)}
-  .explain{font-size:13px;color:#cfe9ff;margin-top:8px;line-height:1.35}
-  footer{margin-top:14px;color:var(--muted);font-size:13px;text-align:center}
-
-  /* responsive */
-  @media(max-width:980px){
-    .grid{grid-template-columns:1fr; }
-    .logo{display:none}
-  }
+  .input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+  .center{display:flex;align-items:center;justify-content:center}
+  .prediction-area{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .pred-box{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));padding:14px;border-radius:10px;text-align:center;border:1px solid rgba(255,255,255,0.03)}
+  .period{font-weight:800;font-size:14px}
+  .result-big{color:#7fe8a7;font-weight:900;font-size:26px}
+  .result-small{color:#ffb6b6;font-weight:900;font-size:26px}
+  .numbers{font-weight:900;font-size:22px;margin-top:8px}
+  .anim-bar{height:6px;background:linear-gradient(90deg,#003,#0ff);border-radius:6px;overflow:hidden;margin-top:12px}
+  .progress{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#8afcff)}
+  .history-list{max-height:220px;overflow:auto;padding:6px;border-radius:8px;background:rgba(0,0,0,0.18)}
+  .hitem{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)}
+  .green{color:#9be3ff}
+  .pink{color:#ffb6b6}
+  .big-pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(123,227,255,0.06);color:#9be3ff;font-weight:800}
+  .small-pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,107,107,0.04);color:#ffb6b6;font-weight:800}
+  /* Buy modal */
+  .modal {position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);visibility:hidden;opacity:0;transition:all .18s;z-index:9999}
+  .modal.show{visibility:visible;opacity:1}
+  .modal-card{background:#071022;padding:18px;border-radius:10px;min-width:320px;border:1px solid rgba(255,255,255,0.03)}
+  /* small responsive */
+  @media(max-width:1000px){ .wrap{grid-template-columns:1fr} .prediction-area{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
-  <div class="wrap">
+  <div style="width:1100px;max-width:98%;margin:auto">
     <header>
-      <div class="logo">DP</div>
+      <div class="logo">CP</div>
       <div>
-        <h1>DeepPredict — Big/Small Analyzer</h1>
-        <div class="small">Paste last results (B / S) → Deep analysis → One prediction with confidence & reasoning.</div>
+        <h1>CoinPredict — Big/Small</h1>
+        <div class="muted">50 free coins on signup • 10 coins per prediction • 1 coin = ₹0.5 • Min buy 100 coins</div>
       </div>
     </header>
 
-    <div class="grid">
-      <!-- left column: input + controls -->
+    <div class="wrap">
+      <!-- LEFT: wallet / buy / history -->
       <div class="card">
-        <label>Paste last results (comma/space/line separated). Most recent should be last.</label>
-        <textarea id="inputResults" rows="8" placeholder="Example: B S B B S B S B S B"></textarea>
-
-        <div style="margin-top:8px" class="row">
-          <button class="btn" id="analyzeBtn">Generate Prediction (Deep Analyze)</button>
-          <button class="btn" id="clearBtn" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04)">Clear</button>
-        </div>
-
-        <div class="analysis-box" id="metricsBox" style="display:none">
-          <div class="row" style="justify-content:space-between;align-items:center">
-            <div>
-              <div class="small">Prediction</div>
-              <div id="predictionText" style="font-weight:900;font-size:20px">--</div>
-              <div class="small" id="confidenceText">Confidence: --</div>
-            </div>
-            <div style="text-align:right">
-              <div class="small">Server</div>
-              <div style="color:#bfe;font-weight:800">Connected ✅</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div>
+            <div class="muted">Your Wallet</div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+              <div class="coin-badge" id="coinCount">0</div>
+              <div>
+                <div style="font-weight:800">Coins</div>
+                <div class="small">1 coin = ₹0.5</div>
+              </div>
             </div>
           </div>
-
-          <div style="margin-top:10px">
-            <div class="small">Quick metrics</div>
-            <div id="quickMetrics" style="margin-top:6px" class="small muted"></div>
-          </div>
-
-          <div style="margin-top:10px">
-            <div class="small">Reasoning</div>
-            <div id="reasonBox" class="explain"></div>
-          </div>
-
-          <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
-            <button id="markBig" class="btn" style="background:#2fb27f">Mark Actual: BIG</button>
-            <button id="markSmall" class="btn" style="background:#ff6b6b">Mark Actual: SMALL</button>
-            <button id="savePreset" class="btn" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04)">Save to history</button>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn" id="buyBtn">Buy Coins</button>
+            <button class="btn ghost" id="refill50">Claim 50 Free</button>
           </div>
         </div>
+
+        <hr style="border:0;border-top:1px solid rgba(255,255,255,0.03)">
 
         <div style="margin-top:12px">
-          <div class="small">Last predictions & history (local)</div>
-          <div id="historyList" style="margin-top:8px;max-height:180px;overflow:auto"></div>
+          <div class="muted">Quick actions</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn" id="openPredict">Open Prediction</button>
+            <button class="btn ghost" id="openHistory">History</button>
+          </div>
+        </div>
+
+        <div style="margin-top:14px">
+          <div class="muted">Purchase history (local demo)</div>
+          <div class="history-list" id="purchaseHistory"></div>
         </div>
       </div>
 
-      <!-- right column: chart + details -->
+      <!-- RIGHT: Prediction main -->
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div class="small">Analysis Dashboard</div>
-            <div style="font-weight:900;font-size:16px">Frequency & Pattern View</div>
+            <div class="muted">Prediction Panel</div>
+            <div style="font-weight:900;font-size:16px">Enter period → Generate prediction</div>
           </div>
-          <div class="small muted">Analysis time: <span id="analyzingTime">0s</span></div>
+          <div class="muted">Cost per prediction: <strong>10 coins</strong></div>
         </div>
 
-        <div style="margin-top:12px">
-          <canvas id="freqChart" height="160"></canvas>
-        </div>
+        <div style="margin-top:12px" class="prediction-area">
+          <div>
+            <div class="pred-box">
+              <div class="muted">Current Period</div>
+              <div class="period" id="periodDisplay">—</div>
 
-        <div style="margin-top:12px">
-          <div class="small">Pattern & run-length summary</div>
-          <div id="patternSummary" class="small muted" style="margin-top:6px"></div>
-        </div>
+              <div style="margin-top:12px">
+                <input id="periodInput" class="input" placeholder="Enter period (e.g. 20250914100011151)">
+              </div>
 
-        <div style="margin-top:12px">
-          <div class="small">Detailed sub-analyses (10 modules)</div>
-          <div id="modulesBox" style="margin-top:8px"></div>
+              <div style="display:flex;gap:8px;margin-top:12px">
+                <button class="btn" id="generateBtn">Generate Prediction</button>
+                <button class="btn ghost" id="autoInc">Auto-inc ON</button>
+              </div>
+
+              <div class="anim-bar" style="margin-top:12px">
+                <div class="progress" id="progressBar"></div>
+              </div>
+
+              <div style="margin-top:12px" id="predictionResult" class="center">
+                <!-- result displayed here -->
+                <div style="width:100%">
+                  <div id="predLabel" style="font-size:14px" class="muted center">No prediction yet</div>
+                  <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+                    <div id="predSign" style="min-width:120px"></div>
+                  </div>
+                  <div id="predNums" class="numbers" style="margin-top:8px"></div>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+                <button class="btn" id="markWin" style="background:#2fb27f">Mark Win</button>
+                <button class="btn" id="markLoss" style="background:#ff6b6b">Mark Loss</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="pred-box">
+              <div class="muted">Summary</div>
+              <div style="display:flex;justify-content:space-between;gap:8px;margin-top:8px">
+                <div><div class="small">Predictions made</div><div id="madeCount" style="font-weight:800">0</div></div>
+                <div><div class="small">Wins</div><div id="winsCount" style="font-weight:800">0</div></div>
+                <div><div class="small">Losses</div><div id="lossCount" style="font-weight:800">0</div></div>
+              </div>
+
+              <div style="margin-top:12px">
+                <div class="small muted">History (latest first)</div>
+                <div class="history-list" id="predHistory"></div>
+              </div>
+            </div>
+
+            <div class="pred-box" style="margin-top:12px">
+              <div class="muted">Design & Animation</div>
+              <div style="margin-top:8px" class="small">Smooth generator animation, neon accents & incremental period auto-increment after each successful generation (if Auto-inc ON).</div>
+            </div>
+          </div>
         </div>
 
       </div>
     </div>
 
-    <footer>DeepPredict — Demo analysis engine. Use responsibly. Local-only storage; no data leaves your browser unless you integrate a backend.</footer>
+    <div style="height:12px"></div>
+    <div class="muted center">This is a frontend demo. Replace payment/UTR handling with secure backend before going live.</div>
+  </div>
+
+  <!-- Buy modal -->
+  <div class="modal" id="buyModal">
+    <div class="modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:800">Buy Coins</div>
+        <div class="small muted">Min 100 coins</div>
+      </div>
+
+      <div style="margin-top:12px">
+        <label class="small">How many coins?</label>
+        <input id="buyCount" class="input" placeholder="100">
+        <div class="small muted" style="margin-top:6px">Price: <span id="buyPrice">₹0</span></div>
+      </div>
+
+      <div style="margin-top:12px">
+        <label class="small">Scan & Pay (QR)</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="width:100px;height:100px;border-radius:8px;background:linear-gradient(90deg,#111,#222);display:flex;align-items:center;justify-content:center;color:var(--muted)">QR.png</div>
+          <div>
+            <div class="small muted">Scan this QR in your UPI app and pay the amount.</div>
+            <input id="buyUTR" class="input" placeholder="Enter 12-digit UTR after payment" style="margin-top:8px">
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button class="btn ghost" id="buyCancel">Cancel</button>
+        <button class="btn" id="buyConfirm">Confirm Purchase</button>
+      </div>
+    </div>
   </div>
 
 <script>
-/* ========= Utilities ========= */
-function nowMs(){ return Date.now(); }
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+/* ---------- Storage keys ---------- */
+const KEY_COINS = 'cp_coins_v1';
+const KEY_PURCHASES = 'cp_purchases_v1';
+const KEY_PREDH = 'cp_predhist_v1';
+const KEY_FREE_CLAIMED = 'cp_free50_v1';
 
-function parseInput(s){
-  if(!s) return [];
-  // accept commas, spaces, newlines. Accept B, S, Big, Small (case-insensitive)
-  const tokens = s.trim().split(/[\s,;]+/).map(t=>t.trim()).filter(Boolean);
-  const out = [];
-  tokens.forEach(t=>{
-    const u = t.toUpperCase();
-    if(u.startsWith('B')) out.push('B');
-    else if(u.startsWith('S')) out.push('S');
-    else {
-      // try last char numeric? ignore
-    }
-  });
-  return out;
+/* ---------- Initial state ---------- */
+function getCoins(){ return parseInt(localStorage.getItem(KEY_COINS) || '0', 10); }
+function setCoins(v){ localStorage.setItem(KEY_COINS, String(v)); updateCoinUI(); }
+function addCoins(v){ setCoins(getCoins() + v); }
+function addPurchaseRecord(rec){
+  const arr = JSON.parse(localStorage.getItem(KEY_PURCHASES) || '[]');
+  arr.unshift(rec);
+  localStorage.setItem(KEY_PURCHASES, JSON.stringify(arr.slice(0,200)));
+  renderPurchases();
+}
+function addPredictionRecord(rec){
+  const arr = JSON.parse(localStorage.getItem(KEY_PREDH) || '[]');
+  arr.unshift(rec);
+  localStorage.setItem(KEY_PREDH, JSON.stringify(arr.slice(0,200)));
+  renderPredHistory();
+}
+function getPredHistory(){ return JSON.parse(localStorage.getItem(KEY_PREDH) || '[]'); }
+
+/* ---------- Init on first visit: give 50 free coins if not claimed ---------- */
+if(!localStorage.getItem(KEY_COINS)){
+  localStorage.setItem(KEY_COINS, '50'); // initial 50 coins
+}
+updateCoinUI();
+renderPurchases();
+renderPredHistory();
+
+/* ---------- UI helpers ---------- */
+function updateCoinUI(){
+  document.getElementById('coinCount').innerText = getCoins();
+}
+document.getElementById('refill50').addEventListener('click', ()=>{
+  if(localStorage.getItem(KEY_FREE_CLAIMED)){ alert('Free 50 already claimed'); return; }
+  addCoins(50);
+  localStorage.setItem(KEY_FREE_CLAIMED, '1');
+  addPurchaseRecord({type:'free', coins:50, ts:Date.now(), note:'50 free coins'});
+  alert('50 coins added to your wallet');
+});
+
+/* Purchase modal */
+const buyModal = document.getElementById('buyModal');
+document.getElementById('buyBtn').addEventListener('click', ()=>{
+  buyModal.classList.add('show');
+  document.getElementById('buyCount').value = '100';
+  updateBuyPrice();
+});
+document.getElementById('buyCancel').addEventListener('click', ()=> buyModal.classList.remove('show'));
+document.getElementById('buyCount').addEventListener('input', updateBuyPrice);
+
+function updateBuyPrice(){
+  const c = parseInt(document.getElementById('buyCount').value || '0',10);
+  const price = Math.max(0, c) * 0.5;
+  document.getElementById('buyPrice').innerText = '₹' + price.toFixed(2);
 }
 
-/* ========= Analysis Engine =========
-   We'll run several "modules" (10) that compute features.
-   Then combine them with a heuristic to output:
-     - prediction: 'B' or 'S'
-     - confidence: 0..100
-   The goal: look like deep analysis, use real metrics (frequency, runs, zigzag, momentum, entropy).
-*/
+/* Confirm purchase (demo: credits immediately) */
+document.getElementById('buyConfirm').addEventListener('click', ()=>{
+  const c = parseInt(document.getElementById('buyCount').value || '0',10);
+  if(isNaN(c) || c < 100){ alert('Minimum 100 coins'); return; }
+  const utr = document.getElementById('buyUTR').value.trim();
+  if(!/^\d{6,18}$/.test(utr)){ if(!confirm('UTR looks empty/invalid. Continue as demo and credit coins immediately?')) return; }
+  // In real scenario: create a pending purchase record and wait admin/payment gateway confirmation
+  addCoins(c);
+  addPurchaseRecord({type:'buy', coins:c, price: c*0.5, utr: utr||'demo', ts:Date.now()});
+  buyModal.classList.remove('show');
+  alert('Purchase confirmed (demo). Coins added.');
+});
 
-function computeFeatures(arr){
-  const n = arr.length;
-  const counts = {B:0, S:0};
-  arr.forEach(x=>{ if(x==='B') counts.B++; else counts.S++; });
-
-  // frequencies
-  const freqB = counts.B / n || 0;
-  const freqS = counts.S / n || 0;
-
-  // last streak (most recent items from end)
-  let last = arr[n-1] || null;
-  let streak = 0;
-  for(let i=n-1;i>=0;i--){
-    if(arr[i] === last) streak++; else break;
-  }
-
-  // run-lengths
-  const runs = [];
-  if(n>0){
-    let cur = arr[0], len = 1;
-    for(let i=1;i<n;i++){
-      if(arr[i]===cur) len++;
-      else { runs.push({val:cur,len}); cur=arr[i]; len=1; }
-    }
-    runs.push({val:cur,len});
-  }
-
-  // longest run
-  let longestRun = 0;
-  runs.forEach(r=>{ if(r.len>longestRun) longestRun=r.len; });
-
-  // zigzag score: count alternations
-  let alternations = 0;
-  for(let i=1;i<n;i++) if(arr[i] !== arr[i-1]) alternations++;
-  const zigzagRatio = alternations / Math.max(1,n-1);
-
-  // entropy (simple)
-  const entropy = -((freqB>0?freqB*Math.log2(freqB):0) + (freqS>0?freqS*Math.log2(freqS):0));
-
-  // pattern detection: detect many doubles/triples
-  const doubles = runs.filter(r=>r.len===2).length;
-  const triplesPlus = runs.filter(r=>r.len>=3).length;
-
-  // balance trend: last k frequency change
-  const k = Math.min(10,n);
-  const lastK = arr.slice(n-k);
-  const lastCounts = {B:0,S:0};
-  lastK.forEach(x=> lastCounts[x]++);
-  const lastKDiff = Math.abs(lastCounts.B - lastCounts.S) / k;
-
-  return {
-    n, counts, freqB, freqS, last, streak, runs, longestRun, zigzagRatio, entropy,
-    doubles, triplesPlus, lastK, lastCounts, lastKDiff, alternations
-  };
-}
-
-/* Modules: 10 sub-analyses (return label + score 0..1 + short note) */
-function runModules(features){
-  const modules = [];
-
-  // 1. Frequency module
-  (()=>{
-    const diff = Math.abs(features.freqB - features.freqS);
-    const fav = features.freqB > features.freqS ? 'B' : 'S';
-    const score = Math.min(0.95, 0.2 + diff*1.3); // 0.2..0.95
-    modules.push({
-      name:'Frequency',
-      note:`Overall frequency favors ${fav} (${Math.round((fav==='B'?features.freqB:features.freqS)*100)}%)`,
-      score, fav
-    });
-  })();
-
-  // 2. Momentum (streak) module
-  (()=>{
-    const s = features.streak;
-    let score = 0;
-    let fav = features.last;
-    if(s >= 3) score = 0.8;
-    else if(s === 2) score = 0.45;
-    else score = 0.12;
-    modules.push({
-      name:'Momentum (streak)',
-      note:`Recent streak: ${s} x ${fav || '-'}`,
-      score, fav
-    });
-  })();
-
-  // 3. Zigzag (alternation) module
-  (()=>{
-    const zr = features.zigzagRatio;
-    let score = zr; // higher zigzag => favour alternation
-    modules.push({
-      name:'Zigzag detection',
-      note:`Alternation ratio: ${Math.round(zr*100)}%`,
-      score,
-      fav: zr > 0.6 ? 'ALTERNATE' : null
-    });
-  })();
-
-  // 4. Run-length / rare-run module
-  (()=>{
-    const lr = features.longestRun;
-    let score = Math.min(0.9, lr*0.15);
-    modules.push({
-      name:'Run-lengths',
-      note:`Longest run = ${lr}`,
-      score, fav: lr>=4 ? features.runs.find(r=>r.len===lr).val : null
-    });
-  })();
-
-  // 5. Recent window module
-  (()=>{
-    const lastB = features.lastCounts.B;
-    const lastS = features.lastCounts.S;
-    let fav = lastB > lastS ? 'B' : (lastS>lastB ? 'S' : null);
-    const score = Math.min(0.9, 0.25 + Math.abs(lastB-lastS)/features.lastK.length);
-    modules.push({name:'Recent window', note:`Last ${features.lastK.length}: B=${lastB}, S=${lastS}`, score, fav});
-  })();
-
-  // 6. Doubles/triples pattern module
-  (()=>{
-    let fav = null;
-    if(features.triplesPlus > 0) fav = 'RUNS';
-    const score = Math.min(0.8, features.triplesPlus*0.35 + features.doubles*0.12);
-    modules.push({name:'Doubles/Triples patterns', note:`triples: ${features.triplesPlus}, doubles: ${features.doubles}`, score, fav});
-  })();
-
-  // 7. Entropy module (uncertainty)
-  (()=>{
-    // entropy 0..1 approx
-    const maxEntropy = 1; // for 2 symbols max is 1
-    let score = Math.max(0, 1 - (features.entropy / maxEntropy)); // low entropy => high predictability
-    modules.push({name:'Entropy (predictability)', note:`entropy=${features.entropy.toFixed(2)}`, score});
-  })();
-
-  // 8. Alternation-run combo (zigzag vs momentum)
-  (()=>{
-    // if both present, conflict lowers confidence
-    let score = 0.2 + (features.zigzagRatio * 0.4) + (Math.min(0.6, features.longestRun * 0.08));
-    modules.push({name:'Zigzag vs Momentum', note:`zigzag=${(features.zigzagRatio*100).toFixed(0)}%, longestRun=${features.longestRun}`, score: Math.min(0.9, score)});
-  })();
-
-  // 9. Psychology module (contrarian heuristic)
-  (()=>{
-    // If global majority high, assume crowd will pick majority -> we pick opposite (contrarian).
-    const maj = features.freqB > features.freqS ? 'B' : 'S';
-    const majScore = Math.abs(features.freqB - features.freqS);
-    const score = Math.min(0.95, 0.25 + majScore*0.9);
-    modules.push({name:'Psychology (contrarian)', note:`majority=${maj} (${Math.round(Math.max(features.freqB,features.freqS)*100)}%)`, score, fav: (Math.max(features.freqB,features.freqS) >= 0.6) ? (maj==='B'?'S':'B') : null});
-  })();
-
-  // 10. Stability module (how stable has sequence been)
-  (()=>{
-    const stability = 1 - features.lastKDiff; // if last window diff low -> stable
-    const score = 0.2 + stability*0.6;
-    modules.push({name:'Stability', note:`last window diff=${features.lastKDiff.toFixed(2)}`, score: Math.min(0.9, score)});
-  })();
-
-  return modules;
-}
-
-/* Combine module outputs into final decision */
-function combineDecision(features, modules){
-  // We'll weight modules; stronger modules (Psychology, Frequency, Entropy, Momentum) carry more weight
-  const weights = {
-    'Frequency': 1.1,
-    'Momentum (streak)': 1.0,
-    'Zigzag detection': 0.9,
-    'Run-lengths': 0.8,
-    'Recent window': 1.0,
-    'Doubles/Triples patterns': 0.6,
-    'Entropy (predictability)': 1.0,
-    'Zigzag vs Momentum': 0.6,
-    'Psychology (contrarian)': 1.2,
-    'Stability': 0.6
-  };
-
-  let scoreB = 0, scoreS = 0, totalW = 0;
-
-  modules.forEach(m=>{
-    const w = weights[m.name] || 0.5;
-    totalW += w;
-    // if module suggests a fav symbol, add the weighted score into that bucket
-    if(m.fav === 'B') scoreB += m.score * w;
-    else if(m.fav === 'S') scoreS += m.score * w;
-    else if(m.fav === 'ALTERNATE'){
-      // alternation suggestion: favor opposite of last
-      const opp = features.last === 'B' ? 'S' : 'B';
-      if(opp === 'B') scoreB += m.score * w * 0.8; else scoreS += m.score * w * 0.8;
-    } else if(m.fav === 'RUNS'){
-      // if runs present favor continuation
-      const runFav = features.runs.length ? features.runs[features.runs.length-1].val : features.last;
-      if(runFav === 'B') scoreB += m.score * w * 0.9; else scoreS += m.score * w * 0.9;
-    } else {
-      // no explicit favorite: distribute proportional to freq but low weight
-      scoreB += m.score * w * features.freqB * 0.3;
-      scoreS += m.score * w * features.freqS * 0.3;
-    }
-  });
-
-  // derive raw confidences
-  let total = scoreB + scoreS;
-  if(total === 0){ scoreB = scoreS = 1; total = 2; } // fallback
-  let confB = scoreB/total;
-  let confS = scoreS/total;
-
-  // apply tie-breaking heuristics:
-  // If global majority > 70% -> contrarian boost (psychology) applied earlier but add additional margin:
-  const majPercent = Math.max(features.freqB, features.freqS);
-  if(majPercent >= 0.7){
-    // pick opposite of majority as final (contrarian)
-    const maj = features.freqB > features.freqS ? 'B' : 'S';
-    if(maj === 'B'){ confS += 0.12; confB -= 0.12; }
-    else { confB += 0.12; confS -= 0.12; }
-  }
-
-  // if last streak >=4 favor continuation strongly
-  if(features.streak >= 4){
-    if(features.last === 'B'){ confB += 0.12; confS -= 0.12; }
-    else { confS += 0.12; confB -= 0.12; }
-  }
-
-  // clamp between 0..1
-  confB = Math.max(0, Math.min(1, confB));
-  confS = Math.max(0, Math.min(1, confS));
-  // renormalize
-  const scale = confB + confS;
-  confB /= scale; confS /= scale;
-
-  const prediction = confB > confS ? 'B' : 'S';
-  const confidence = Math.round(Math.max(confB, confS) * 100);
-
-  return { prediction, confidence, confB, confS, scoreB, scoreS };
-}
-
-/* ========= UI + Chart ========= */
-let chart = null;
-
-function updateChart(features){
-  const ctx = document.getElementById('freqChart').getContext('2d');
-  const labels = ['Big', 'Small'];
-  const data = [features.counts.B, features.counts.S];
-  if(chart){ chart.data.datasets[0].data = data; chart.update(); return; }
-  chart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels, datasets: [{
-        label: 'Counts',
-        data,
-        backgroundColor: ['rgba(123,227,255,0.9)','rgba(255,107,107,0.9)'],
-        borderRadius: 6
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend:{display:false} },
-      scales: {
-        y: { beginAtZero:true, grid:{color:'rgba(255,255,255,0.03)'} },
-        x: { grid:{display:false} }
-      }
-    }
+/* Render purchases (left panel) */
+function renderPurchases(){
+  const arr = JSON.parse(localStorage.getItem(KEY_PURCHASES) || '[]');
+  const el = document.getElementById('purchaseHistory');
+  el.innerHTML = '';
+  if(arr.length === 0){ el.innerHTML = '<div class="small">No purchases</div>'; return; }
+  arr.slice(0,10).forEach(p=>{
+    const d = document.createElement('div');
+    d.style.padding = '8px';
+    d.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
+    d.innerHTML = `<div style="display:flex;justify-content:space-between"><div style="font-weight:700">${p.type}</div><div class="small muted">${new Date(p.ts).toLocaleString()}</div></div>
+      <div class="small muted">Coins: ${p.coins} • Price: ₹${(p.price||p.coins*0.5).toFixed(2)} ${p.utr?('• UTR:'+p.utr):''}</div>`;
+    el.appendChild(d);
   });
 }
 
-/* display modules and reasoning */
-function renderModules(mods){
-  const box = document.getElementById('modulesBox');
-  box.innerHTML = '';
-  mods.forEach(m=>{
-    const el = document.createElement('div');
-    el.style.padding = '8px';
-    el.style.borderBottom = '1px solid rgba(255,255,255,0.03)';
-    el.innerHTML = `<div style="display:flex;justify-content:space-between"><div style="font-weight:700">${m.name}</div><div style="color:#9fb0d6">${Math.round(m.score*100)}%</div></div>
-      <div class="small muted" style="margin-top:6px">${m.note}</div>`;
-    box.appendChild(el);
+/* ---------- Prediction logic UI ---------- */
+const progressBar = document.getElementById('progressBar');
+let generatorRunning = false;
+let autoInc = true;
+document.getElementById('autoInc').addEventListener('click', ()=>{
+  autoInc = !autoInc;
+  document.getElementById('autoInc').innerText = autoInc ? 'Auto-inc ON' : 'Auto-inc OFF';
+});
+
+/* Generate prediction event */
+document.getElementById('generateBtn').addEventListener('click', async ()=>{
+  if(generatorRunning) return;
+  const periodStr = (document.getElementById('periodInput').value || '').trim();
+  if(!periodStr){ alert('Enter a period number (e.g. 20250914100011151)'); return; }
+  const coins = getCoins();
+  if(coins < 10){ if(confirm('Not enough coins. Buy now?')) document.getElementById('buyBtn').click(); return; }
+
+  // debit 10 coins now
+  setCoins(coins - 10);
+
+  generatorRunning = true;
+  // animate progress over ~1.3-1.8s with random split
+  progressBar.style.width = '0%';
+  document.getElementById('predLabel').innerText = 'Analyzing...';
+  document.getElementById('predSign').innerHTML = '';
+  document.getElementById('predNums').innerText = '';
+  let totalMs = 1200 + Math.random()*900;
+  let t=0;
+  const step = 40;
+  while(t < totalMs){
+    await new Promise(r=>setTimeout(r, step));
+    t += step;
+    const pct = Math.min(100, Math.round((t/totalMs)*100));
+    progressBar.style.width = pct + '%';
+  }
+
+  // Decide prediction: random 50/50 (user asked for random)
+  const pred = Math.random() < 0.5 ? 'Small' : 'Big';
+  // numbers generation
+  let a = 0, b = 0;
+  if(pred === 'Small'){ a = randInt(0,4); b = randInt(0,4); }
+  else { a = randInt(5,9); b = randInt(5,9); }
+
+  // show result with animation
+  const predSignEl = document.getElementById('predSign');
+  predSignEl.innerHTML = pred === 'Big' ? `<div class="result-big">BIG</div>` : `<div class="result-small">SMALL</div>`;
+  document.getElementById('predNums').innerText = `${a} / ${b}`;
+  document.getElementById('predLabel').innerText = 'Prediction';
+
+  // record history
+  const rec = { period: periodStr, pred, nums:[a,b], ts: Date.now() };
+  addPredictionRecord(rec);
+  incrementCounters();
+
+  // auto-increment period if ON
+  if(autoInc){
+    const next = incrementPeriodString(periodStr);
+    document.getElementById('periodInput').value = next;
+    document.getElementById('periodDisplay').innerText = next;
+  } else {
+    document.getElementById('periodDisplay').innerText = periodStr;
+  }
+
+  progressBar.style.width = '100%';
+  generatorRunning = false;
+});
+
+/* Mark win/loss */
+document.getElementById('markWin').addEventListener('click', ()=>{
+  const hist = getPredHistory();
+  if(!hist || hist.length===0){ alert('No predictions to mark'); return; }
+  // mark last prediction result as win
+  const last = hist[0];
+  last.result = 'WIN';
+  last.markedTs = Date.now();
+  localStorage.setItem(KEY_PREDH, JSON.stringify(hist));
+  renderPredHistory();
+  incrementWinLoss(true);
+});
+document.getElementById('markLoss').addEventListener('click', ()=>{
+  const hist = getPredHistory();
+  if(!hist || hist.length===0){ alert('No predictions to mark'); return; }
+  const last = hist[0];
+  last.result = 'LOSS';
+  last.markedTs = Date.now();
+  localStorage.setItem(KEY_PREDH, JSON.stringify(hist));
+  renderPredHistory();
+  incrementWinLoss(false);
+});
+
+/* counters */
+function incrementCounters(){
+  const meta = JSON.parse(localStorage.getItem('cp_meta_v1') || '{}');
+  meta.made = (meta.made||0) + 1;
+  localStorage.setItem('cp_meta_v1', JSON.stringify(meta));
+  renderCounters();
+}
+function incrementWinLoss(win){
+  const meta = JSON.parse(localStorage.getItem('cp_meta_v1') || '{}');
+  meta.wins = (meta.wins||0) + (win?1:0);
+  meta.losses = (meta.losses||0) + (win?0:1);
+  localStorage.setItem('cp_meta_v1', JSON.stringify(meta));
+  renderCounters();
+}
+function renderCounters(){
+  const meta = JSON.parse(localStorage.getItem('cp_meta_v1') || '{}');
+  document.getElementById('madeCount').innerText = meta.made||0;
+  document.getElementById('winsCount').innerText = meta.wins||0;
+  document.getElementById('lossCount').innerText = meta.losses||0;
+}
+renderCounters();
+
+/* render pred history */
+function renderPredHistory(){
+  const arr = getPredHistory();
+  const el = document.getElementById('predHistory');
+  el.innerHTML = '';
+  if(arr.length === 0){ el.innerHTML = '<div class="small muted">No predictions yet</div>'; return; }
+  arr.slice(0,30).forEach(it=>{
+    const div = document.createElement('div');
+    div.className = 'hitem';
+    div.innerHTML = `<div>
+        <div style="font-weight:800">${it.period}</div>
+        <div class="small muted">${new Date(it.ts).toLocaleString()}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="margin-bottom:6px">${it.pred === 'Big' ? '<span class="big-pill">BIG</span>' : '<span class="small-pill">SMALL</span>'}</div>
+        <div class="small muted">${it.nums ? it.nums.join(' / ') : ''} ${it.result ? ('• ' + it.result) : ''}</div>
+      </div>`;
+    el.appendChild(div);
   });
 }
 
-/* pattern summary */
-function renderPatternSummary(features){
-  const el = document.getElementById('patternSummary');
-  const runs = features.runs.map(r=>`${r.val}${r.len}`).join(' • ');
-  el.innerHTML = `Total=${features.n} · B=${features.counts.B} · S=${features.counts.S} · last=${features.last || '-'} · streak=${features.streak} · runs: ${runs}`;
+/* purchases history render already done earlier */
+
+/* Utility: random int inclusive */
+function randInt(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+/* Increment period string by +1 on its numeric suffix
+   If period has trailing digits, increment those preserving length.
+   Else append '1' */
+function incrementPeriodString(s){
+  if(!s) return '';
+  // find trailing numeric sequence
+  const m = s.match(/(.*?)(\d+)$/);
+  if(!m) return s + '1';
+  const prefix = m[1];
+  const num = m[2];
+  const len = num.length;
+  const n = BigInt(num) + 1n;
+  let ns = n.toString();
+  // preserve leading zeros if length stays same, else let it grow
+  if(ns.length < len) ns = ns.padStart(len, '0');
+  return prefix + ns;
 }
 
-/* history management */
-function loadHistory(){
-  try{
-    const h = JSON.parse(localStorage.getItem('dp_history_v1') || '[]');
-    const el = document.getElementById('historyList');
-    el.innerHTML = '';
-    if(!h.length) { el.innerHTML = '<div class="small muted">No history yet</div>'; return;}
-    h.slice(0,50).forEach(item=>{
-      const r = document.createElement('div');
-      r.style.padding='6px'; r.style.borderBottom='1px solid rgba(255,255,255,0.02)';
-      r.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>${item.pred}</strong> <span style="color:#9fb0d6;font-size:12px">(${item.conf}%)</span></div>
-          <div style="font-size:12px;color:#bbb">${new Date(item.ts).toLocaleString()}</div>
-        </div>
-        <div class="small muted" style="margin-top:4px">${item.note || ''}</div>`;
-      el.appendChild(r);
-    });
-  }catch(e){
-    console.error(e);
-  }
+/* Open/close panels shortcuts */
+document.getElementById('openPredict').addEventListener('click', ()=> {
+  document.getElementById('periodInput').focus();
+});
+document.getElementById('openHistory').addEventListener('click', ()=> {
+  document.getElementById('predHistory').scrollIntoView({behavior:'smooth'});
+});
+
+/* Render purchase and pred history initial */
+renderPurchases();
+renderPredHistory();
+
+/* If period display empty fill with sample */
+if(!document.getElementById('periodInput').value) {
+  document.getElementById('periodInput').value = '20250914100011151';
+  document.getElementById('periodDisplay').innerText = document.getElementById('periodInput').value;
 }
 
-function saveHistoryEntry(obj){
-  try{
-    const h = JSON.parse(localStorage.getItem('dp_history_v1') || '[]');
-    h.unshift(obj);
-    localStorage.setItem('dp_history_v1', JSON.stringify(h.slice(0,200)));
-    loadHistory();
-  }catch(e){}
-}
-
-/* ========= Main flow ========= */
-document.getElementById('analyzeBtn').addEventListener('click', async ()=>{
-  const t0 = nowMs();
-  const raw = document.getElementById('inputResults').value;
-  const arr = parseInput(raw);
-  if(arr.length < 6){ alert('Please provide at least 6 last results (B/S). For better accuracy provide 10-30 results.'); return; }
-
-  // show analyzing animation/time
-  document.getElementById('metricsBox').style.display='block';
-  document.getElementById('predictionText').innerText = 'Analyzing...';
-  document.getElementById('confidenceText').innerText = 'Confidence: —';
-  document.getElementById('reasonBox').innerText = 'Running deep analysis modules (this simulates 10 modules) ...';
-
-  // simulate deep analysis time (random between 800ms - 1800ms per module)
-  const features = computeFeatures(arr);
-  const modules = runModules(features);
-  // simulate processing delays to feel "deep"
-  for(let i=0;i<modules.length;i++){
-    // small delay but update module box progressively
-    await sleep(120 + Math.random()*160);
-  }
-
-  // combine decision
-  const decision = combineDecision(features, modules);
-
-  // build reasoning summary
-  const reasonLines = [];
-  reasonLines.push(`Overall: B=${features.counts.B}, S=${features.counts.S} (${features.n} samples).`);
-  reasonLines.push(`Frequency favors ${features.freqB>features.freqS ? 'BIG' : 'SMALL'} by ${(Math.abs(features.freqB-features.freqS)*100).toFixed(1)}%.`);
-  reasonLines.push(`Recent streak: ${features.streak} x ${features.last || '-'}. Zigzag ratio: ${(features.zigzagRatio*100).toFixed(0)}%.`);
-  reasonLines.push(`Entropy: ${features.entropy.toFixed(2)} (lower => more predictable).`);
-  reasonLines.push(`Modules consensus produced scores -> B:${Math.round(decision.scoreB)} S:${Math.round(decision.scoreS)}.`);
-  reasonLines.push(`Heuristic: ${decision.prediction==='B' ? 'BIG' : 'SMALL'} with ${decision.confidence}% confidence.`);
-  const reasonText = reasonLines.join(' ');
-
-  // update UI
-  document.getElementById('predictionText').innerText = decision.prediction === 'B' ? 'BIG' : 'SMALL';
-  document.getElementById('confidenceText').innerText = `Confidence: ${decision.confidence}%`;
-  document.getElementById('quickMetrics').innerText = `freq: B=${features.counts.B} S=${features.counts.S} · last:${features.last} · streak:${features.streak} · zigzag:${Math.round(features.zigzagRatio*100)}%`;
-  document.getElementById('reasonBox').innerText = reasonText;
-  document.getElementById('analyzingTime').innerText = ((nowMs()-t0)/1000).toFixed(2) + 's';
-
-  // render chart + modules
-  updateChart(features);
-  renderModules(modules);
-  renderPatternSummary(features);
-
-  // store a suggested-entry in temp (for Save)
-  window._lastDecision = { arr, features, modules, decision, reasonText };
-
+/* Simple keyboard: Enter to generate */
+document.getElementById('periodInput').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') document.getElementById('generateBtn').click();
 });
 
-document.getElementById('clearBtn').addEventListener('click', ()=>{
-  document.getElementById('inputResults').value = '';
-  document.getElementById('metricsBox').style.display='none';
-});
-
-document.getElementById('savePreset').addEventListener('click', ()=>{
-  if(!window._lastDecision){ alert('No analysis yet'); return; }
-  saveHistoryEntry({ pred: window._lastDecision.decision.prediction==='B'?'BIG':'SMALL', conf: window._lastDecision.decision.confidence, ts: Date.now(), note: window._lastDecision.reasonText });
-  alert('Saved to local history');
-});
-
-document.getElementById('markBig').addEventListener('click', ()=>{
-  if(!window._lastDecision){ alert('Generate prediction first'); return; }
-  // mark actual and update local "last results" array if user wants
-  saveHistoryEntry({ pred: 'BIG (actual)', conf: 100, ts: Date.now(), note: 'User marked actual=BIG' });
-  alert('Saved actual=BIG to history');
-});
-
-document.getElementById('markSmall').addEventListener('click', ()=>{
-  if(!window._lastDecision){ alert('Generate prediction first'); return; }
-  saveHistoryEntry({ pred: 'SMALL (actual)', conf: 100, ts: Date.now(), note: 'User marked actual=SMALL' });
-  alert('Saved actual=SMALL to history');
-});
-
-/* init */
-(function init(){
-  loadHistory();
-  // seed a small empty chart
-  const ctx = document.getElementById('freqChart').getContext('2d');
-  chart = new Chart(ctx, {
-    type:'bar',
-    data:{ labels:['Big','Small'], datasets:[{ data:[0,0], backgroundColor:['rgba(123,227,255,0.9)','rgba(255,107,107,0.9)'], borderRadius:6 }] },
-    options:{ plugins:{legend:{display:false}}, scales:{ y:{ beginAtZero:true, grid:{color:'rgba(255,255,255,0.03)'} }, x:{ grid:{display:false}} } }
-  });
-})();
+/* End of script */
 </script>
 </body>
 </html>
