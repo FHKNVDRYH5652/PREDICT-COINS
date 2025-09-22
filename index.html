@@ -1,885 +1,526 @@
 <!doctype html>
-<html lang="en">
+<html lang="hi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Prediction Coin — Professional (Fixed)</title>
-
-  <!-- Google font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <style>
-    :root{
-      --bg1: #060712;
-      --card: #0e1320;
-      --muted: #9aa7b2;
-      --accent1: #2ee6c9;
-      --accent2: #6d6cff;
-      --accent3: #ff6da6;
-      --glass: rgba(255,255,255,0.03);
-      --glass-2: rgba(255,255,255,0.02);
-    }
-    *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial}
-    body{
-      margin:0;
-      min-height:100vh;
-      background: radial-gradient(1200px 600px at 10% 10%, rgba(45,50,70,0.25), transparent),
-                  radial-gradient(800px 400px at 90% 90%, rgba(110,110,255,0.06), transparent),
-                  var(--bg1);
-      color:#e6eef7;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:18px;
-    }
-    .app{
-      width:100%;
-      max-width:980px;
-      border-radius:14px;
-      overflow:hidden;
-      box-shadow: 0 10px 50px rgba(0,0,0,0.6);
-      background:linear-gradient(180deg, rgba(8,10,18,0.98), rgba(6,7,12,0.96));
-    }
-    header{
-      padding:18px 20px; display:flex; gap:12px; align-items:center; border-bottom:1px solid rgba(255,255,255,0.03);
-    }
-    .logo {
-      width:64px; height:64px; border-radius:12px; overflow:hidden; background:linear-gradient(135deg,var(--accent2),var(--accent1));
-      display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; font-size:20px;
-      box-shadow: 0 6px 20px rgba(109,108,255,0.08), inset 0 -6px 20px rgba(0,0,0,0.2);
-    }
-    header h1{font-size:20px;margin:0}
-    header p{margin:0;color:var(--muted);font-size:13px}
-
-    .content{
-      display:grid;
-      grid-template-columns: 1fr 380px;
-      gap:20px;
-      padding:18px;
-    }
-    @media(max-width:980px){ .content{grid-template-columns:1fr} .rightCol{order:2} }
-
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border-radius:12px; padding:18px; box-shadow:0 8px 30px rgba(0,0,0,0.4);
-      border:1px solid rgba(255,255,255,0.03);
-    }
-
-    /* left */
-    .bigTitle{font-size:18px;font-weight:700;color:var(--accent1)}
-    .muted{color:var(--muted);font-size:13px;margin-top:6px}
-
-    .row{display:flex;gap:10px;align-items:center}
-    input[type="text"], input[type="number"], textarea {
-      width:100%; padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);
-      background:var(--glass-2); color:#fff; font-size:14px;
-    }
-    button{ padding:10px 14px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--accent1),var(--accent2)); color:#02131a; font-weight:700; cursor:pointer; box-shadow:0 6px 20px rgba(46,230,201,0.08) }
-    .btn-ghost{ background:transparent;border:1px solid rgba(255,255,255,0.04); color:var(--muted); font-weight:600 }
-
-    .section{ margin-bottom:14px }
-
-    /* prediction box */
-    .predictBox{ display:flex; flex-direction:column; gap:12px; align-items:center; text-align:center }
-    .periodBox{ font-weight:800; font-size:16px; padding:10px 14px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.03) }
-    .predLabel{ font-weight:900; font-size:34px; letter-spacing:1px; color:var(--accent1); text-shadow:0 6px 20px rgba(46,230,201,0.06) }
-    .subNumber{ font-weight:800; font-size:22px; color:#fff; opacity:0.95 }
-
-    .controls{ display:flex; gap:10px; width:100%; justify-content:center }
-    .smallNote{ font-size:13px;color:var(--muted) }
-
-    /* right column */
-    .rightCol .wallet{ display:flex; justify-content:space-between; align-items:center; gap:10px }
-    .wallet .bal{ font-weight:900; font-size:24px; color:var(--accent2) }
-    .ordersList{ max-height:260px; overflow:auto; margin-top:12px; padding-right:6px }
-
-    /* chart */
-    canvas{ background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent); border-radius:8px; padding:6px; }
-
-    /* admin cross */
-    .adminCross {
-      position: fixed; right:18px; bottom:18px; width:54px; height:54px; border-radius:12px;
-      background: linear-gradient(135deg, rgba(255,100,120,0.06), rgba(120,66,255,0.05));
-      display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900; cursor:pointer; z-index:9999;
-      border:1px solid rgba(255,255,255,0.04);
-      box-shadow:0 12px 30px rgba(0,0,0,0.6);
-    }
-
-    /* small helpers */
-    .mutedBox{ background:rgba(255,255,255,0.02); padding:8px;border-radius:10px; border:1px solid rgba(255,255,255,0.02); color:var(--muted); font-size:13px }
-    .orderRow{ display:flex; justify-content:space-between; gap:8px; padding:8px; border-radius:8px; background: linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005)); margin-bottom:8px; border:1px solid rgba(255,255,255,0.02) }
-    .tag{ padding:6px 8px;border-radius:8px;font-weight:700;font-size:13px }
-
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Loss Recovery — Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#071022; --card:#0f1724; --muted:#9fb0d6; --accent:#ff6b6b; --accent2:#ffd166;
+}
+*{box-sizing:border-box;font-family:'Poppins',sans-serif}
+body{margin:0;background:linear-gradient(180deg,#061021,#07142a);color:#eaf6ff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}
+.app{width:100%;max-width:980px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border-radius:12px;padding:18px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 20px 60px rgba(0,0,0,0.6);position:relative;overflow:hidden}
+.background{position:absolute;inset:0;opacity:0.06;background-image:url('anime.png');background-size:cover;background-position:center;filter:blur(2px)}
+.header{display:flex;align-items:center;gap:12px}
+.logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(90deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:900;color:#071022}
+.title{font-size:18px;font-weight:800}
+.subtitle{color:var(--muted);font-size:13px}
+.container{margin-top:18px}
+.card{background:transparent;padding:18px;border-radius:10px}
+.center{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.bigbtn{padding:12px 18px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#071022;font-weight:800;cursor:pointer}
+.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:10px 12px;border-radius:8px;cursor:pointer}
+.input{padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:inherit;width:220px;text-align:center}
+.row{display:flex;gap:8px;align-items:center;justify-content:center}
+.plans{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.plan{padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));cursor:pointer;min-width:140px}
+.plan.selected{box-shadow:0 10px 30px rgba(0,0,0,0.5);transform:translateY(-6px)}
+.small{font-size:13px;color:var(--muted)}
+.qr{width:260px;height:260px;border-radius:12px;border:4px solid rgba(255,255,255,0.03);object-fit:cover}
+.hidden{display:none}
+.footer{margin-top:12px;text-align:center;color:var(--muted);font-size:13px}
+.admin-cross{position:fixed;right:18px;bottom:18px;width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;cursor:pointer;z-index:999}
+.panel{position:fixed;right:18px;top:18px;width:360px;background:rgba(0,0,0,0.6);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);z-index:999;box-shadow:0 12px 40px rgba(0,0,0,0.6)}
+.list{max-height:320px;overflow:auto;margin-top:8px}
+.item{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.badge{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.03);font-weight:700}
+.step{border-radius:8px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);margin-top:12px}
+.success{color:#b4f8c8}
+.warn{color:#ffd6a5}
+</style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <div class="logo">BT</div>
-      <div>
-        <h1>Baba Tillu — Prediction Coin</h1>
-        <p>Fast predictions • coin-based access • admin approval via Firebase</p>
-      </div>
-      <div style="margin-left:auto;text-align:right">
-        <div style="font-size:12px;color:var(--muted)">Background assets: anime1.png / anime2.png / anime3.png</div>
-      </div>
-    </header>
+<div class="app" role="application">
+  <div class="background" aria-hidden="true"></div>
 
-    <div class="content">
-      <!-- LEFT: Prediction -->
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div class="bigTitle">Prediction</div>
-            <div class="muted">Enter current period then click <strong>Generate Prediction</strong>. Each prediction uses coins.</div>
-          </div>
-          <div class="muted">Server: Connected (Firebase)</div>
-        </div>
-
-        <div style="margin-top:12px" class="section">
-          <div class="muted">Current Period (manual):</div>
-          <div style="display:flex;gap:10px;margin-top:8px">
-            <input id="periodInput" type="text" placeholder="2025091500010259" value="">
-            <button id="btnGenerate">Generate Prediction</button>
-            <button id="btnAutoInc" class="btn-ghost">Auto-inc OFF</button>
-          </div>
-          <div class="muted smallNote" style="margin-top:8px">After generate, period auto-increments if Auto-inc ON.</div>
-        </div>
-
-        <div class="card predictBox" style="margin-top:12px">
-          <div class="periodBox">Current → <span id="periodLabel">—</span></div>
-          <div class="predLabel" id="predLabel">—</div>
-          <div class="subNumber" id="predNumbers">— / —</div>
-          <div class="controls">
-            <button id="btnMarkWin" class="btn-ghost">Mark Win</button>
-            <button id="btnMarkLoss" class="btn-ghost">Mark Loss</button>
-          </div>
-          <div class="smallNote" id="statusNote">Idle</div>
-        </div>
-
-        <div style="margin-top:12px" class="section">
-          <div class="bigTitle">Analysis & Log</div>
-          <div id="analysisLog" class="mutedBox" style="margin-top:8px; min-height:120px; overflow:auto; max-height:240px;"></div>
-        </div>
-
-      </div>
-
-      <!-- RIGHT: Wallet / Orders / Chart -->
-      <div class="rightCol">
-        <div class="card wallet">
-          <div>
-            <div class="bigTitle">Wallet</div>
-            <div class="muted">Coins: available for predictions</div>
-            <div style="margin-top:8px"><span class="bal" id="coinBalance">0</span> <span style="color:var(--muted);font-size:13px">coins</span></div>
-            <div class="muted smallNote" style="margin-top:8px">Free 50 coins per device (one time).</div>
-          </div>
-          <div style="text-align:right">
-            <button id="claimFreeBtn" class="btn-ghost">Claim 50 free</button>
-            <div style="height:6px"></div>
-            <button id="btnBuy" style="display:block">Buy Coins</button>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:14px">
-          <div class="bigTitle">Chart</div>
-          <div class="muted" style="margin-top:8px">Recent frequency (Big vs Small)</div>
-          <div style="height:180px;margin-top:12px">
-            <canvas id="freqChart"></canvas>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:14px">
-          <div class="bigTitle">Payment / Orders</div>
-          <div class="muted" style="margin-top:8px">Create an order to buy coins — admin will approve.</div>
-          <div style="margin-top:10px">
-            <input id="buyCount" type="number" placeholder="Coins to buy (min 100)" value="100" />
-            <div style="display:flex;gap:8px;margin-top:10px">
-              <button id="createOrderBtn">Create Order</button>
-              <button id="openPayBtn" class="btn-ghost">Open QR / Payment</button>
-            </div>
-            <div id="orderMessage" class="muted smallNote" style="margin-top:8px"></div>
-          </div>
-
-          <div style="margin-top:12px">
-            <div class="muted">Payment / UTR submit (after scanning qr):</div>
-            <div style="margin-top:8px; display:flex;gap:8px">
-              <input id="utrInput" type="text" placeholder="Enter 12-digit UTR" />
-              <button id="submitUtrBtn" class="btn-ghost">Submit</button>
-            </div>
-            <div id="utrMsg" class="muted smallNote" style="margin-top:8px"></div>
-          </div>
-
-          <div style="margin-top:12px">
-            <div class="bigTitle">Payment History</div>
-            <div id="paymentHistory" class="ordersList" style="margin-top:8px"></div>
-          </div>
-        </div>
-
-      </div>
-    </div> <!-- content -->
-
-    <footer style="padding:14px 18px;border-top:1px solid rgba(255,255,255,0.02); text-align:center;color:var(--muted);font-size:13px">
-      Prediction engine: multi-module analysis • Deep-analysis timing simulated • Save & sync via Firebase.
-    </footer>
-  </div>
-
-  <!-- Admin cross -->
-  <div class="adminCross" id="adminCross">❌</div>
-
-  <!-- Admin modal -->
-  <div id="adminModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9998">
-    <div style="width:950px;max-width:95%;background:#071022;border-radius:12px;padding:18px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 14px 50px rgba(0,0,0,0.7)">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div><h3 style="margin:0">Admin Console</h3><div class="muted">Pending payments & approvals (Firebase)</div></div>
-        <div><button id="closeAdmin" class="btn-ghost">Close</button></div>
-      </div>
-      <div style="margin-top:12px">
-        <div id="adminOrdersList" style="max-height:380px;overflow:auto;padding-right:8px"></div>
-      </div>
+  <div class="header">
+    <div class="logo">LR</div>
+    <div>
+      <div class="title">Loss Recovery</div>
+      <div class="subtitle">Smart, guided loss recovery — voice assisted</div>
     </div>
   </div>
 
-  <!-- Payment QR modal -->
-  <div id="payModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9997">
-    <div style="width:640px;max-width:95%;background:#071022;border-radius:12px;padding:18px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 14px 50px rgba(0,0,0,0.7);text-align:center">
-      <h3 style="margin:0">Scan QR — Pay exact amount</h3>
-      <div style="margin-top:12px">
-        <img id="payQrImg" src="qr.png" alt="qr" style="max-width:320px;border-radius:10px;border:6px solid rgba(255,255,255,0.02);" />
+  <div class="container">
+    <!-- Pages (show/hide by id) -->
+    <!-- 1: Welcome -->
+    <div id="page-welcome" class="card center">
+      <h2>Welcome to Loss Recovery</h2>
+      <p class="small">Apka swagat hai — hum aapki madad karenge aapka loss recover karne mein.</p>
+      <button class="bigbtn" id="welcomeNext">Next</button>
+      <div class="small">(Voice guidance enabled)</div>
+    </div>
+
+    <!-- 2: Enter amount -->
+    <div id="page-amount" class="card center hidden">
+      <h3>How much is your loss?</h3>
+      <input id="lossAmount" class="input" type="number" placeholder="Enter amount in Rs" min="1"/>
+      <div class="row" style="margin-top:10px">
+        <button class="bigbtn" id="confirmAmount">Confirm</button>
+        <button class="ghost" id="amountBack">Back</button>
       </div>
-      <div style="margin-top:12px;display:flex;justify-content:center;gap:8px">
-        <button id="closePayModal" class="btn-ghost">Done / Close</button>
+      <div class="small">Amount dala jaayega aur voice se confirm hogi</div>
+    </div>
+
+    <!-- 3: Plan selection -->
+    <div id="page-plans" class="card center hidden">
+      <h3>Choose recovery plan</h3>
+      <div class="small">Plans ke price loss amount ke % par based honge</div>
+      <div class="plans" id="plansBox">
+        <!-- plans inserted by JS -->
       </div>
+      <div class="row" style="margin-top:12px">
+        <button class="bigbtn" id="choosePlanBtn">Proceed to Payment</button>
+        <button class="ghost" id="plansBack">Back</button>
+      </div>
+    </div>
+
+    <!-- 4: Payment page -->
+    <div id="page-payment" class="card center hidden">
+      <h3>Payment</h3>
+      <div class="small">Scan QR and pay exact amount for the chosen plan. Then enter 12-digit UTR and confirm.</div>
+      <img src="qr.png" alt="QR" class="qr" id="qrImg" onerror="this.src='';" />
+      <div style="margin-top:10px"><input id="utrInput" class="input" placeholder="Enter 12-digit UTR" maxlength="12"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="bigbtn" id="submitPayment">Submit UTR & Request Approval</button>
+        <button class="ghost" id="paymentBack">Back</button>
+      </div>
+      <div style="margin-top:10px" class="small">If approval delayed, contact: <a href="https://t.me/Nskskssiwi" target="_blank" style="color:#bfe">Customer Service</a></div>
+      <div id="paymentStatus" class="small" style="margin-top:8px"></div>
+    </div>
+
+    <!-- 5: Strategy page -->
+    <div id="page-strategy" class="card hidden">
+      <h3>Recovery Strategy</h3>
+      <div id="strategyIntro" class="small">Preparing your step-by-step recovery plan...</div>
+
+      <div id="strategySteps" class="step hidden"></div>
+
+      <div class="row" style="margin-top:12px">
+        <button class="bigbtn" id="strategyNext" disabled>Next Step</button>
+        <button class="ghost" id="strategyFinish" style="display:none">Finish</button>
+      </div>
+      <div id="strategyNote" class="small" style="margin-top:10px"></div>
+    </div>
+
+    <div class="footer">This is a demo — Not financial advice. Keep screenshots for approvals.</div>
+  </div>
+
+  <!-- hidden admin cross -->
+  <div class="admin-cross" id="adminCross" title="Admin">❌</div>
+
+  <!-- admin panel -->
+  <div id="adminPanel" class="panel hidden" role="dialog" aria-hidden="true">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-weight:800">Admin Panel</div>
+      <div class="small">Locked</div>
+    </div>
+
+    <div style="margin-top:8px">
+      <input id="adminPass" class="input" placeholder="Enter admin password" type="password"/>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button class="bigbtn" id="adminLoginBtn">Login</button>
+        <button class="ghost" id="adminCloseBtn">Close</button>
+      </div>
+    </div>
+
+    <div id="adminControls" class="hidden">
+      <div style="margin-top:12px;font-weight:700">Pending Payments</div>
+      <div class="list" id="pendingList"></div>
+      <div style="margin-top:8px" class="small">Approve will notify the user (localStorage based demo)</div>
     </div>
   </div>
 
-  <!-- Firebase & App Script -->
-  <script type="module">
-/* =============================
-   Firebase init (v9 modular)
-   Replace config below if needed
-   ============================= */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getDatabase, ref, push, set, onValue, update, get, child } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+</div>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
-  authDomain: "terminal-xxrr.firebaseapp.com",
-  databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "terminal-xxrr",
-  storageBucket: "terminal-xxrr.firebasestorage.app",
-  messagingSenderId: "722753278120",
-  appId: "1:722753278120:web:bfa37aab39635a4e57f29d",
-  measurementId: "G-E3MZH3E1K5"
+<script>
+/* Loss Recovery SPA (single-file)
+   - Voice via SpeechSynthesis (Hindi)
+   - Admin approvals via localStorage: pending_<utr> and approved_<utr>
+   - Admin panel hidden behind cross; password: 456
+*/
+
+const pages = {
+  welcome: document.getElementById('page-welcome'),
+  amount: document.getElementById('page-amount'),
+  plans: document.getElementById('page-plans'),
+  payment: document.getElementById('page-payment'),
+  strategy: document.getElementById('page-strategy')
 };
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
 
-/* =============================
-   Helper utilities & selectors
-   ============================= */
-const periodInput = document.getElementById('periodInput');
-const periodLabel = document.getElementById('periodLabel');
-const btnGenerate = document.getElementById('btnGenerate');
-const btnAutoInc = document.getElementById('btnAutoInc');
-const predLabel = document.getElementById('predLabel');
-const predNumbers = document.getElementById('predNumbers');
-const statusNote = document.getElementById('statusNote');
-const analysisLog = document.getElementById('analysisLog');
+let state = {
+  lossAmount: 0,
+  chosenPlan: null,
+  chosenPlanPrice: 0,
+  chosenPlanKey: null,
+  pendingUTR: null
+};
 
-const coinBalanceEl = document.getElementById('coinBalance');
-const claimFreeBtn = document.getElementById('claimFreeBtn');
-const btnBuy = document.getElementById('btnBuy');
+function showPage(name){
+  Object.values(pages).forEach(p=>p.classList.add('hidden'));
+  pages[name].classList.remove('hidden');
+  // spoken guidance for each page
+  if(name === 'welcome') speakHindi('स्वागत है Loss Recovery में। आगे बढ़ने के लिए नेक्स्ट दबाएं।');
+  else if(name === 'amount') speakHindi('कितना नुकसान हुआ है? कृपया राशि दर्ज करें और कन्फर्म करें।');
+  else if(name === 'plans') speakHindi('अपना प्लान चुनें। आपकी राशि के अनुसार प्राइस दिखाई देगा।');
+  else if(name === 'payment') speakHindi('क्यूआर से भुगतान करें और 12 अंकों का U T R डालकर सबमिट करें।');
+  else if(name === 'strategy') speakHindi('आपका रिकवरि योजना तैयार हो रही है। कृपया आगे बढ़ें।');
+}
 
-const createOrderBtn = document.getElementById('createOrderBtn');
-const openPayBtn = document.getElementById('openPayBtn');
-const orderMessage = document.getElementById('orderMessage');
-const buyCount = document.getElementById('buyCount');
-const utrInput = document.getElementById('utrInput');
-const submitUtrBtn = document.getElementById('submitUtrBtn');
-const utrMsg = document.getElementById('utrMsg');
-const paymentHistoryEl = document.getElementById('paymentHistory');
+/* Speech */
+function speakHindi(text){
+  try{
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.lang = 'hi-IN';
+    msg.rate = 0.95;
+    msg.pitch = 0.9;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(msg);
+  }catch(e){}
+}
 
+/* Welcome flow */
+document.getElementById('welcomeNext').addEventListener('click', ()=>{
+  showPage('amount');
+});
+
+/* Amount page */
+document.getElementById('amountBack').addEventListener('click', ()=> showPage('welcome'));
+
+document.getElementById('confirmAmount').addEventListener('click', ()=>{
+  const v = Number(document.getElementById('lossAmount').value);
+  if(!v || v <= 0){ alert('कृपया सही राशि दर्ज करें'); return; }
+  state.lossAmount = Math.round(v);
+  speakHindi(`आपका नुकसान ${state.lossAmount} रुपये दर्ज किया गया है। चिंता न करें, हम इसे रिकवर कर देंगे।`);
+  setTimeout(()=> showPlansPage(), 900);
+});
+
+/* Plans computation */
+const plansDef = [
+  {key:'3m', label:'3 Months', pct:7},
+  {key:'1m', label:'1 Month', pct:12.5},
+  {key:'1w', label:'1 Week', pct:15},
+  {key:'3d', label:'3 Days', pct:20},
+  {key:'1d', label:'1 Day', pct:25}
+];
+
+function showPlansPage(){
+  const box = document.getElementById('plansBox');
+  box.innerHTML = '';
+  plansDef.forEach(p=>{
+    const price = Math.max(1, Math.round(state.lossAmount * (p.pct/100) * 100)/100);
+    const div = document.createElement('div');
+    div.className = 'plan';
+    div.id = 'plan-' + p.key;
+    div.innerHTML = `<div style="font-weight:800">${p.label}</div>
+      <div class="small">${p.pct}% of loss</div>
+      <div style="margin-top:8px;font-weight:700">₹ ${price.toFixed(2)}</div>`;
+    div.addEventListener('click', ()=> {
+      document.querySelectorAll('.plan').forEach(x=>x.classList.remove('selected'));
+      div.classList.add('selected');
+      state.chosenPlan = p;
+      state.chosenPlanPrice = Number(price.toFixed(2));
+      state.chosenPlanKey = p.key;
+      speakHindi(`${p.label} चुना गया। कृपया अगला दबाएं और भुगतान करें।`);
+    });
+    box.appendChild(div);
+  });
+  showPage('plans');
+}
+
+document.getElementById('plansBack').addEventListener('click', ()=> showPage('amount'));
+
+document.getElementById('choosePlanBtn').addEventListener('click', ()=>{
+  if(!state.chosenPlan){ alert('कृपया कोई प्लान चुनें'); return; }
+  // go to payment
+  document.getElementById('paymentStatus').innerText = '';
+  document.getElementById('utrInput').value = '';
+  document.getElementById('qrImg').src = 'qr.png';
+  showPage('payment');
+  speakHindi(`आपने ${state.chosenPlan.label} चुना है। भुगतान अमाउंट ${state.chosenPlanPrice} रुपये है। कृपया QR से भुगतान करें और U T R डालें।`);
+});
+
+/* Payment page */
+document.getElementById('paymentBack').addEventListener('click', ()=> showPage('plans'));
+
+document.getElementById('submitPayment').addEventListener('click', ()=>{
+  const utr = document.getElementById('utrInput').value.trim();
+  if(!/^[0-9]{12}$/.test(utr)){ alert('कृपया 12 अंकों का सही U T R डालें'); return; }
+  const key = 'pending_' + utr;
+  const payload = {
+    utr, amount: state.chosenPlanPrice, plan: state.chosenPlanKey, loss: state.lossAmount, ts: Date.now()
+  };
+  try{
+    localStorage.setItem(key, JSON.stringify(payload));
+    state.pendingUTR = utr;
+    document.getElementById('paymentStatus').innerText = 'Payment submitted — awaiting admin approval.';
+    speakHindi(`आपका भुगतान अनुरोध भेज दिया गया है। U T R ${utr} जमा किया गया है। एडमिन अप्रूवल के बाद आगे बढ़ेंगे।`);
+    // start listening for approval (storage event handles cross-tab; also poll for same-tab)
+    startApprovalPoll(utr);
+  }catch(e){
+    alert('Storage error: ' + e);
+  }
+});
+
+/* approval detection */
+let approvalInterval = null;
+function startApprovalPoll(utr){
+  stopApprovalPoll();
+  approvalInterval = setInterval(()=> {
+    const apr = localStorage.getItem('approved_' + utr);
+    if(apr){
+      stopApprovalPoll();
+      onApproved(utr);
+    }
+  }, 1200);
+}
+function stopApprovalPoll(){ if(approvalInterval){ clearInterval(approvalInterval); approvalInterval = null; } }
+
+window.addEventListener('storage', (ev)=>{
+  if(!ev.key) return;
+  if(ev.key.startsWith('approved_')){
+    const utr = ev.key.replace('approved_','');
+    if(state.pendingUTR === utr){
+      onApproved(utr);
+    }
+  }
+});
+
+function onApproved(utr){
+  document.getElementById('paymentStatus').innerText = '✅ Approved by admin. Preparing your recovery strategy...';
+  speakHindi('आपका भुगतान अप्रूव हो गया है। अब हम आपकी रिकवरी योजना तैयार करते हैं।');
+  setTimeout(()=> {
+    // navigate to strategy and create steps
+    createStrategy(state.lossAmount, state.chosenPlanKey);
+    showPage('strategy');
+  }, 1500);
+}
+
+/* Admin panel logic */
 const adminCross = document.getElementById('adminCross');
-const adminModal = document.getElementById('adminModal');
-const adminOrdersList = document.getElementById('adminOrdersList');
-const closeAdmin = document.getElementById('closeAdmin');
+const adminPanel = document.getElementById('adminPanel');
+const adminLoginBtn = document.getElementById('adminLoginBtn');
+const adminPass = document.getElementById('adminPass');
+const adminCloseBtn = document.getElementById('adminCloseBtn');
+const adminControls = document.getElementById('adminControls');
+const pendingList = document.getElementById('pendingList');
 
-const payModal = document.getElementById('payModal');
-const closePayModal = document.getElementById('closePayModal');
-const payQrImg = document.getElementById('payQrImg');
+adminCross.addEventListener('click', ()=> {
+  // toggle admin panel
+  adminPanel.classList.toggle('hidden');
+});
 
-/* =============================
-   Local storage keys & state
-   ============================= */
-const LS_FREE_CLAIM = 'bt_free_claim_v1';
-const LS_HISTORY = 'bt_history_v1';
-const LS_BALANCE = 'bt_balance_v1';
-const LS_LAST_ORDER = 'bt_last_order_v1';
+adminCloseBtn.addEventListener('click', ()=> adminPanel.classList.add('hidden'));
 
-let autoInc = false;
-btnAutoInc.textContent = 'Auto-inc OFF';
+// password 456 as requested
+adminLoginBtn.addEventListener('click', ()=> {
+  const p = adminPass.value || '';
+  if(p === '456'){
+    adminControls.classList.remove('hidden');
+    document.getElementById('adminPass').value = '';
+    renderPending();
+    speakHindi('एडमिन पैनल ओपन हो गया है। पेंडिंग पेमेंट्स दिख रहे हैं।');
+  } else {
+    alert('Incorrect admin password');
+  }
+});
 
-/* =============================
-   Simple local DB helpers
-   ============================= */
-function readLocalHistory(){
-  try{ return JSON.parse(localStorage.getItem(LS_HISTORY) || '[]'); } catch(e){ return []; }
+function renderPending(){
+  pendingList.innerHTML = '';
+  // iterate localStorage keys for pending_
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(k && k.startsWith('pending_')){
+      try{
+        const payload = JSON.parse(localStorage.getItem(k));
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = `<div>
+          <div style="font-weight:800">${payload.utr} • ₹${payload.amount}</div>
+          <div class="small">loss ₹${payload.loss} • plan ${payload.plan}</div>
+        </div>`;
+        const btns = document.createElement('div');
+        const approve = document.createElement('button');
+        approve.className = 'bigbtn';
+        approve.textContent = 'Approve';
+        approve.addEventListener('click', ()=> {
+          localStorage.setItem('approved_'+payload.utr, JSON.stringify({by:'admin',ts:Date.now(),payload}));
+          // optionally remove pending
+          localStorage.removeItem(k);
+          renderPending();
+          alert('Approved ' + payload.utr);
+        });
+        const reject = document.createElement('button');
+        reject.className = 'ghost';
+        reject.textContent = 'Reject';
+        reject.addEventListener('click', ()=>{
+          localStorage.removeItem(k);
+          renderPending();
+          alert('Rejected ' + payload.utr);
+        });
+        btns.appendChild(approve);
+        btns.appendChild(reject);
+        div.appendChild(btns);
+        pendingList.appendChild(div);
+      }catch(e){}
+    }
+  }
 }
-function writeLocalHistory(arr){
-  localStorage.setItem(LS_HISTORY, JSON.stringify(arr));
-}
-function readBalance(){
-  try{ return parseInt(localStorage.getItem(LS_BALANCE) || '0',10); } catch(e){ return 0; }
-}
-function writeBalance(v){
-  localStorage.setItem(LS_BALANCE, String(v));
-  coinBalanceEl.textContent = String(v);
+
+/* Strategy creation
+   - Generate steps based on loss amount & plan
+   - Speak each step in Hindi when shown
+*/
+const strategyStepsEl = document.getElementById('strategySteps');
+const strategyNextBtn = document.getElementById('strategyNext');
+const strategyFinishBtn = document.getElementById('strategyFinish');
+const strategyIntro = document.getElementById('strategyIntro');
+const strategyNote = document.getElementById('strategyNote');
+
+let currentStepIndex = 0;
+let generatedSteps = [];
+
+function createStrategy(lossAmnt, planKey){
+  generatedSteps = [];
+  currentStepIndex = 0;
+
+  // plan multipliers and schedules (rough)
+  const planMap = {
+    '3m': {label:'3 Months', days:90, feePct:7},
+    '1m': {label:'1 Month', days:30, feePct:12.5},
+    '1w': {label:'1 Week', days:7, feePct:15},
+    '3d': {label:'3 Days', days:3, feePct:20},
+    '1d': {label:'1 Day', days:1, feePct:25}
+  };
+  const plan = planMap[planKey] || planMap['1m'];
+  const fee = Math.round((lossAmnt * (plan.feePct/100))*100)/100;
+
+  // step 0: intro
+  generatedSteps.push({
+    title: `Plan: ${plan.label}`,
+    text: `आपने ${plan.label} चुना है। प्लान का प्राइस ₹${fee} है। अब हम ज़रूरी स्टेप्स बतायेंगे।`
+  });
+
+  // step 1: deposit 5% initial (as example)
+  const deposit = Math.max(1, Math.round(lossAmnt * 0.05 * 100)/100);
+  generatedSteps.push({
+    title:'Step 1: Initial Deposit',
+    text: `आरम्भ के लिए ${deposit} रुपये जमा करें (कुल नुकसान का 5%). यह आपके पहले माइक्रो-बेट के लिए बैलेंस तैयार करेगा।`
+  });
+
+  // step 2: Open WINGO 1 min (instruction)
+  generatedSteps.push({
+    title:'Step 2: Open WINGO 1 min',
+    text: `WINGO 1-min खोलें और उस समय के अनुसार हमारे सुझावों को फॉलो करें। हर दिन लक्ष्य पूरा करने पर Next पर क्लिक करें।`
+  });
+
+  // step 3: daily targets splitting
+  const days = plan.days;
+  const dailyTarget = Math.max(1, Math.round((lossAmnt / days) * 100)/100);
+  generatedSteps.push({
+    title:'Step 3: Daily target',
+    text: `हर दिन का लक्ष्य: ₹${dailyTarget} कमाना। छोटे-छोटे बेट्स में यह आसान रहेगा।`
+  });
+
+  // step 4: betting levels (15/30/55 logic)
+  generatedSteps.push({
+    title:'Step 4: Bet sizing',
+    text: `हम तीन स्तर सुझाते हैं: Level1 = 15%, Level2 = 30%, Level3 = 55% (जरूरत अनुसार)। Loss होने पर अगले Level पर जाएं।`
+  });
+
+  // step 5: safety & skip
+  generatedSteps.push({
+    title:'Step 5: Safety rules',
+    text: `अगर दो बार लगातार Loss हों तो strategy बदलें और छोटा बैट चुनें। एक ही round में अत्यधिक जोखिम न लें।`
+  });
+
+  // step 6: timeline & completion
+  generatedSteps.push({
+    title:'Final: Goal & completion',
+    text: `यदि आपने निर्धारित लक्ष्य पूरा कर लिया तो Complete बटन दबाएँ। हम हर दिन प्रोग्रेस रिकॉर्ड करेंगे।`
+  });
+
+  // render
+  renderStrategy();
+  speakHindi(`आपका ${plan.label} प्लान सेट हो गया है। कुल फीस ${fee} रुपये है। आगे बढ़ने के लिए नेक्स्ट दबाइए।`);
 }
 
-/* init UI */
-(function(){
-  writeBalance(readBalance());
-  const h = readLocalHistory();
-  renderChart(h);
-  renderPaymentHistory();
+function renderStrategy(){
+  strategyStepsEl.innerHTML = '';
+  generatedSteps.forEach((s, idx)=>{
+    const d = document.createElement('div');
+    d.className = 'step';
+    d.id = 'step-' + idx;
+    d.innerHTML = `<div style="font-weight:800">${s.title}</div><div style="margin-top:6px">${s.text}</div>`;
+    if(idx !== currentStepIndex) d.style.display = 'none';
+    strategyStepsEl.appendChild(d);
+  });
+  strategyStepsEl.classList.remove('hidden');
+  strategyNextBtn.disabled = false;
+  strategyNextBtn.style.display = 'inline-block';
+  strategyFinishBtn.style.display = 'none';
+  strategyIntro.innerText = `आपने कुल ${generatedSteps.length} स्टेप्स पाए। अब पहला स्टेप दिखाया है।`;
+  speakCurrentStep();
+}
+
+function speakCurrentStep(){
+  const s = generatedSteps[currentStepIndex];
+  if(s) speakHindi(s.text);
+}
+
+strategyNextBtn.addEventListener('click', ()=>{
+  if(currentStepIndex < generatedSteps.length -1){
+    // hide current
+    const cur = document.getElementById('step-' + currentStepIndex);
+    if(cur) cur.style.display = 'none';
+    currentStepIndex++;
+    const nxt = document.getElementById('step-' + currentStepIndex);
+    if(nxt) nxt.style.display = 'block';
+    speakCurrentStep();
+    if(currentStepIndex === generatedSteps.length -1){
+      strategyNextBtn.disabled = true;
+      strategyNextBtn.style.display = 'none';
+      strategyFinishBtn.style.display = 'inline-block';
+      strategyFinishBtn.disabled = false;
+      strategyNote.innerText = 'आप अंतिम स्टेप पर हैं — पूरा करने के लिए Finish दबाएं।';
+    } else {
+      strategyNote.innerText = `Step ${currentStepIndex+1} of ${generatedSteps.length}`;
+    }
+  }
+});
+
+strategyFinishBtn.addEventListener('click', ()=>{
+  speakHindi('बधाई हो। आपने अपनी Recovery योजना शुरू की। रोज के टास्क पर दीक्षा करें।');
+  alert('Recovery plan started. Return to welcome to start new flow.');
+  // reset
+  location.reload();
+});
+
+/* Utilities */
+// small helper to auto-approve for demo (REMOVE in production)
+function autoApproveForDemo(){
+  // no-op; admin must approve manually via admin panel
+}
+
+/* initialize */
+(function init(){
+  showPage('welcome');
+  // greet voice
+  speakHindi('Welcome to Loss Recovery. आपका स्वागत है। आगे बढ़ने के लिए Next दबाएँ।');
 })();
 
-/* =============================
-   Chart.js for frequency
-   ============================= */
-let chart = null;
-function renderChart(historyArray){
-  const ctx = document.getElementById('freqChart').getContext('2d');
-  const freq = historyArray.reduce((acc,item)=>{
-    const s = (item.result||item).toString().toUpperCase();
-    if(s.includes('B')||s==='BIG') acc.big++;
-    else acc.small++;
-    return acc;
-  },{big:0,small:0});
-  if(chart) chart.destroy();
-  chart = new Chart(ctx, {
-    type:'bar',
-    data:{
-      labels:['BIG','SMALL'],
-      datasets:[{
-        label:'Frequency',
-        data:[freq.big, freq.small],
-        backgroundColor:[ 'rgba(46,230,201,0.9)', 'rgba(255,109,166,0.9)' ],
-        borderRadius:8
-      }]
-    },
-    options:{ plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
-  });
-}
-
-/* =============================
-   Prediction logic (multi-modules)
-   - Uses last up to 30 history entries
-   - Real metrics computed; final decision uses weighted modules
-   - Generates two numbers according to Big/Small
-   ============================= */
-function analyzeAndPredict(historyArray){
-  // ensure array entries are strings 'B'/'S' or objects with .result
-  const hist = historyArray.slice(-30).map(h=> (typeof h === 'string') ? h : (h.result || h).toString() );
-
-  // normalize to 'B' / 'S'
-  const norm = hist.map(x=>{
-    x = x.toString().trim().toUpperCase();
-    if(x.startsWith('B')) return 'B';
-    if(x.startsWith('S')) return 'S';
-    // fallback: numeric last char
-    const last = x.trim().slice(-1);
-    if(/[0-9]/.test(last)) return (Number(last) >=5) ? 'B' : 'S';
-    return 'B';
-  });
-
-  // modules -> each returns {pred:'B'/'S', weight:0..1, info}
-  const modules = [];
-
-  // 1) Frequency module
-  (function(){
-    const big = norm.filter(x=>x==='B').length;
-    const small = norm.length - big;
-    const total = Math.max(1, norm.length);
-    const pBig = big/total;
-    const pSmall = small/total;
-    // choose opposite of majority (psychology rule) with some weight
-    const pred = (pBig>pSmall) ? 'S' : 'B';
-    const weight = 0.16 + Math.abs(pBig-pSmall)*0.34; // 0.16..0.5
-    modules.push({name:'Frequency', pred, weight, details:`B:${big} S:${small}`});
-  })();
-
-  // 2) Recent bias module (last 8)
-  (function(){
-    const last = norm.slice(-8);
-    const big = last.filter(x=>x==='B').length;
-    const small = last.length - big;
-    const pred = (big>small) ? 'S' : 'B';
-    const weight = 0.12 + Math.abs(big-small)*0.08; // small weight
-    modules.push({name:'RecentBias', pred, weight, details:`last8 B:${big} S:${small}`});
-  })();
-
-  // 3) Run-length module (detect long streak)
-  (function(){
-    let maxB=0,maxS=0,cur=''; let curLen=0;
-    for(let x of norm){
-      if(x===cur){ curLen++; } else { cur = x; curLen=1; }
-      if(cur==='B') maxB = Math.max(maxB, curLen);
-      else maxS = Math.max(maxS, curLen);
-    }
-    // if there's long streak of B, then predict opposite (psychology)
-    const pred = (maxB > maxS) ? 'S' : (maxS>maxB ? 'B' : (Math.random()>0.5?'B':'S'));
-    const weight = 0.1 + Math.min(0.4, Math.abs(maxB-maxS)*0.08);
-    modules.push({name:'RunLength', pred, weight, details:`maxB:${maxB} maxS:${maxS}`});
-  })();
-
-  // 4) Pattern detector: simple repeating patterns (zigzag etc)
-  (function(){
-    // check if pattern ABAB or AABB etc in last 6
-    const last6 = norm.slice(-6).join('');
-    let pred = 'B'; let weight=0.08;
-    if(/(BS){3}$/.test(last6) || /(SB){3}$/.test(last6)){
-      // zigzag detected -> predict majority of less recent? choose opposite of what most expect -> opposite of last value
-      pred = (norm[norm.length-1]==='B') ? 'S' : 'B';
-      weight = 0.14;
-    } else {
-      weight = 0.06;
-      pred = (Math.random()>0.5)?'B':'S';
-    }
-    modules.push({name:'Pattern', pred, weight, details:last6});
-  })();
-
-  // 5) Momentum module: moving-window diff
-  (function(){
-    const n = norm.length;
-    const firstPart = norm.slice(0, Math.floor(n/2));
-    const secondPart = norm.slice(Math.floor(n/2));
-    const a = firstPart.filter(x=>x==='B').length;
-    const b = secondPart.filter(x=>x==='B').length;
-    const pred = (b > a) ? 'B' : 'S';
-    const weight = 0.10 + Math.min(0.25, Math.abs(b-a)/Math.max(1,n)*0.6);
-    modules.push({name:'Momentum', pred, weight, details:`firstB:${a} secondB:${b}`});
-  })();
-
-  // 6) Entropy module (randomness measure)
-  (function(){
-    const big = norm.filter(x=>x==='B').length;
-    const small = norm.length - big;
-    const pB = big/(norm.length||1); const pS = small/(norm.length||1);
-    const e = -((pB*Math.log2(pB||1)) + (pS*Math.log2(pS||1)));
-    // if low entropy (very biased), choose opposite with higher weight
-    const pred = (pB > pS) ? 'S' : 'B';
-    const weight = 0.06 + (1 - e)*(0.34); // low e => higher weight
-    modules.push({name:'Entropy', pred, weight, details:`e:${e.toFixed(2)}`});
-  })();
-
-  // 7) Psychology module - opposite of where users likely bet (we use freq as proxy)
-  (function(){
-    const big = norm.filter(x=>x==='B').length;
-    const small = norm.length - big;
-    const pred = (big > small) ? 'S' : 'B';
-    const weight = 0.12 + Math.abs(big-small)/Math.max(1,norm.length)*0.18;
-    modules.push({name:'Psychology', pred, weight, details:`proxy for public:${big}B/${small}S`});
-  })();
-
-  // 8) Frequency-smoothed module (weighted recent)
-  (function(){
-    let score = 0; let weightSum = 0;
-    for(let i=0;i<norm.length;i++){
-      const w = 1 + i/(norm.length || 1); // more recent higher
-      score += (norm[i]==='B'?1:-1) * w;
-      weightSum += w;
-    }
-    const pred = (score > 0) ? 'S' : 'B';
-    const weight = 0.08 + Math.min(0.25, Math.abs(score)/Math.max(1,weightSum)*0.2);
-    modules.push({name:'Smoothed', pred, weight, details:`score:${score.toFixed(2)}`});
-  })();
-
-  // 9) Random tie-breaker
-  (function(){
-    modules.push({name:'TieBreaker', pred: (Math.random()>0.5?'B':'S'), weight:0.04, details:'random'});
-  })();
-
-  // 10) Heuristic: if last result == X, slight inclination to opposite
-  (function(){
-    const last = norm[norm.length-1] || 'B';
-    modules.push({name:'LastOpposite', pred: last==='B'?'S':'B', weight:0.08, details:`last:${last}`});
-  })();
-
-  // Aggregate votes
-  let score = 0; let totalW = 0;
-  modules.forEach(m=>{
-    const val = (m.pred==='B') ? 1 : -1;
-    score += val * m.weight;
-    totalW += m.weight;
-  });
-  const agg = score / Math.max(0.0001, totalW);
-  const finalPred = (agg > 0) ? 'B' : 'S';
-  const confidence = Math.round((Math.abs(agg)/1.0) * 100); // rough 0..100
-
-  // Compose details
-  const detailText = modules.map(m=> `${m.name}: ${m.pred} (${m.details})`).join(' • ');
-
-  // Generate two numbers: for BIG -> two numbers 5..9 ; for SMALL -> 0..4
-  function genNumbers(side){
-    if(side==='B'){
-      const a = 5 + Math.floor(Math.random()*5);
-      const b = 5 + Math.floor(Math.random()*5);
-      return [a,b];
-    } else {
-      const a = Math.floor(Math.random()*5);
-      const b = Math.floor(Math.random()*5);
-      return [a,b];
-    }
-  }
-  const nums = genNumbers(finalPred);
-
-  return {
-    pred: finalPred,
-    confidence: Math.min(98, Math.max(40, confidence + 10)), // scale into a believable range
-    modules,
-    detailText,
-    numbers: nums,
-    elapsedSec: (6 + Math.random()*8).toFixed(1) // simulated analysis time (6..14s)
-  };
-}
-
-/* =============================
-   UI: generate prediction flow
-   - checks coin balance (10 coins)
-   - simulated analysis time and log
-   - updates history & chart
-   ============================= */
-const COIN_COST = 10;
-
-btnGenerate.addEventListener('click', async ()=>{
-  const period = (periodInput.value || '').trim();
-  if(!period){ alert('Enter a period number first'); return; }
-
-  // check coins
-  const bal = readBalance();
-  if(bal < COIN_COST){
-    if(!confirm('Not enough coins. Go to Buy?')) return;
-    openBuyFlow();
-    return;
-  }
-
-  // consume coins immediately for demo:
-  writeBalance(bal - COIN_COST);
-
-  periodLabel.textContent = period;
-  statusNote.textContent = 'Working — running deep analysis...';
-  btnGenerate.disabled = true;
-
-  // simulate analysis delay and run modules
-  const history = readLocalHistory();
-  // run analysis; this is synchronous algorithmic work but we simulate progress
-  const start = Date.now();
-  // show progress dots for user
-  analysisLog.prepend(document.createElement('div')).textContent = `${new Date().toLocaleTimeString()} — Analysis started...`;
-  await new Promise(res=>setTimeout(res, 600 + Math.random()*400)); // small
-  const result = analyzeAndPredict(history);
-
-  // simulate the modules scanning (use setTimeouts to show incremental logs)
-  const simulatedSteps = [
-    `Loading ${Math.max(5, history.length)} historical entries...`,
-    `Running frequency & psychology modules...`,
-    `Checking run-length & pattern detectors...`,
-    `Scoring momentum & entropy...`,
-    `Compiling final decision...`
-  ];
-  for(let i=0;i<simulatedSteps.length;i++){
-    analysisLog.prepend(document.createElement('div')).textContent = `${new Date().toLocaleTimeString()} — ${simulatedSteps[i]}`;
-    await new Promise(res=>setTimeout(res, 700 + Math.random()*800));
-  }
-
-  // final summary
-  analysisLog.prepend(document.createElement('div')).textContent = `${new Date().toLocaleTimeString()} — Analysis finished in ${result.elapsedSec}s — Pred: ${result.pred} • Conf: ${result.confidence}%`;
-  analysisLog.prepend(document.createElement('div')).textContent = `Modules: ${result.modules.map(m=>m.name+'='+m.pred).join(', ')}`;
-
-  // update UI
-  predLabel.textContent = (result.pred==='B') ? 'BIG' : 'SMALL';
-  predNumbers.textContent = `${result.numbers[0]} / ${result.numbers[1]}`;
-  statusNote.textContent = `Confidence: ${result.confidence}% • Cost: ${COIN_COST} coins`;
-
-  // push to local history as a pending prediction (so chart shows)
-  const localHist = readLocalHistory();
-  localHist.push({ period, result: result.pred, numbers: result.numbers, ts: Date.now(), conf: result.confidence });
-  // keep last 200
-  writeLocalHistory(localHist.slice(-200));
-  renderChart(localHist);
-
-  // increment period if autoInc ON
-  if(autoInc){
-    try{
-      let n = Number(period);
-      if(!isNaN(n)) {
-        n++;
-        periodInput.value = String(n);
-      }
-    }catch(e){}
-  }
-
-  btnGenerate.disabled = false;
-});
-
-/* Mark Win / Loss -> update last history entry */
-document.getElementById('btnMarkWin').addEventListener('click', ()=>{
-  markResult(true);
-});
-document.getElementById('btnMarkLoss').addEventListener('click', ()=>{
-  markResult(false);
-});
-
-function markResult(isWin){
-  const localHist = readLocalHistory();
-  if(!localHist.length){ alert('No prediction in history to mark.'); return; }
-  // update last entry's status
-  localHist[localHist.length-1].outcome = isWin ? 'win' : 'loss';
-  writeLocalHistory(localHist);
-  renderChart(localHist);
-  analysisLog.prepend(document.createElement('div')).textContent = `${new Date().toLocaleTimeString()} — User marked ${isWin ? 'WIN' : 'LOSS'}. History updated.`;
-  // If loss happened, we try to increase analysis aggressiveness: for demo we'll add an artificial "boost" into modules by adding a local flag
-  if(!isWin){
-    // simple heuristic: if 2 consecutive losses, add a forced win prediction next time (demo)
-    const last2 = localHist.slice(-2);
-    if(last2.length===2 && last2[0].outcome==='loss' && last2[1].outcome==='loss'){
-      analysisLog.prepend(document.createElement('div')).textContent = `${new Date().toLocaleTimeString()} — Loss streak detected. Next prediction biasing for higher certainty.`;
-      // (this demo does not change the analyzeAndPredict internal deterministic weights; it's a UI note)
-    }
-  }
-}
-
-/* =============================
-   Free claim (one-time per device)
-   ============================= */
-claimFreeBtn.addEventListener('click', ()=>{
-  if(localStorage.getItem(LS_FREE_CLAIM)){
-    alert('Free coins already claimed on this device.');
-    return;
-  }
-  const cur = readBalance();
-  writeBalance(cur + 50);
-  localStorage.setItem(LS_FREE_CLAIM, '1');
-  claimFreeBtn.textContent = 'Claimed';
-  orderMessage.textContent = '50 coins credited (free).';
-});
-
-/* =============================
-   Buy coins -> Order creation
-   Saves order in Firebase 'orders'
-   ============================= */
-function openBuyFlow(){
-  payModal.style.display = 'flex';
-}
-btnBuy.addEventListener('click', openBuyFlow);
-openPayBtn.addEventListener('click', openBuyFlow);
-closePayModal.addEventListener('click', ()=> payModal.style.display='none');
-
-createOrderBtn.addEventListener('click', async ()=>{
-  const cnt = Math.max(0, parseInt(buyCount.value || '0',10));
-  if(cnt < 100){ alert('Minimum 100 coins'); return; }
-  const amount = (cnt * 0.5).toFixed(2);
-  // create order id locally
-  const orderId = 'O_' + Math.random().toString(36).slice(2,12).toUpperCase();
-  const orderData = {
-    orderId,
-    coins: cnt,
-    amount,
-    status: 'created',
-    createdAt: Date.now()
-  };
-  // store locally
-  localStorage.setItem(LS_LAST_ORDER, JSON.stringify(orderData));
-  orderMessage.textContent = `Order created. Scan QR and submit UTR with Order ID: ${orderId}`;
-  // push to firebase as pending with status created
-  const ordersRef = ref(db, 'orders/' + orderId);
-  await set(ordersRef, orderData);
-  renderPaymentHistory();
-});
-
-/* UTR submit: attach utr to last order + optional screenshot (not storing screenshot file in firebase for demo) */
-submitUtrBtn.addEventListener('click', async ()=>{
-  const utr = (utrInput.value || '').trim();
-  if(!/^\d{10,20}$/.test(utr)){ alert('Enter a valid UTR (digits)'); return; }
-  const lastOrderRaw = localStorage.getItem(LS_LAST_ORDER);
-  if(!lastOrderRaw){ alert('No last order found. Create an order first.'); return; }
-  const order = JSON.parse(lastOrderRaw);
-  // update in firebase as pending and attach utr
-  const ordersRef = ref(db, 'orders/' + order.orderId);
-  await update(ordersRef, { utr, status: 'pending', utrSubmittedAt: Date.now() });
-  utrMsg.textContent = 'UTR submitted. Awaiting admin approval.';
-  renderPaymentHistory();
-});
-
-/* Render payment history by reading orders for this device from firebase */
-async function renderPaymentHistory(){
-  paymentHistoryEl.innerHTML = '';
-  // get last order id local
-  const lastOrderRaw = localStorage.getItem(LS_LAST_ORDER);
-  if(lastOrderRaw){
-    const ord = JSON.parse(lastOrderRaw);
-    // fetch from firebase for latest
-    try{
-      const snapshot = await get(ref(db, 'orders/' + ord.orderId));
-      if(snapshot.exists()){
-        const data = snapshot.val();
-        const row = document.createElement('div');
-        row.className = 'orderRow';
-        row.innerHTML = `<div>
-            <div style="font-weight:700">${data.orderId}</div>
-            <div style="color:var(--muted);font-size:13px">Coins: ${data.coins} • ₹${data.amount}</div>
-          </div>
-          <div style="text-align:right">
-            <div class="tag" style="background:${data.status==='approved'?'rgba(46,230,201,0.12)':'rgba(255,109,166,0.06)'}">${data.status}</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:6px">${data.utr ? 'UTR: ' + data.utr : ''}</div>
-          </div>`;
-        paymentHistoryEl.appendChild(row);
-      }
-    }catch(e){
-      console.error(e);
-    }
-  } else {
-    paymentHistoryEl.innerHTML = '<div class="muted">No orders yet.</div>';
-  }
-}
-
-/* =============================
-   Admin console
-   - opens after clicking adminCross and entering password (456)
-   - lists pending orders and provides Approve / Reject buttons
-   ============================= */
-adminCross.addEventListener('click', async ()=>{
-  const pw = prompt('Enter admin password:');
-  if(pw !== '456'){ alert('Wrong password'); return; }
-  // open modal
-  adminModal.style.display = 'flex';
-  // fetch pending orders and subscribe
-  const ordersRef = ref(db, 'orders');
-  onValue(ordersRef, (snap)=>{
-    adminOrdersList.innerHTML = '';
-    const val = snap.val() || {};
-    const entries = Object.values(val).filter(o=>o.status && o.status!=='approved' && o.status!=='rejected');
-    if(entries.length===0){
-      adminOrdersList.innerHTML = '<div class="mutedBox">No pending payments.</div>';
-      return;
-    }
-    entries.forEach(o=>{
-      const div = document.createElement('div');
-      div.style.marginBottom='12px';
-      div.innerHTML = `
-        <div style="display:flex;gap:12px;align-items:center;justify-content:space-between">
-          <div>
-            <div style="font-weight:700">${o.orderId} • ₹${o.amount}</div>
-            <div style="color:var(--muted);font-size:13px">Coins: ${o.coins} • Created: ${new Date(o.createdAt).toLocaleString()}</div>
-            <div style="margin-top:6px;color:var(--muted);font-size:13px">UTR: ${o.utr || '-'} </div>
-          </div>
-          <div style="text-align:right">
-            <div style="display:flex;flex-direction:column;gap:8px">
-              <button class="btnApprove" data-id="${o.orderId}">Approve</button>
-              <button class="btnReject" data-id="${o.orderId}" style="background:linear-gradient(90deg,#ff6da6,#ff8a6a);color:#fff">Reject</button>
-            </div>
-          </div>
-        </div>
-      `;
-      adminOrdersList.appendChild(div);
-    });
-    // attach handlers
-    adminOrdersList.querySelectorAll('.btnApprove').forEach(b=>{
-      b.addEventListener('click', async (e)=>{
-        const id = e.currentTarget.dataset.id;
-        await approveOrder(id);
-      });
-    });
-    adminOrdersList.querySelectorAll('.btnReject').forEach(b=>{
-      b.addEventListener('click', async (e)=>{
-        const id = e.currentTarget.dataset.id;
-        if(!confirm('Reject this order?')) return;
-        await update(ref(db, 'orders/' + id), { status:'rejected', adminAt: Date.now() });
-      });
-    });
-  });
-});
-
-closeAdmin.addEventListener('click', ()=> adminModal.style.display='none');
-
-async function approveOrder(orderId){
-  // get order
-  const snap = await get(ref(db, 'orders/' + orderId));
-  if(!snap.exists()){ alert('Order missing'); return; }
-  const ord = snap.val();
-  // update status
-  await update(ref(db, 'orders/' + orderId), { status: 'approved', adminAt: Date.now() });
-  // credit to local user's balance if last order matches (demo)
-  const lastOrderRaw = localStorage.getItem(LS_LAST_ORDER);
-  if(lastOrderRaw){
-    const last = JSON.parse(lastOrderRaw);
-    if(last.orderId === orderId){
-      // credit
-      const cur = readBalance();
-      writeBalance(cur + Number(ord.coins));
-      analysisLog.prepend(document.createElement('div')).textContent = `${new Date().toLocaleTimeString()} — Admin approved ${orderId} — ${ord.coins} coins credited.`;
-      renderPaymentHistory();
-    }
-  }
-}
-
-/* =============================
-   Subscriptions: listen for orders changes to update payment history automatically
-   ============================= */
-onValue(ref(db, 'orders'), (snap)=>{
-  renderPaymentHistory();
-});
-
-/* =============================
-   Admin modal close helper
-   ============================= */
-document.addEventListener('click', (e)=>{
-  if(e.target === adminModal) adminModal.style.display='none';
-  if(e.target === payModal) payModal.style.display='none';
-});
-
-/* =============================
-   Chart / history refresh helper
-   ============================= */
-function refreshUI(){
-  renderChart(readLocalHistory());
-  renderPaymentHistory();
-}
-setInterval(refreshUI, 3000);
-
-/* =============================
-   Auto-inc toggle
-   ============================= */
-btnAutoInc.addEventListener('click', ()=>{
-  autoInc = !autoInc;
-  btnAutoInc.textContent = autoInc ? 'Auto-inc ON' : 'Auto-inc OFF';
-});
-
-/* =============================
-   Open Buy Page (just open QR modal)
-   ============================= */
-function openBuyFlow(){
-  payModal.style.display = 'flex';
-}
-btnBuy.addEventListener('click', openBuyFlow);
-
-/* =============================
-   Small helper: if user closes page and returns, ensure coin claim not re-done
-   ============================= */
-window.addEventListener('load', ()=>{
-  coinBalanceEl.textContent = String(readBalance());
-  if(localStorage.getItem(LS_FREE_CLAIM)) claimFreeBtn.textContent = 'Claimed';
-});
-
-/* =============================
-   Utility: prevent accidental text selection etc (small UX)
-   ============================= */
-document.body.addEventListener('mousedown', ()=>{ /* noop */ });
-
-  </script>
+</script>
 </body>
 </html>
