@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Loss Recovery — Demo</title>
+<title>Loss Recovery (Firebase)</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -32,13 +32,14 @@ body{margin:0;background:linear-gradient(180deg,#061021,#07142a);color:#eaf6ff;m
 .hidden{display:none}
 .footer{margin-top:12px;text-align:center;color:var(--muted);font-size:13px}
 .admin-cross{position:fixed;right:18px;bottom:18px;width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;cursor:pointer;z-index:999}
-.panel{position:fixed;right:18px;top:18px;width:360px;background:rgba(0,0,0,0.6);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);z-index:999;box-shadow:0 12px 40px rgba(0,0,0,0.6)}
-.list{max-height:320px;overflow:auto;margin-top:8px}
+.panel{position:fixed;right:18px;top:18px;width:420px;background:rgba(10,10,12,0.95);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);z-index:999;box-shadow:0 12px 40px rgba(0,0,0,0.6);color:#dfe}
+.list{max-height:360px;overflow:auto;margin-top:8px}
 .item{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center;gap:8px}
 .badge{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.03);font-weight:700}
 .step{border-radius:8px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);margin-top:12px}
 .success{color:#b4f8c8}
 .warn{color:#ffd6a5}
+.note{font-size:13px;color:#b9d3ff}
 </style>
 </head>
 <body>
@@ -49,13 +50,12 @@ body{margin:0;background:linear-gradient(180deg,#061021,#07142a);color:#eaf6ff;m
     <div class="logo">LR</div>
     <div>
       <div class="title">Loss Recovery</div>
-      <div class="subtitle">Smart, guided loss recovery — voice assisted</div>
+      <div class="subtitle">Smart recovery — Firebase powered</div>
     </div>
   </div>
 
   <div class="container">
-    <!-- Pages (show/hide by id) -->
-    <!-- 1: Welcome -->
+    <!-- Pages -->
     <div id="page-welcome" class="card center">
       <h2>Welcome to Loss Recovery</h2>
       <p class="small">Apka swagat hai — hum aapki madad karenge aapka loss recover karne mein.</p>
@@ -63,7 +63,6 @@ body{margin:0;background:linear-gradient(180deg,#061021,#07142a);color:#eaf6ff;m
       <div class="small">(Voice guidance enabled)</div>
     </div>
 
-    <!-- 2: Enter amount -->
     <div id="page-amount" class="card center hidden">
       <h3>How much is your loss?</h3>
       <input id="lossAmount" class="input" type="number" placeholder="Enter amount in Rs" min="1"/>
@@ -74,20 +73,16 @@ body{margin:0;background:linear-gradient(180deg,#061021,#07142a);color:#eaf6ff;m
       <div class="small">Amount dala jaayega aur voice se confirm hogi</div>
     </div>
 
-    <!-- 3: Plan selection -->
     <div id="page-plans" class="card center hidden">
       <h3>Choose recovery plan</h3>
       <div class="small">Plans ke price loss amount ke % par based honge</div>
-      <div class="plans" id="plansBox">
-        <!-- plans inserted by JS -->
-      </div>
+      <div class="plans" id="plansBox"></div>
       <div class="row" style="margin-top:12px">
         <button class="bigbtn" id="choosePlanBtn">Proceed to Payment</button>
         <button class="ghost" id="plansBack">Back</button>
       </div>
     </div>
 
-    <!-- 4: Payment page -->
     <div id="page-payment" class="card center hidden">
       <h3>Payment</h3>
       <div class="small">Scan QR and pay exact amount for the chosen plan. Then enter 12-digit UTR and confirm.</div>
@@ -101,13 +96,10 @@ body{margin:0;background:linear-gradient(180deg,#061021,#07142a);color:#eaf6ff;m
       <div id="paymentStatus" class="small" style="margin-top:8px"></div>
     </div>
 
-    <!-- 5: Strategy page -->
     <div id="page-strategy" class="card hidden">
       <h3>Recovery Strategy</h3>
       <div id="strategyIntro" class="small">Preparing your step-by-step recovery plan...</div>
-
       <div id="strategySteps" class="step hidden"></div>
-
       <div class="row" style="margin-top:12px">
         <button class="bigbtn" id="strategyNext" disabled>Next Step</button>
         <button class="ghost" id="strategyFinish" style="display:none">Finish</button>
@@ -115,13 +107,11 @@ body{margin:0;background:linear-gradient(180deg,#061021,#07142a);color:#eaf6ff;m
       <div id="strategyNote" class="small" style="margin-top:10px"></div>
     </div>
 
-    <div class="footer">This is a demo — Not financial advice. Keep screenshots for approvals.</div>
+    <div class="footer">Demo: Firebase Realtime DB approvals enabled. Keep QR and anime.png in same folder.</div>
   </div>
 
-  <!-- hidden admin cross -->
   <div class="admin-cross" id="adminCross" title="Admin">❌</div>
 
-  <!-- admin panel -->
   <div id="adminPanel" class="panel hidden" role="dialog" aria-hidden="true">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div style="font-weight:800">Admin Panel</div>
@@ -139,19 +129,36 @@ body{margin:0;background:linear-gradient(180deg,#061021,#07142a);color:#eaf6ff;m
     <div id="adminControls" class="hidden">
       <div style="margin-top:12px;font-weight:700">Pending Payments</div>
       <div class="list" id="pendingList"></div>
-      <div style="margin-top:8px" class="small">Approve will notify the user (localStorage based demo)</div>
+      <div style="margin-top:8px" class="small">Approve will notify the user (Realtime DB).</div>
     </div>
   </div>
 
 </div>
 
-<script>
-/* Loss Recovery SPA (single-file)
-   - Voice via SpeechSynthesis (Hindi)
-   - Admin approvals via localStorage: pending_<utr> and approved_<utr>
-   - Admin panel hidden behind cross; password: 456
-*/
+<!-- Firebase compat SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
+<script>
+/* ====== CONFIG - INSERT YOUR FIREBASE CONFIG ======
+   You gave this earlier; I include it here.
+   If you change config, update below.
+*/
+const firebaseConfig = {
+  apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+  authDomain: "terminal-xxrr.firebaseapp.com",
+  databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "terminal-xxrr",
+  storageBucket: "terminal-xxrr.firebasestorage.app",
+  messagingSenderId: "722753278120",
+  appId: "1:722753278120:web:bfa37aab39635a4e57f29d",
+  measurementId: "G-E3MZH3E1K5"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* SPA state & pages */
 const pages = {
   welcome: document.getElementById('page-welcome'),
   amount: document.getElementById('page-amount'),
@@ -159,55 +166,42 @@ const pages = {
   payment: document.getElementById('page-payment'),
   strategy: document.getElementById('page-strategy')
 };
+let state = { lossAmount:0, chosenPlan:null, chosenPlanPrice:0, chosenPlanKey:null, pendingUTR:null };
 
-let state = {
-  lossAmount: 0,
-  chosenPlan: null,
-  chosenPlanPrice: 0,
-  chosenPlanKey: null,
-  pendingUTR: null
-};
-
+/* show page + voice */
 function showPage(name){
   Object.values(pages).forEach(p=>p.classList.add('hidden'));
   pages[name].classList.remove('hidden');
-  // spoken guidance for each page
-  if(name === 'welcome') speakHindi('स्वागत है Loss Recovery में। आगे बढ़ने के लिए नेक्स्ट दबाएं।');
-  else if(name === 'amount') speakHindi('कितना नुकसान हुआ है? कृपया राशि दर्ज करें और कन्फर्म करें।');
-  else if(name === 'plans') speakHindi('अपना प्लान चुनें। आपकी राशि के अनुसार प्राइस दिखाई देगा।');
-  else if(name === 'payment') speakHindi('क्यूआर से भुगतान करें और 12 अंकों का U T R डालकर सबमिट करें।');
-  else if(name === 'strategy') speakHindi('आपका रिकवरि योजना तैयार हो रही है। कृपया आगे बढ़ें।');
+  if(name==='welcome') speakHindi('स्वागत है Loss Recovery में। आगे बढ़ने के लिए नेक्स्ट दबाएं।');
+  if(name==='amount') speakHindi('कितना नुकसान हुआ है ? कृपया राशि दर्ज करें और कन्फर्म करें।');
+  if(name==='plans') speakHindi('अपना प्लान चुनें। आपकी राशि के अनुसार प्राइस दिखाई देगा।');
+  if(name==='payment') speakHindi('क्यूआर से भुगतान करें और 12 अंकों का U T R डालकर सबमिट करें।');
+  if(name==='strategy') speakHindi('आपकी रिकवरी रणनीति तैयार हो रही है, कृपया आगे बढ़ें।');
 }
-
-/* Speech */
 function speakHindi(text){
   try{
-    const msg = new SpeechSynthesisUtterance(text);
-    msg.lang = 'hi-IN';
-    msg.rate = 0.95;
-    msg.pitch = 0.9;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang='hi-IN'; u.rate=0.95; u.pitch=0.95;
     window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(msg);
+    window.speechSynthesis.speak(u);
   }catch(e){}
 }
 
-/* Welcome flow */
-document.getElementById('welcomeNext').addEventListener('click', ()=>{
-  showPage('amount');
-});
-
-/* Amount page */
+/* init */
+document.getElementById('welcomeNext').addEventListener('click', ()=> showPage('amount'));
 document.getElementById('amountBack').addEventListener('click', ()=> showPage('welcome'));
+document.getElementById('plansBack').addEventListener('click', ()=> showPage('amount'));
+document.getElementById('paymentBack').addEventListener('click', ()=> showPage('plans'));
 
 document.getElementById('confirmAmount').addEventListener('click', ()=>{
   const v = Number(document.getElementById('lossAmount').value);
-  if(!v || v <= 0){ alert('कृपया सही राशि दर्ज करें'); return; }
+  if(!v || v<=0){ alert('कृपया वैध राशि दर्ज करें'); return; }
   state.lossAmount = Math.round(v);
-  speakHindi(`आपका नुकसान ${state.lossAmount} रुपये दर्ज किया गया है। चिंता न करें, हम इसे रिकवर कर देंगे।`);
-  setTimeout(()=> showPlansPage(), 900);
+  speakHindi(`आपका नुकसान ${state.lossAmount} रूपये रिकॉर्ड हो गया है। अब प्लान चुनें।`);
+  setTimeout(renderPlans, 800);
 });
 
-/* Plans computation */
+/* Plans */
 const plansDef = [
   {key:'3m', label:'3 Months', pct:7},
   {key:'1m', label:'1 Month', pct:12.5},
@@ -216,7 +210,7 @@ const plansDef = [
   {key:'1d', label:'1 Day', pct:25}
 ];
 
-function showPlansPage(){
+function renderPlans(){
   const box = document.getElementById('plansBox');
   box.innerHTML = '';
   plansDef.forEach(p=>{
@@ -233,82 +227,58 @@ function showPlansPage(){
       state.chosenPlan = p;
       state.chosenPlanPrice = Number(price.toFixed(2));
       state.chosenPlanKey = p.key;
-      speakHindi(`${p.label} चुना गया। कृपया अगला दबाएं और भुगतान करें।`);
+      speakHindi(`${p.label} चुना गया। आगे भुगतान करें।`);
     });
     box.appendChild(div);
   });
   showPage('plans');
 }
 
-document.getElementById('plansBack').addEventListener('click', ()=> showPage('amount'));
-
 document.getElementById('choosePlanBtn').addEventListener('click', ()=>{
-  if(!state.chosenPlan){ alert('कृपया कोई प्लान चुनें'); return; }
-  // go to payment
+  if(!state.chosenPlan){ alert('कृपया प्लान चुनें'); return; }
   document.getElementById('paymentStatus').innerText = '';
   document.getElementById('utrInput').value = '';
   document.getElementById('qrImg').src = 'qr.png';
   showPage('payment');
-  speakHindi(`आपने ${state.chosenPlan.label} चुना है। भुगतान अमाउंट ${state.chosenPlanPrice} रुपये है। कृपया QR से भुगतान करें और U T R डालें।`);
+  speakHindi(`आपने ${state.chosenPlan.label} चुना। भुगतान राशि ${state.chosenPlanPrice} रुपये है।`);
 });
 
-/* Payment page */
-document.getElementById('paymentBack').addEventListener('click', ()=> showPage('plans'));
-
-document.getElementById('submitPayment').addEventListener('click', ()=>{
+/* Payment -> write pending to Firebase */
+document.getElementById('submitPayment').addEventListener('click', async ()=>{
   const utr = document.getElementById('utrInput').value.trim();
-  if(!/^[0-9]{12}$/.test(utr)){ alert('कृपया 12 अंकों का सही U T R डालें'); return; }
-  const key = 'pending_' + utr;
+  if(!/^[0-9]{12}$/.test(utr)){ alert('कृपया 12 अंकों का UTR दर्ज करें'); return; }
   const payload = {
     utr, amount: state.chosenPlanPrice, plan: state.chosenPlanKey, loss: state.lossAmount, ts: Date.now()
   };
   try{
-    localStorage.setItem(key, JSON.stringify(payload));
+    // write to /pending/<utr>
+    await db.ref('pending/' + utr).set(payload);
     state.pendingUTR = utr;
     document.getElementById('paymentStatus').innerText = 'Payment submitted — awaiting admin approval.';
-    speakHindi(`आपका भुगतान अनुरोध भेज दिया गया है। U T R ${utr} जमा किया गया है। एडमिन अप्रूवल के बाद आगे बढ़ेंगे।`);
-    // start listening for approval (storage event handles cross-tab; also poll for same-tab)
-    startApprovalPoll(utr);
+    speakHindi('आपका अनुरोध भेज दिया गया है। एडमिन के अप्रूवल का इंतज़ार करें।');
+    listenForApproval(utr);
   }catch(e){
-    alert('Storage error: ' + e);
+    alert('Firebase error: ' + e.message);
   }
 });
 
-/* approval detection */
-let approvalInterval = null;
-function startApprovalPoll(utr){
-  stopApprovalPoll();
-  approvalInterval = setInterval(()=> {
-    const apr = localStorage.getItem('approved_' + utr);
-    if(apr){
-      stopApprovalPoll();
-      onApproved(utr);
+/* Listen for approval on /approved/<utr> */
+function listenForApproval(utr){
+  const apprRef = db.ref('approved/' + utr);
+  apprRef.on('value', snap=>{
+    if(snap.exists()){
+      // approved
+      document.getElementById('paymentStatus').innerText = '✅ Approved by admin. Preparing strategy...';
+      speakHindi('आपका भुगतान अप्रूव हो गया है। अब हम आपकी रिकवरी योजना तैयार करेंगे।');
+      setTimeout(()=> {
+        createStrategy(state.lossAmount, state.chosenPlanKey);
+        showPage('strategy');
+      }, 1000);
     }
-  }, 1200);
-}
-function stopApprovalPoll(){ if(approvalInterval){ clearInterval(approvalInterval); approvalInterval = null; } }
-
-window.addEventListener('storage', (ev)=>{
-  if(!ev.key) return;
-  if(ev.key.startsWith('approved_')){
-    const utr = ev.key.replace('approved_','');
-    if(state.pendingUTR === utr){
-      onApproved(utr);
-    }
-  }
-});
-
-function onApproved(utr){
-  document.getElementById('paymentStatus').innerText = '✅ Approved by admin. Preparing your recovery strategy...';
-  speakHindi('आपका भुगतान अप्रूव हो गया है। अब हम आपकी रिकवरी योजना तैयार करते हैं।');
-  setTimeout(()=> {
-    // navigate to strategy and create steps
-    createStrategy(state.lossAmount, state.chosenPlanKey);
-    showPage('strategy');
-  }, 1500);
+  });
 }
 
-/* Admin panel logic */
+/* Admin panel behavior */
 const adminCross = document.getElementById('adminCross');
 const adminPanel = document.getElementById('adminPanel');
 const adminLoginBtn = document.getElementById('adminLoginBtn');
@@ -317,72 +287,62 @@ const adminCloseBtn = document.getElementById('adminCloseBtn');
 const adminControls = document.getElementById('adminControls');
 const pendingList = document.getElementById('pendingList');
 
-adminCross.addEventListener('click', ()=> {
-  // toggle admin panel
-  adminPanel.classList.toggle('hidden');
-});
-
+adminCross.addEventListener('click', ()=> adminPanel.classList.toggle('hidden'));
 adminCloseBtn.addEventListener('click', ()=> adminPanel.classList.add('hidden'));
 
-// password 456 as requested
-adminLoginBtn.addEventListener('click', ()=> {
+adminLoginBtn.addEventListener('click', async ()=>{
   const p = adminPass.value || '';
-  if(p === '456'){
-    adminControls.classList.remove('hidden');
-    document.getElementById('adminPass').value = '';
-    renderPending();
-    speakHindi('एडमिन पैनल ओपन हो गया है। पेंडिंग पेमेंट्स दिख रहे हैं।');
-  } else {
-    alert('Incorrect admin password');
-  }
+  if(p !== '456'){ alert('Incorrect password'); return; }
+  adminControls.classList.remove('hidden');
+  adminPass.value = '';
+  // start listening pending node
+  loadPendingFirebase();
 });
 
-function renderPending(){
-  pendingList.innerHTML = '';
-  // iterate localStorage keys for pending_
-  for(let i=0;i<localStorage.length;i++){
-    const k = localStorage.key(i);
-    if(k && k.startsWith('pending_')){
-      try{
-        const payload = JSON.parse(localStorage.getItem(k));
-        const div = document.createElement('div');
-        div.className = 'item';
-        div.innerHTML = `<div>
-          <div style="font-weight:800">${payload.utr} • ₹${payload.amount}</div>
-          <div class="small">loss ₹${payload.loss} • plan ${payload.plan}</div>
+/* load pending payments from Firebase and render */
+let pendingRef = null;
+function loadPendingFirebase(){
+  if(pendingRef) pendingRef.off();
+  pendingRef = db.ref('pending');
+  pendingRef.on('value', snap=>{
+    pendingList.innerHTML = '';
+    const data = snap.val() || {};
+    const keys = Object.keys(data).sort((a,b)=> (data[b].ts||0)-(data[a].ts||0));
+    if(keys.length===0){ pendingList.innerHTML = '<div class="small">No pending payments</div>'; return; }
+    keys.forEach(k=>{
+      const p = data[k];
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `<div style="flex:1">
+          <div style="font-weight:800">${p.utr} • ₹${p.amount}</div>
+          <div class="note">loss ₹${p.loss} • plan ${p.plan} • ${new Date(p.ts).toLocaleString()}</div>
         </div>`;
-        const btns = document.createElement('div');
-        const approve = document.createElement('button');
-        approve.className = 'bigbtn';
-        approve.textContent = 'Approve';
-        approve.addEventListener('click', ()=> {
-          localStorage.setItem('approved_'+payload.utr, JSON.stringify({by:'admin',ts:Date.now(),payload}));
-          // optionally remove pending
-          localStorage.removeItem(k);
-          renderPending();
-          alert('Approved ' + payload.utr);
-        });
-        const reject = document.createElement('button');
-        reject.className = 'ghost';
-        reject.textContent = 'Reject';
-        reject.addEventListener('click', ()=>{
-          localStorage.removeItem(k);
-          renderPending();
-          alert('Rejected ' + payload.utr);
-        });
-        btns.appendChild(approve);
-        btns.appendChild(reject);
-        div.appendChild(btns);
-        pendingList.appendChild(div);
-      }catch(e){}
-    }
-  }
+      const btns = document.createElement('div');
+      btns.style.display='flex'; btns.style.gap='8px';
+      const approve = document.createElement('button'); approve.className='bigbtn'; approve.textContent='Approve';
+      approve.addEventListener('click', async ()=>{
+        try{
+          await db.ref('approved/' + p.utr).set({by:'admin',ts:Date.now(),payload:p});
+          await db.ref('pending/' + p.utr).remove();
+          alert('Approved ' + p.utr);
+        }catch(e){ alert('Error: '+e.message); }
+      });
+      const reject = document.createElement('button'); reject.className='ghost'; reject.textContent='Reject';
+      reject.addEventListener('click', async ()=>{
+        if(!confirm('Reject payment ' + p.utr + '?')) return;
+        try{
+          await db.ref('pending/' + p.utr).remove();
+          alert('Rejected ' + p.utr);
+        }catch(e){ alert('Error: '+e.message); }
+      });
+      btns.appendChild(approve); btns.appendChild(reject);
+      div.appendChild(btns);
+      pendingList.appendChild(div);
+    });
+  });
 }
 
-/* Strategy creation
-   - Generate steps based on loss amount & plan
-   - Speak each step in Hindi when shown
-*/
+/* Strategy creation (as before) */
 const strategyStepsEl = document.getElementById('strategySteps');
 const strategyNextBtn = document.getElementById('strategyNext');
 const strategyFinishBtn = document.getElementById('strategyFinish');
@@ -395,8 +355,6 @@ let generatedSteps = [];
 function createStrategy(lossAmnt, planKey){
   generatedSteps = [];
   currentStepIndex = 0;
-
-  // plan multipliers and schedules (rough)
   const planMap = {
     '3m': {label:'3 Months', days:90, feePct:7},
     '1m': {label:'1 Month', days:30, feePct:12.5},
@@ -407,54 +365,19 @@ function createStrategy(lossAmnt, planKey){
   const plan = planMap[planKey] || planMap['1m'];
   const fee = Math.round((lossAmnt * (plan.feePct/100))*100)/100;
 
-  // step 0: intro
-  generatedSteps.push({
-    title: `Plan: ${plan.label}`,
-    text: `आपने ${plan.label} चुना है। प्लान का प्राइस ₹${fee} है। अब हम ज़रूरी स्टेप्स बतायेंगे।`
-  });
-
-  // step 1: deposit 5% initial (as example)
+  generatedSteps.push({title:`Plan: ${plan.label}`, text:`आपने ${plan.label} चुना है। प्लान की फीस ₹${fee} है।`});
   const deposit = Math.max(1, Math.round(lossAmnt * 0.05 * 100)/100);
-  generatedSteps.push({
-    title:'Step 1: Initial Deposit',
-    text: `आरम्भ के लिए ${deposit} रुपये जमा करें (कुल नुकसान का 5%). यह आपके पहले माइक्रो-बेट के लिए बैलेंस तैयार करेगा।`
-  });
-
-  // step 2: Open WINGO 1 min (instruction)
-  generatedSteps.push({
-    title:'Step 2: Open WINGO 1 min',
-    text: `WINGO 1-min खोलें और उस समय के अनुसार हमारे सुझावों को फॉलो करें। हर दिन लक्ष्य पूरा करने पर Next पर क्लिक करें।`
-  });
-
-  // step 3: daily targets splitting
+  generatedSteps.push({title:'Step 1: Initial Deposit', text:`आरम्भ के लिए ₹${deposit} जमा करें (5% of loss).`});
+  generatedSteps.push({title:'Step 2: Open WINGO 1-min', text:'WINGO 1-min खोलें और हमारे सुझावों का पालन करें।'});
   const days = plan.days;
   const dailyTarget = Math.max(1, Math.round((lossAmnt / days) * 100)/100);
-  generatedSteps.push({
-    title:'Step 3: Daily target',
-    text: `हर दिन का लक्ष्य: ₹${dailyTarget} कमाना। छोटे-छोटे बेट्स में यह आसान रहेगा।`
-  });
+  generatedSteps.push({title:'Step 3: Daily Target', text:`हर दिन लक्ष्य: ₹${dailyTarget}`});
+  generatedSteps.push({title:'Step 4: Bet sizing', text:'Levels: Level1=15%, Level2=30%, Level3=55%. Loss पर level up करें।'});
+  generatedSteps.push({title:'Step 5: Safety rules', text:'यदि दो बार लगातार loss आते हैं, strategy बदलें और छोटे bets लें।'});
+  generatedSteps.push({title:'Final: Completion', text:'Target पूरा होने पर Complete दबाएँ।'});
 
-  // step 4: betting levels (15/30/55 logic)
-  generatedSteps.push({
-    title:'Step 4: Bet sizing',
-    text: `हम तीन स्तर सुझाते हैं: Level1 = 15%, Level2 = 30%, Level3 = 55% (जरूरत अनुसार)। Loss होने पर अगले Level पर जाएं।`
-  });
-
-  // step 5: safety & skip
-  generatedSteps.push({
-    title:'Step 5: Safety rules',
-    text: `अगर दो बार लगातार Loss हों तो strategy बदलें और छोटा बैट चुनें। एक ही round में अत्यधिक जोखिम न लें।`
-  });
-
-  // step 6: timeline & completion
-  generatedSteps.push({
-    title:'Final: Goal & completion',
-    text: `यदि आपने निर्धारित लक्ष्य पूरा कर लिया तो Complete बटन दबाएँ। हम हर दिन प्रोग्रेस रिकॉर्ड करेंगे।`
-  });
-
-  // render
   renderStrategy();
-  speakHindi(`आपका ${plan.label} प्लान सेट हो गया है। कुल फीस ${fee} रुपये है। आगे बढ़ने के लिए नेक्स्ट दबाइए।`);
+  speakHindi('Strategy तैयार है। पहले स्टेप के लिए नेक्स्ट दबाएँ।');
 }
 
 function renderStrategy(){
@@ -471,7 +394,7 @@ function renderStrategy(){
   strategyNextBtn.disabled = false;
   strategyNextBtn.style.display = 'inline-block';
   strategyFinishBtn.style.display = 'none';
-  strategyIntro.innerText = `आपने कुल ${generatedSteps.length} स्टेप्स पाए। अब पहला स्टेप दिखाया है।`;
+  strategyIntro.innerText = `आपके पास ${generatedSteps.length} स्टेप हैं।`;
   speakCurrentStep();
 }
 
@@ -482,19 +405,16 @@ function speakCurrentStep(){
 
 strategyNextBtn.addEventListener('click', ()=>{
   if(currentStepIndex < generatedSteps.length -1){
-    // hide current
-    const cur = document.getElementById('step-' + currentStepIndex);
-    if(cur) cur.style.display = 'none';
+    document.getElementById('step-' + currentStepIndex).style.display = 'none';
     currentStepIndex++;
-    const nxt = document.getElementById('step-' + currentStepIndex);
-    if(nxt) nxt.style.display = 'block';
+    document.getElementById('step-' + currentStepIndex).style.display = 'block';
     speakCurrentStep();
     if(currentStepIndex === generatedSteps.length -1){
       strategyNextBtn.disabled = true;
       strategyNextBtn.style.display = 'none';
       strategyFinishBtn.style.display = 'inline-block';
       strategyFinishBtn.disabled = false;
-      strategyNote.innerText = 'आप अंतिम स्टेप पर हैं — पूरा करने के लिए Finish दबाएं।';
+      strategyNote.innerText = 'अंतिम स्टेप पर हैं — Finish दबाएँ।';
     } else {
       strategyNote.innerText = `Step ${currentStepIndex+1} of ${generatedSteps.length}`;
     }
@@ -502,24 +422,14 @@ strategyNextBtn.addEventListener('click', ()=>{
 });
 
 strategyFinishBtn.addEventListener('click', ()=>{
-  speakHindi('बधाई हो। आपने अपनी Recovery योजना शुरू की। रोज के टास्क पर दीक्षा करें।');
-  alert('Recovery plan started. Return to welcome to start new flow.');
-  // reset
+  speakHindi('बधाई हो! आपकी recovery journey शुरू हो गई है।');
+  alert('Recovery plan started. You can start again from welcome.');
   location.reload();
 });
 
-/* Utilities */
-// small helper to auto-approve for demo (REMOVE in production)
-function autoApproveForDemo(){
-  // no-op; admin must approve manually via admin panel
-}
-
-/* initialize */
-(function init(){
-  showPage('welcome');
-  // greet voice
-  speakHindi('Welcome to Loss Recovery. आपका स्वागत है। आगे बढ़ने के लिए Next दबाएँ।');
-})();
+/* initial show */
+showPage('welcome');
+speakHindi('Welcome to Loss Recovery. आपका स्वागत है। आगे बढ़ने के लिए Next दबाएँ।');
 
 </script>
 </body>
