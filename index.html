@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mr Perfect Pro - Updated</title>
+<link rel="icon" href="assets/favicon.png" />
+<style>
+:root{--accent:#0ea5a4;--bg:#0b1020;--card:#071126;color:#e6f7fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans',Ubuntu,'Helvetica Neue',Arial}
+body{margin:0;background:#071226;color:var(--card);font-family:Inter,system-ui,Segoe UI,Roboto,'Noto Sans',Arial}
+.app-bg{min-height:100vh;background-size:cover;background-position:center;padding:20px;}
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:linear-gradient(90deg,rgba(255,255,255,0.03),transparent);border-radius:12px}
+.card{background:rgba(255,255,255,0.02);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+button{background:var(--accent);color:#001;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+.input{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--card);width:100%}
+.small{font-size:0.9rem;color:#bfeeea}
+.footer{margin-top:18px;color:#9fcfd0;font-size:0.85rem}
+.hide{display:none}
+.cross-admin{position:fixed;right:18px;top:18px;background:rgba(0,0,0,0.6);padding:8px;border-radius:999px;cursor:pointer;z-index:80}
+.modal{position:fixed;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(2,6,12,0.6);z-index:90}
+.modal .box{width:340px;padding:18px;border-radius:12px;background:linear-gradient(180deg,#041226,#062034);box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+.step{margin:12px 0;padding:12px;border-radius:10px;background:rgba(255,255,255,0.02)}
+.badge{display:inline-block;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.03);font-weight:700}
+</style>
+
+<!-- Firebase SDKs (user-provided config) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-analytics.js";
+  import { getStorage, ref as sref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
+  import { getDatabase, ref as dbref, set, push, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+    authDomain: "terminal-xxrr.firebaseapp.com",
+    databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "terminal-xxrr",
+    storageBucket: "terminal-xxrr.firebasestorage.app",
+    messagingSenderId: "722753278120",
+    appId: "1:722753278120:web:bfa37aab39635a4e57f29d",
+    measurementId: "G-E3MZH3E1K5"
+  };
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  window._firebase = { app, analytics, getStorage, getDatabase, sref, dbref, uploadBytes, getDownloadURL, set, push, onValue };
+</script>
+</head>
+<body>
+<div class="app-bg" style="background-image:url('assets/anime1.png')">
+  <div class="header card">
+    <div><h2>Mr Perfect Pro</h2><div class="small">Loss Recovery & Prediction</div></div>
+    <div>
+      <a href="prediction.html"><button>Prediction</button></a>
+      <a href="recovery.html"><button style="margin-left:8px">Recovery Strategy</button></a>
+      <a href="payment.html"><button style="margin-left:8px">Payment</button></a>
+    </div>
+  </div>
+
+  <div style="margin-top:18px" class="card">
+    <h3>Quick Actions</h3>
+    <p class="small">Admin panel hidden: Click the cross-mark on top-right (only you know password).</p>
+    <div style="display:flex;gap:12px;margin-top:12px;">
+      <a href="prediction.html"><button>Open Prediction</button></a>
+      <a href="recovery.html"><button>Open Recovery Strategy</button></a>
+    </div>
+  </div>
+
+  <div class="footer">All features updated as requested. QR image name: <strong>qr.png</strong>. Backgrounds: anime1.png .. anime4.png</div>
+</div>
+
+<!-- Hidden admin cross mark -->
+<div class="cross-admin" id="adminCross" title="Admin (hidden)">
+  ✕
+</div>
+
+<!-- Admin modal -->
+<div id="adminModal" class="modal hide">
+  <div class="box">
+    <h3>Admin Login</h3>
+    <p class="small">Enter admin password</p>
+    <input id="adminPass" class="input" placeholder="Password" type="password" />
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button id="adminOk">Open</button>
+      <button id="adminClose">Close</button>
+    </div>
+    <div style="margin-top:8px;color:#9fcfd0;font-size:0.9rem">Note: Admin password is <strong>456</strong></div>
+  </div>
+</div>
+
+<script>
+// admin behaviour: cross shows modal when clicked; modal hidden by default so normal users won't see
+const adminCross = document.getElementById('adminCross');
+const adminModal = document.getElementById('adminModal');
+const adminOk = document.getElementById('adminOk');
+const adminClose = document.getElementById('adminClose');
+
+adminCross.addEventListener('click', ()=>{ adminModal.classList.remove('hide'); });
+adminClose.addEventListener('click', ()=>{ adminModal.classList.add('hide'); });
+adminOk.addEventListener('click', ()=>{
+  const pass = document.getElementById('adminPass').value.trim();
+  if(pass==='456'){ alert('Admin unlocked. Connecting to Firebase storage...'); adminModal.classList.add('hide'); window.location.href='admin.html'; }
+  else alert('Incorrect password');
+});
+</script>
+</body>
+</html>
