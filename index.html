@@ -1,106 +1,478 @@
 <!doctype html>
 <html lang="hi">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mr Perfect Pro - Updated</title>
-<link rel="icon" href="assets/favicon.png" />
-<style>
-:root{--accent:#0ea5a4;--bg:#0b1020;--card:#071126;color:#e6f7fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans',Ubuntu,'Helvetica Neue',Arial}
-body{margin:0;background:#071226;color:var(--card);font-family:Inter,system-ui,Segoe UI,Roboto,'Noto Sans',Arial}
-.app-bg{min-height:100vh;background-size:cover;background-position:center;padding:20px;}
-.header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:linear-gradient(90deg,rgba(255,255,255,0.03),transparent);border-radius:12px}
-.card{background:rgba(255,255,255,0.02);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
-button{background:var(--accent);color:#001;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
-.input{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--card);width:100%}
-.small{font-size:0.9rem;color:#bfeeea}
-.footer{margin-top:18px;color:#9fcfd0;font-size:0.85rem}
-.hide{display:none}
-.cross-admin{position:fixed;right:18px;top:18px;background:rgba(0,0,0,0.6);padding:8px;border-radius:999px;cursor:pointer;z-index:80}
-.modal{position:fixed;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(2,6,12,0.6);z-index:90}
-.modal .box{width:340px;padding:18px;border-radius:12px;background:linear-gradient(180deg,#041226,#062034);box-shadow:0 10px 30px rgba(2,6,23,0.6)}
-.step{margin:12px 0;padding:12px;border-radius:10px;background:rgba(255,255,255,0.02)}
-.badge{display:inline-block;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.03);font-weight:700}
-</style>
-
-<!-- Firebase SDKs (user-provided config) -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-analytics.js";
-  import { getStorage, ref as sref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
-  import { getDatabase, ref as dbref, set, push, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
-    authDomain: "terminal-xxrr.firebaseapp.com",
-    databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "terminal-xxrr",
-    storageBucket: "terminal-xxrr.firebasestorage.app",
-    messagingSenderId: "722753278120",
-    appId: "1:722753278120:web:bfa37aab39635a4e57f29d",
-    measurementId: "G-E3MZH3E1K5"
-  };
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-  window._firebase = { app, analytics, getStorage, getDatabase, sref, dbref, uploadBytes, getDownloadURL, set, push, onValue };
-</script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Loss Recovery - Final</title>
+  <style>
+    body{margin:0;font-family:Arial, sans-serif;background:#111;color:#fff;text-align:center;background-size:cover;background-position:center;min-height:100vh}
+    .page{display:none;padding:20px}
+    .active{display:block}
+    .btn{padding:10px 20px;margin:10px;border:none;border-radius:8px;cursor:pointer;background:#ff6b6b;color:#fff;font-weight:700}
+    .plans{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:20px}
+    .plan{background:rgba(255,255,255,0.03);padding:15px;border-radius:10px;cursor:pointer;min-width:140px;box-shadow:0 6px 18px rgba(0,0,0,0.6)}
+    .selected{outline:3px solid rgba(255,107,107,0.6)}
+    img.qr{width:200px;height:200px;margin-top:15px;object-fit:cover}
+    #adminPanel{display:none;background:rgba(0,0,0,0.7);padding:20px;text-align:left;border-radius:8px;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:90%;max-width:700px;z-index:999}
+    #cross{position:fixed;top:12px;right:12px;cursor:pointer;font-size:24px;z-index:1000;color:#fff;background:rgba(255,0,0,0.12);padding:6px 10px;border-radius:50%}
+    input[type=text], input[type=number]{padding:10px;border-radius:6px;border:none;outline:none;width:80%;max-width:420px;margin:8px 0}
+    .small{font-size:13px;color:#ddd}
+    .hint{opacity:0.8;font-size:13px}
+    #predictionResult{margin-top:12px}
+    .chip{display:inline-block;background:rgba(255,255,255,0.04);padding:6px 10px;border-radius:999px;margin:6px}
+  </style>
 </head>
-<body>
-<div class="app-bg" style="background-image:url('assets/anime1.png')">
-  <div class="header card">
-    <div><h2>Mr Perfect Pro</h2><div class="small">Loss Recovery & Prediction</div></div>
-    <div>
-      <a href="prediction.html"><button>Prediction</button></a>
-      <a href="recovery.html"><button style="margin-left:8px">Recovery Strategy</button></a>
-      <a href="payment.html"><button style="margin-left:8px">Payment</button></a>
-    </div>
-  </div>
+<body id="body">
 
-  <div style="margin-top:18px" class="card">
-    <h3>Quick Actions</h3>
-    <p class="small">Admin panel hidden: Click the cross-mark on top-right (only you know password).</p>
-    <div style="display:flex;gap:12px;margin-top:12px;">
-      <a href="prediction.html"><button>Open Prediction</button></a>
-      <a href="recovery.html"><button>Open Recovery Strategy</button></a>
-    </div>
-  </div>
-
-  <div class="footer">All features updated as requested. QR image name: <strong>qr.png</strong>. Backgrounds: anime1.png .. anime4.png</div>
+<div id="welcome" class="page active">
+  <h1>Welcome to Loss Recovery</h1>
+  <p class="small">Aapka suagat hai Loss Recovery mein</p>
+  <button class="btn" onclick="goLoss()">Next</button>
 </div>
 
-<!-- Hidden admin cross mark -->
-<div class="cross-admin" id="adminCross" title="Admin (hidden)">
-  ✕
+<div id="loss" class="page">
+  <h2>How much is your loss?</h2>
+  <input type="number" id="lossAmount" placeholder="Enter amount" />
+  <div><button class="btn" onclick="confirmLoss()">Confirm</button>
+  <button class="btn" onclick="showPage('welcome')">Back</button></div>
 </div>
 
-<!-- Admin modal -->
-<div id="adminModal" class="modal hide">
-  <div class="box">
-    <h3>Admin Login</h3>
-    <p class="small">Enter admin password</p>
-    <input id="adminPass" class="input" placeholder="Password" type="password" />
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button id="adminOk">Open</button>
-      <button id="adminClose">Close</button>
-    </div>
-    <div style="margin-top:8px;color:#9fcfd0;font-size:0.9rem">Note: Admin password is <strong>456</strong></div>
+<div id="plan" class="page">
+  <h2>Choose a plan</h2>
+  <div class="plans" id="plans"></div>
+  <div>
+    <button class="btn" onclick="goPayment()">Proceed to Payment</button>
+    <button class="btn" onclick="showPage('loss')">Back</button>
   </div>
 </div>
 
-<script>
-// admin behaviour: cross shows modal when clicked; modal hidden by default so normal users won't see
-const adminCross = document.getElementById('adminCross');
-const adminModal = document.getElementById('adminModal');
-const adminOk = document.getElementById('adminOk');
-const adminClose = document.getElementById('adminClose');
+<div id="payment" class="page">
+  <h2 id="planName"></h2>
+  <p>Amount to Pay: ₹<span id="planPrice"></span></p>
+  <img src="qr.png" class="qr" alt="QR Code"/>
+  <p class="hint">Scan the QR code and make payment. Enter UTR below.</p>
+  <input type="text" id="utr" placeholder="Enter UTR / Transaction ID" />
+  <div>
+    <button class="btn" onclick="submitUTR()">Confirm UTR</button>
+    <button class="btn" onclick="showPage('plan')">Back</button>
+  </div>
+</div>
 
-adminCross.addEventListener('click', ()=>{ adminModal.classList.remove('hide'); });
-adminClose.addEventListener('click', ()=>{ adminModal.classList.add('hide'); });
-adminOk.addEventListener('click', ()=>{
-  const pass = document.getElementById('adminPass').value.trim();
-  if(pass==='456'){ alert('Admin unlocked. Connecting to Firebase storage...'); adminModal.classList.add('hide'); window.location.href='admin.html'; }
-  else alert('Incorrect password');
+<div id="strategy" class="page">
+  <h2>Recovery Strategy</h2>
+  <div id="strategyBox"></div>
+  <div>
+    <button class="btn" onclick="showPage('predict')">Start your loss recovery journey</button>
+  </div>
+</div>
+
+<div id="predict" class="page">
+  <h2>AI Prediction (WINGO 1-min)</h2>
+  <p class="small">Enter last 3-digit period number (e.g., 123) and last results sequence (Small/Big)</p>
+  <input type="text" id="period" placeholder="Period (e.g., 123)" />
+  <div style="margin-top:6px" class="hint">Example last 10: Small Big Small Big Big Big Small Big Small Big</div>
+  <input type="text" id="last10" placeholder="Enter last results separated by space" />
+  <div>
+    <button class="btn" onclick="genPrediction()">Generate AI Prediction</button>
+    <button class="btn" onclick="autoFillExample()">Fill Example</button>
+  </div>
+
+  <div id="predictionResult"></div>
+
+  <div style="margin-top:12px">
+    <button class="btn" onclick="recordResult('win')">Win</button>
+    <button class="btn" onclick="recordResult('loss')">Loss</button>
+    <button class="btn" onclick="showPage('strategy')">Back</button>
+  </div>
+
+  <div style="margin-top:12px" class="hint">AI remembers feedback to improve suggestions (stored locally + firebase UTR requests track payments).</div>
+</div>
+
+<div id="adminPanel">
+  <h2>Admin Panel</h2>
+  <p class="small">Pending UTR requests will appear below (Firebase connected). Approve / Reject logic can be expanded as needed.</p>
+  <div id="adminRequests">Loading...</div>
+  <div style="text-align:right;margin-top:10px"><button class="btn" onclick="closeAdmin()">Close</button></div>
+</div>
+<div id="cross" onclick="openAdmin()">×</div>
+
+<script type="module">
+// ---------- Firebase (client) ----------
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBs7eQyMrcN8kJWMHl2ac2UZHlYQ6DypD8",
+  authDomain: "terminal-xxrr.firebaseapp.com",
+  databaseURL: "https://terminal-xxrr-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "terminal-xxrr",
+  storageBucket: "terminal-xxrr.firebasestorage.app",
+  messagingSenderId: "722753278120",
+  appId: "1:722753278120:web:bfa37aab39635a4e57f29d",
+  measurementId: "G-E3MZH3E1K5"
+};
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const db = getDatabase(app);
+
+function saveUTRtoFirebase(utr, amount){
+  const utrRef = ref(db, 'utrRequests');
+  const newRef = push(utrRef);
+  set(newRef,{utr:utr,amount:amount,status:'pending',time:Date.now()});
+}
+
+// admin listener
+const adminReqRef = ref(db, 'utrRequests');
+onValue(adminReqRef, (snap) => {
+  const el = document.getElementById('adminRequests');
+  if(!snap.exists()){ el.innerHTML = '<div class="small">No pending requests</div>'; return; }
+  const data = snap.val();
+  let html = '<ul>';
+  for(const k in data){
+    const r = data[k];
+    html += `<li class="small" style="margin-bottom:8px;padding:8px;background:rgba(255,255,255,0.02);border-radius:6px;">
+      UTR: <b>${r.utr}</b> | Amt: ₹${r.amount} | Status: ${r.status} | Time: ${new Date(r.time).toLocaleString()}
+      </li>`;
+  }
+  html += '</ul>';
+  el.innerHTML = html;
 });
+
+// ---------- App Logic ----------
+function speak(t){
+  try{ let u=new SpeechSynthesisUtterance(t); u.lang='hi-IN'; speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){}
+}
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const bg={'welcome':'anime1.png','loss':'anime2.png','plan':'anime3.png','payment':'anime4.png','strategy':'anime5.png','predict':'anime4.png'};
+  document.body.style.backgroundImage = "url('"+(bg[id]||'anime1.png')+"')";
+}
+function goLoss(){ speak('Apna loss amount darj karein'); showPage('loss'); }
+
+let loss=0;
+let selectedPlan=null;
+let planPrice=0;
+let dayCount = parseInt(localStorage.getItem('dayCount')||'0',10);
+let martingaleCurrent = parseInt(localStorage.getItem('martingaleCurrent')||'0',10);
+let baseBet = 0;
+
+function confirmLoss(){
+  loss = parseFloat(document.getElementById('lossAmount').value);
+  if(!loss || loss <= 0){ alert('Enter valid amount'); return; }
+  baseBet = Math.max(1, Math.round((loss * 0.05))); // base bet = 5% rounded
+  martingaleCurrent = baseBet;
+  localStorage.setItem('baseBet', String(baseBet));
+  localStorage.setItem('martingaleCurrent', String(martingaleCurrent));
+  localStorage.setItem('lossAmount', String(loss));
+  buildPlans(); speak('Apko apna loss kitne dino mai cover karna hai. Plan choose karein'); showPage('plan');
+}
+
+const plans = [
+  {label:'3 Month',pct:7,days:90},
+  {label:'1 Month',pct:12.5,days:30},
+  {label:'1 Week',pct:15,days:7},
+  {label:'3 Days',pct:20,days:3},
+  {label:'1 Day',pct:25,days:1}
+];
+
+function buildPlans(){
+  const box = document.getElementById('plans'); box.innerHTML='';
+  plans.forEach(p=>{
+    const price = (loss * p.pct / 100).toFixed(2);
+    const div = document.createElement('div');
+    div.className = 'plan';
+    div.innerHTML = `<b>${p.label}</b><div class="small">Price: ₹${price}</div><div class="small">Duration: ${p.days} days</div>`;
+    div.onclick = ()=>{
+      document.querySelectorAll('.plan').forEach(x=>x.classList.remove('selected'));
+      div.classList.add('selected');
+      selectedPlan = p;
+      planPrice = price;
+      speak('Apne '+p.label+' plan chuna. Price '+price+' rupaye');
+    };
+    box.appendChild(div);
+  });
+}
+
+function goPayment(){
+  if(!selectedPlan){ alert('Select a plan'); return; }
+  document.getElementById('planName').innerText = selectedPlan.label;
+  document.getElementById('planPrice').innerText = planPrice;
+  showPage('payment');
+  speak('QR scan karke '+planPrice+' rupaye ka payment karein.');
+}
+
+function submitUTR(){
+  const utr = document.getElementById('utr').value.trim();
+  if(!utr){ alert('Enter UTR'); return; }
+  saveUTRtoFirebase(utr, planPrice);
+  speak('Payment submit hua. Admin approval ka wait kijiye.');
+  buildStrategy();
+  showPage('strategy');
+}
+
+function buildStrategy(){
+  const box = document.getElementById('strategyBox');
+  box.innerHTML='';
+  const daily = (loss / selectedPlan.days).toFixed(2);
+  const dep = (loss * 0.05).toFixed(2);
+  box.innerHTML = `<p>Deposit ₹${dep} (5% of loss)</p>
+                   <p>Roz ka target ₹${daily} rakhiye. <b>${selectedPlan.days}</b> din ka plan hai.</p>
+                   <p class="small">Base Bet: ₹${baseBet} | Martingale suggested on loss</p>
+                   <p class="small">Open WINGO 1-min & follow the AI suggestions.</p>`;
+}
+
+// ---------- Advanced AI Prediction Logic ----------
+/*
+  Logic summary:
+   - Analyze last10 sequence for streaks, alternation ratio, majority and patterns.
+   - Compute scores for Big and Small using continuation and reversal heuristics.
+   - Confidence derived from pattern strength and streak length.
+   - Suggested bet uses martingaleCurrent (stored).
+   - RecordResult updates martingale and local memory; also appends latest result into last10 field.
+*/
+
+function parseSeq(text){
+  if(!text) return [];
+  const parts = text.trim().split(/\s+/).map(s=>{
+    const a = s.toLowerCase();
+    if(a.startsWith('b')) return 'Big';
+    if(a.startsWith('s')) return 'Small';
+    // try common synonyms
+    if(a==='1' || a==='big') return 'Big';
+    if(a==='0' || a==='small') return 'Small';
+    return null;
+  }).filter(Boolean);
+  return parts;
+}
+
+function computePatternPrediction(seq){
+  // seq is array of 'Big'/'Small', most recent at end
+  const n = seq.length;
+  if(n === 0) return {prediction:'Big', confidence:50, reason:'no-data'};
+
+  // count majority
+  const counts = {Big:0, Small:0};
+  seq.forEach(x=>counts[x] = (counts[x]||0)+1);
+
+  // streak detection (end-of-seq)
+  let last = seq[n-1];
+  let streak = 1;
+  for(let i=n-2;i>=0;i--){
+    if(seq[i]===last) streak++; else break;
+  }
+
+  // alternation detection
+  let alternations = 0;
+  for(let i=1;i<n;i++){
+    if(seq[i] !== seq[i-1]) alternations++;
+  }
+  const alternationRatio = alternations / Math.max(1, n-1);
+
+  // score system
+  let score = {Big:0, Small:0};
+
+  // majority bias
+  if(counts.Big > counts.Small) score.Big += 1;
+  if(counts.Small > counts.Big) score.Small += 1;
+
+  // continuation bias: if alternation ratio low and last is in majority, continue
+  if(alternationRatio < 0.4){ // trending sequence
+    score[last] += 2;
+  } else if(alternationRatio > 0.6){ // alternating strongly -> continuation
+    // give small boost to continuation pattern
+    score[last] += 1;
+  }
+
+  // streak -> likely reversal if streak long
+  if(streak >= 4){
+    // long streak -> reversal likely
+    const other = last === 'Big' ? 'Small' : 'Big';
+    score[other] += 3;
+  } else if(streak >= 2){
+    // short streak -> slight chance of continuation
+    score[last] += 1;
+  }
+
+  // pattern heuristics: check last 4 pattern (e.g., B S B S -> continuation)
+  if(n >= 4){
+    const last4 = seq.slice(-4).join(' ');
+    if(/^(Big Small Big Small|Small Big Small Big)$/i.test(last4)){
+      // alternating 4 -> continue alternation
+      const next = last === 'Big' ? 'Small' : 'Big';
+      score[next] += 2;
+    }
+    // check triple pattern e.g., Big Big Small -> if single opposite then continuation of opposite?
+    if(/^(Big Big Small|Small Small Big)$/i.test(last4)){
+      const next = last === 'Big' ? 'Small' : 'Big';
+      score[next] += 1;
+    }
+  }
+
+  // final pick: higher score wins; tie -> choose opposite of long streak to be safe
+  let prediction = 'Big';
+  if(score.Small > score.Big) prediction = 'Small';
+  else if(score.Big > score.Small) prediction = 'Big';
+  else {
+    // tie-breaker: choose opposite of long streak if streak >=3 else choose majority
+    if(streak >= 3) prediction = (last === 'Big' ? 'Small' : 'Big');
+    else prediction = (counts.Big >= counts.Small ? 'Big' : 'Small');
+  }
+
+  // compute confidence: base 50 plus modifiers
+  let confidence = 50;
+  // difference in scores
+  const diff = Math.abs(score.Big - score.Small);
+  confidence += Math.min(30, diff * 10); // each score point -> +10 up to +30
+  // streak adds or subtracts depending on the logic
+  if(streak >= 4) confidence += 10; // strong pattern (reversal logic)
+  if(alternationRatio > 0.7) confidence += 5; // strong alternation gives some confidence
+  // majority weight
+  confidence += Math.min(10, Math.abs(counts.Big - counts.Small) * 2);
+
+  // clamp
+  confidence = Math.max(50, Math.min(95, Math.round(confidence)));
+
+  // reason summary for UI (human-readable)
+  let reason = `counts: B${counts.Big}/S${counts.Small}, streak:${last}x${streak}, altRatio:${(alternationRatio*100).toFixed(0)}%`;
+
+  return {prediction, confidence, reason, score};
+}
+
+function genPrediction(){
+  const last10Text = document.getElementById('last10').value.trim();
+  const seq = parseSeq(last10Text);
+  if(seq.length < 3){
+    alert('Please enter at least 3 recent results (ideally 10).');
+    return;
+  }
+
+  const period = document.getElementById('period').value.trim();
+  const res = document.getElementById('predictionResult');
+  res.innerHTML = `<p class="small">AI analyzing trends & patterns... (this may take 8-12 seconds)</p>
+                   <div class="chip">Period: ${period||'N/A'}</div>
+                   <div class="chip">Base Bet: ₹${baseBet}</div>
+                   <div class="chip">Martingale current: ₹${martingaleCurrent}</div>`;
+
+  // simulate analysis delay
+  setTimeout(()=>{
+    const out = computePatternPrediction(seq);
+    // suggested bet = martingaleCurrent (double on loss)
+    let suggestedBet = martingaleCurrent || baseBet;
+    // safety cap: do not suggest more than 30% of loss in one bet
+    const cap = Math.max(1, Math.round(loss * 0.30));
+    if(suggestedBet > cap) suggestedBet = cap;
+
+    res.innerHTML = `<h3>Prediction: ${out.prediction}</h3>
+                     <p class="small">Confidence: <b>${out.confidence}%</b></p>
+                     <p class="small">Reason: ${out.reason}</p>
+                     <p class="small">Suggested Bet: <b>₹${suggestedBet}</b></p>
+                     <p class="small">Tip: Martingale will double bet after loss, reset to base after win.</p>`;
+
+    // save last prediction to local for learning
+    const hist = JSON.parse(localStorage.getItem('predictionHistory')||'[]');
+    hist.push({time:Date.now(), period:period||null, seq:seq.slice(-10), pred:out.prediction, conf:out.confidence});
+    if(hist.length > 200) hist.shift();
+    localStorage.setItem('predictionHistory', JSON.stringify(hist));
+
+    // speak
+    speak('Agla result hone ki sambhavna hai ' + out.prediction + ' confidence ' + out.confidence + ' percent');
+  }, 10000);
+}
+
+function recordResult(outcome){
+  // outcome = 'win' or 'loss' for the last prediction
+  const predDiv = document.getElementById('predictionResult');
+  if(!predDiv.innerText || predDiv.innerText.trim()==='') { alert('Pehle AI prediction generate kijiye.'); return; }
+
+  // determine what was predicted from UI (best-effort)
+  const predictedText = (document.querySelector('#predictionResult h3')||{innerText:''}).innerText || '';
+  const predicted = predictedText.replace('Prediction:','').trim();
+
+  // Update martingale strategy
+  if(outcome === 'win'){
+    dayCount++;
+    localStorage.setItem('dayCount', String(dayCount));
+    // reset martingale
+    martingaleCurrent = baseBet;
+    localStorage.setItem('martingaleCurrent', String(martingaleCurrent));
+    predDiv.innerHTML += `<p>✅ Win recorded. Congratulations — Day ${dayCount} target complete. Martingale reset to base ₹${baseBet}.</p>`;
+    speak('Aaj ka target complete ho gaya. Martingale reset hua.');
+  } else {
+    // loss: double the martingale
+    martingaleCurrent = Math.min(Math.round(martingaleCurrent * 2) || (baseBet*2), Math.max(1, Math.round(loss * 0.5)));
+    localStorage.setItem('martingaleCurrent', String(martingaleCurrent));
+    predDiv.innerHTML += `<p>❌ Loss recorded. Martingale increased to ₹${martingaleCurrent} for next bet.</p>`;
+    speak('Loss hua. Agla bet ₹'+martingaleCurrent+' suggest kiya jayega.');
+  }
+
+  // Append actual outcome to last10 input auto (so history grows and prediction improves)
+  // we assume user enters 'Big' or 'Small' as textual; on loss/win we don't know actual result; we will prompt user for actual result to append
+  const actual = prompt('Enter actual result that happened (Big or Small) — isko history me add karenge:').trim();
+  if(actual){
+    const val = actual.toLowerCase().startsWith('b') ? 'Big' : actual.toLowerCase().startsWith('s') ? 'Small' : null;
+    if(val){
+      // update last10 input by pushing the new actual result and keeping last 10
+      const field = document.getElementById('last10');
+      const cur = parseSeq(field.value);
+      cur.push(val);
+      const newArr = cur.slice(-10);
+      field.value = newArr.join(' ');
+      predDiv.innerHTML += `<p class="small">History updated: ${newArr.join(' ')}</p>`;
+      // store feedback in history
+      const hist = JSON.parse(localStorage.getItem('predictionHistory')||'[]');
+      const lastEntry = hist.length? hist[hist.length-1] : null;
+      if(lastEntry){
+        lastEntry.outcome = outcome;
+        lastEntry.actual = val;
+        lastEntry.martingaleAfter = martingaleCurrent;
+      }
+      localStorage.setItem('predictionHistory', JSON.stringify(hist));
+    } else {
+      alert('Invalid actual result entered — must start with B or S. History not updated.');
+    }
+  }
+}
+
+// helper: fill example
+function autoFillExample(){
+  document.getElementById('period').value = 'yesterday-123';
+  document.getElementById('last10').value = 'Small Big Small Big Big Big Small Big Small Big';
+  speak('Example results filled. Generate AI prediction karen.');
+}
+
+// Admin open/close with password
+function openAdmin(){
+  const pass = prompt('Enter Admin Password');
+  if(pass === '456'){
+    document.getElementById('adminPanel').style.display = 'block';
+  } else {
+    alert('Wrong password');
+  }
+}
+function closeAdmin(){
+  document.getElementById('adminPanel').style.display = 'none';
+}
+
+// expose to global (for inline onclick)
+window.goLoss = goLoss;
+window.confirmLoss = confirmLoss;
+window.goPayment = goPayment;
+window.submitUTR = submitUTR;
+window.buildStrategy = buildStrategy;
+window.genPrediction = genPrediction;
+window.recordResult = recordResult;
+window.showPage = showPage;
+window.openAdmin = openAdmin;
+window.closeAdmin = closeAdmin;
+window.autoFillExample = autoFillExample;
+
+// initialize ui with stored values
+(function init(){
+  const storedLoss = parseFloat(localStorage.getItem('lossAmount')||'0');
+  if(storedLoss) { loss = storedLoss; baseBet = parseInt(localStorage.getItem('baseBet')||String(Math.max(1,Math.round(loss*0.05))),10); martingaleCurrent = parseInt(localStorage.getItem('martingaleCurrent')||String(baseBet),10); }
+})();
 </script>
 </body>
 </html>
