@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Payment</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <div id="payment" class="page">
+      <h2 id="planName"></h2>
+      <p>Amount to Pay: ₹<span id="planPrice"></span></p>
+      <img src="qr.png" class="qr" alt="QR Code"/>
+      <p class="hint">Scan & pay using QR. Enter UTR below and submit for admin approval.</p>
+      <input type="text" id="utr" placeholder="Enter UTR / Transaction ID" />
+      <div>
+        <button class="btn" onclick="submitUTR()">Submit for Approval</button>
+        <button class="btn" onclick="showPage('plan')">Back</button>
+      </div>
+  </div>
+  <script type="module" src="script.js"></script>
+</body>
+</html>

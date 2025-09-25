@@ -1,0 +1,19 @@
+
+    body{margin:0;font-family:Arial, sans-serif;background:#0f1720;color:#fff;text-align:center;background-size:cover;background-position:center;min-height:100vh}
+    .container{padding:20px;max-width:980px;margin:0 auto}
+    .page{display:none;padding:18px}
+    .active{display:block}
+    .btn{padding:10px 18px;margin:8px;border:none;border-radius:8px;cursor:pointer;background:#ff6b6b;color:#fff;font-weight:700}
+    .plans{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:20px}
+    .plan{background:rgba(255,255,255,0.03);padding:14px;border-radius:10px;cursor:pointer;min-width:140px;box-shadow:0 6px 18px rgba(0,0,0,0.6)}
+    .selected{outline:3px solid rgba(255,107,107,0.6)}
+    img.qr{width:200px;height:200px;margin-top:15px;object-fit:cover}
+    #adminPanel{display:none;background:rgba(0,0,0,0.95);padding:16px;text-align:left;border-radius:8px;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:90%;max-width:600px;max-height:80vh;overflow-y:auto;z-index:999;color:#eee}
+    #cross{position:fixed;top:12px;right:12px;cursor:pointer;font-size:24px;z-index:1000;color:#fff;background:rgba(255,0,0,0.08);padding:6px 10px;border-radius:50%}
+    input[type=text], input[type=number]{padding:10px;border-radius:6px;border:none;outline:none;width:80%;max-width:420px;margin:8px 0;background:rgba(255,255,255,0.03);color:#fff}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:8px;border:1px solid rgba(255,255,255,0.06);font-size:14px;text-align:center}
+    .small{font-size:13px;color:#cbd5e1}
+    .hint{opacity:0.85;font-size:13px}
+    .chip{display:inline-block;background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:999px;margin:6px}
+  
