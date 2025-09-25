@@ -226,7 +226,7 @@ function submitUTR(){
 const adminReqRef = ref(db, 'utrRequests');
 onValue(adminReqRef, (snap) => {
   const el = document.getElementById('adminRequests');
-  if(!snap.exists()){ el.innerHTML = '<div class="small">No pending requests</div>'; return; }
+  if(!snap.exists()){ el.innerHTML = '<div class="small">No pending requests</div>'; checkUserApproval(null); return; }
   const data = snap.val();
   // Build admin table - show only PENDING entries (requested)
   let html = '<div style="overflow-x:auto"><table><thead><tr><th>Key</th><th>UTR</th><th>Amt</th><th>DeviceId</th><th>Plan</th><th>Days</th><th>Status</th><th>Time</th><th>Action</th></tr></thead><tbody>';
@@ -304,22 +304,25 @@ function generateAndStoreTargets(){
   const l = parseFloat(localStorage.getItem('lossAmount') || '0');
   const days = parseInt(localStorage.getItem('planDays') || (selectedPlan ? selectedPlan.days : '0'), 10);
   if(!l || !days) return;
-  // Progressive targets: day1 small, increase gradually so sum == loss
-  let a = Math.max(1, Math.round(l * 0.03)); // start roughly 3% of loss
-  let d = 0;
-  if(days > 1) d = (2 * l / days - 2 * a) / (days - 1);
-  else d = 0;
+  // Progressive targets: start small and increase so sum == loss
+  // Start ~(loss / days) scaled; keep reasonable progressive increase
   let targets = [];
-  let sum = 0;
+  // simpler approach: distribute roughly equally but slightly progressive
+  const base = Math.floor(l / days);
+  let remainder = l - (base * days);
   for(let i=0;i<days;i++){
-    let t = Math.max(1, Math.round(a + i * d));
-    targets.push(t);
-    sum += t;
+    let add = Math.round(base + (i * (base * 0.15))); // increase each day a bit
+    targets.push(Math.max(1, add));
   }
-  const diff = Math.round(l - sum);
+  // adjust sum to equal loss
+  let sum = targets.reduce((a,b)=>a+b,0);
+  let diff = l - sum;
+  // apply diff to last day
   if(diff !== 0){
-    targets[targets.length - 1] += diff;
+    targets[targets.length -1] += diff;
   }
+  // final safety: if any negative or zero, fix
+  targets = targets.map(t => Math.max(1, Math.round(t)));
   localStorage.setItem('dayTargets', JSON.stringify(targets));
   const statusArr = Array.from({length: days}, (_,i) => 'Pending');
   localStorage.setItem('dayStatus', JSON.stringify(statusArr));
@@ -335,6 +338,10 @@ function renderStrategyLocked(){
   const utrTime = parseInt(localStorage.getItem('utrSubmittedAt')||'0',10);
   let waitingHtml = `<p class="small">Your payment is pending admin approval. Submit UTR on Payment page and wait for admin.</p>
                      <div class="hint">Deposit required now: <b>₹${deposit}</b> (10% of loss). After payment, enter UTR to request approval.</div>`;
+  const storedLoss = parseFloat(localStorage.getItem('lossAmount')||'0');
+  if(storedLoss){
+    waitingHtml = `<p class="small">Total Loss: <b>₹${storedLoss}</b></p>` + waitingHtml;
+  }
   if(utrTime){
     const elapsed = Date.now() - utrTime;
     if(elapsed > (5 * 60 * 1000)){
@@ -362,8 +369,9 @@ function renderStrategyUnlocked(){
   const targets = JSON.parse(localStorage.getItem('dayTargets')||'[]');
   const dayStatus = JSON.parse(localStorage.getItem('dayStatus')||'[]');
   const currentDay = parseInt(localStorage.getItem('currentDay')||'1',10);
+  const storedLoss = parseFloat(localStorage.getItem('lossAmount')||'0');
   if(!targets.length){ el.innerHTML = '<p class="small">Targets not generated yet.</p>'; return; }
-  let html = `<p class="small">Plan: ${localStorage.getItem('planLabel')||''} | Total Loss: ₹${localStorage.getItem('lossAmount')||''}</p>`;
+  let html = `<p class="small">Plan: ${localStorage.getItem('planLabel')||''} | Total Loss: ₹${storedLoss || 0}</p>`;
   html += '<table><thead><tr><th>Day</th><th>Target (₹)</th><th>Status</th></tr></thead><tbody>';
   targets.forEach((t,i)=>{
     const idx = i+1;
@@ -587,7 +595,7 @@ function autoFillExample(){
 /* ---------- Init ---------- */
 (function init(){
   const storedLoss = parseFloat(localStorage.getItem('lossAmount')||'0');
-  if(storedLoss) { loss = storedLoss; }
+  if(storedLoss) { loss = storedLoss; document.getElementById('lossAmount').value = storedLoss; }
   if(localStorage.getItem('planStarted') === 'true'){
     if(localStorage.getItem('approved') === 'true' && localStorage.getItem('dayTargets')){
       renderStrategyUnlocked();
