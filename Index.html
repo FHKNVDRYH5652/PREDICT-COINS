@@ -1,19 +1,547 @@
-<!doctype html>
-<html lang="hi">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Welcome</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<title>210 Human Psychology WINGO Predictor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  /* Base Styles */
+  body {
+    margin: 0;
+    padding: 0;
+    background: #08090b;
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+  }
+  .container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #00eaff;
+    font-weight: 700;
+  }
+  h3 {
+    font-size: 1.25rem;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #00eaff;
+    border-bottom: 2px solid #00eaff33;
+    padding-bottom: 5px;
+  }
+  /* Input and Button */
+  input {
+    width: 40px;
+    padding: 6px 4px;
+    margin: 3px;
+    background: #111;
+    color: #0f0;
+    border: 1px solid #333;
+    text-align: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  input:focus {
+    outline: none;
+    border-color: #00eaff;
+    box-shadow: 0 0 5px #00eaff44;
+  }
+  button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #00eaff;
+    color: #08090b;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: background-color 0.3s, transform 0.1s;
+  }
+  button:hover {
+    background: #00c7e0;
+  }
+  /* Boxes */
+  .table-box {
+    margin-top: 25px;
+    padding: 15px;
+    background: #111;
+    border: 1px solid #222;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  }
+  .mind-box {
+    background: #0d1117;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-top: 8px;
+    display: inline-block;
+    width: 24%; /* For desktop view */
+    margin-right: 1%;
+    vertical-align: top;
+    transition: background-color 0.2s;
+  }
+  .mind-box:hover {
+    background: #1a1f26;
+  }
+  /* Responsive */
+  @media (max-width: 768px) {
+    .mind-box {
+      width: 48%;
+      margin-right: 2%;
+    }
+  }
+  @media (max-width: 480px) {
+    .mind-box {
+      width: 100%;
+      margin-right: 0;
+    }
+    input {
+        width: 35px;
+        margin: 2px;
+    }
+  }
+</style>
 </head>
+
 <body>
-  <div class="container">
-    <div id="welcome" class="page active">
-      <h1>Welcome to Loss Recovery</h1>
-      <p class="small">Aapka suagat hai — start recovery journey</p>
-      <button class="btn" onclick="goLoss()">Next</button>
+
+<div class="container">
+<h1>210 Human Psychology AI Predictor</h1>
+
+<div class="table-box">
+  <h3>Enter Last 20 WINGO Results (0-9)</h3>
+  <div id="inputs" class="flex flex-wrap justify-center"></div>
+  <div class="text-center">
+    <button onclick="predict()">Generate Prediction</button>
+  </div>
+</div>
+
+<div id="output" class="mb-20"></div>
+
+</div>
+
+<script>
+// --- Universal Helpers ---
+function isBig(n){ return n >= 5; }
+function getColor(n){
+  if(n === 0) return "Red+Violet";
+  if(n === 5) return "Green+Violet";
+  // The numbers 1, 3, 7, 9 are Green. 2, 4, 6, 8 are Red.
+  return (n % 2 !== 0) ? "Green" : "Red"; 
+}
+function last(h){return h[h.length-1];}
+function secondLast(h){return h[h.length-2];}
+function lastN(h, n){return h.slice(Math.max(0, h.length-n));}
+function avg(a){return a.length === 0 ? 0 : a.reduce((x,y)=>x+y,0)/a.length;}
+function mode(a){
+    if (a.length === 0) return 0;
+    let f={}, max=0, res=a[0];
+    a.forEach(n=>{ f[n]=(f[n]||0)+1; if(f[n]>max){max=f[n];res=n;} });
+    return res;
+}
+function trendStrength(a){
+    let up=0, down=0;
+    for(let i=1;i<a.length;i++){
+        if(a[i]>a[i-1]) up++;
+        else if(a[i]<a[i-1]) down++;
+    }
+    return up-down;
+}
+function randomInt(max) {
+    return Math.floor(Math.random() * (max + 1));
+}
+function randomGuess() {
+    const num = randomInt(9); // 0-9
+    return { bigSmall: isBig(num) ? "Big" : "Small", color: getColor(num), number: num };
+}
+
+// --- Mind Storage ---
+let minds = {};
+
+// --- Build Input Boxes ---
+let boxHTML = "";
+for(let i=1;i<=20;i++){
+  boxHTML += `<input id="r${i}" maxlength="1" placeholder="${i}" value="${i % 10}"> `;
+}
+document.getElementById("inputs").innerHTML = boxHTML;
+
+
+// ----------------------------------------------------
+// MINDS 1–20 (Trend Followers)
+// ----------------------------------------------------
+minds[1] = function(history){ let t = trendStrength(history); let next = last(history) + (t > 0 ? 1 : (t < 0 ? -1 : 0)); next = ((next % 10) + 10) % 10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[2] = function(history){ let arr=lastN(history,3); let t=trendStrength(arr); let next=last(history)+(t>0?1:-1); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[3] = function(history){ let arr=lastN(history,10); let t=trendStrength(arr); let next=(last(history)+(t>0?2:-2)); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[4] = function(history){ let arr=lastN(history,7); let at=avg(arr); let next=Math.round(last(history)+(last(history)-at)); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[5] = function(history){ let diff=last(history)-secondLast(history); let next=last(history)+(diff>0?2:1); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[6] = function(history){ let t=trendStrength(lastN(history,5)); let next=last(history)+(t>0?1:-1); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[7] = function(history){ let t=trendStrength(history); let next=last(history)+(t>0?3:-3); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[8] = function(history){ let dir=history[history.length-1]>history[history.length-2]?1:-1; let next=last(history)+dir; next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[9] = function(history){ let dir=(history[19]>history[18]&&history[18]>history[17])?2:-2; let next=last(history)+dir; next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[10] = function(history){ let arr=lastN(history,4); let t=trendStrength(arr); let next=last(history)+(t>0?3:-3); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[11] = function(history){ let a=Math.round(avg(lastN(history,10))); let next=Math.round((last(history)+a)/2)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[12] = function(history){ let diff=last(history)-avg(lastN(history,5)); let next=last(history)+Math.sign(diff)*3; next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[13] = function(history){ let t=trendStrength(lastN(history,6)); let next=last(history)+(t>0?1:-1); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[14] = function(history){ let c=getColor(last(history)); let next=last(history)+(c.includes("Red")?1:2); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[15] = function(history){ let m=mode(lastN(history,7)); let t=trendStrength(history); let next=Math.round((m+last(history)+(t>0?1:-1))/2)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[16] = function(history){ let d=last(history)>history[history.length-2]?-1:1; let next=last(history)+d; next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[17] = function(history){ let t=trendStrength(history); let next=last(history)+(t>0?-1:1); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[18] = function(history){ let diff=last(history)-secondLast(history); let next=diff>0?last(history):secondLast(history); next%=10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[19] = function(history){ let slope=last(history)-history[history.length-3]; let next=last(history)+Math.sign(slope)*2; next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[20] = function(history){ let p=last(history)-avg(lastN(history,8)); let next=last(history)+(p>0?2:-2); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+
+// ----------------------------------------------------
+// MINDS 21–45 (PATTERN FOLLOWERS) - Completed 25 types
+// ----------------------------------------------------
+minds[21] = function(history){ let patt = mode(history); let next = (patt + 1) % 10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[22] = function(history){ let next = (10 - last(history)) % 10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[23] = function(history){ let arr = lastN(history,4); let next = arr[0]; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[24] = function(history){ let arr = lastN(history,3); let sum = arr[0] + arr[1] + arr[2]; let next = (10 - (sum % 10)) % 10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[25] = function(history){ let a=history[history.length-4], c=history[history.length-2]; let next = Math.abs(a - c); next%=10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[26] = function(history){ let n1=history[history.length-4],n2=history[history.length-3],n3=history[history.length-2]; let next=(n1+n3-n2+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[27] = function(history){ let diff = last(history)-secondLast(history); let next = last(history)-diff; next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[28] = function(history){ let arr = lastN(history,3); let next = (arr[0] + arr[1] + arr[2]) % 10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[29] = function(history){ let arr = lastN(history,4); let next = (arr[0] + arr[2]) % 10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[30] = function(history){ let next = Math.floor(avg(lastN(history,5)))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[31] = function(history){ let m = mode(lastN(history,6)); let next = (m + 3) % 10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[32] = function(history){ let next = (last(history)*2) % 10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[33] = function(history){ let next = (10 - (last(history)%10))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[34] = function(history){ let col = getColor(last(history)); let next = (last(history) + (col.includes("Green")?3:1))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[35] = function(history){ let bigs = lastN(history,6).filter(x=>isBig(x)).length; let sm = 6-bigs; let next = (bigs>sm?7:3)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[36] = function(history){ let arr = lastN(history,8); let avgx = Math.round(avg(arr))%10; let modeX = mode(arr); let next = Math.round((avgx+modeX)/2)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[37] = function(history){ let diff1=last(history)-secondLast(history); let diff2=secondLast(history)-history[history.length-3]; let next = (diff1===diff2)? (last(history)+1)%10 : (last(history)+5)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[38] = function(history){ let arr = lastN(history,3); let next = (arr[2] + arr[0])%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[39] = function(history){ let arr = lastN(history,4); let next = (Math.max(...arr) - Math.min(...arr))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[40] = function(history){ let m = mode(lastN(history,10)); let next = (m+2)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+// --- Remaining Pattern Followers (41-45) ---
+minds[41] = function(history){ let diff = last(history)-secondLast(history); let next = last(history)+diff; next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[42] = function(history){ let next = history[0]; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[43] = function(history){ let m=mode(lastN(history,5)); let next=m; if(m===last(history)||m===secondLast(history)){next=(last(history)+1)%10;} return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[44] = function(history){ let m=mode(history); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[45] = function(history){ return randomGuess(); }; // Pattern gambler - random guess, just playing the game.
+
+// ----------------------------------------------------
+// MINDS 46–65 (FEAR-BASED PLAYERS) - 20 Types
+// ----------------------------------------------------
+minds[46] = function(history){ let next = randomInt(1) * 2 + 1; return {bigSmall:"Small",color:"Green",number:next}; }; // Small/Red or Small/Green (1, 3) - safer side
+minds[47] = function(history){ let t=trendStrength(lastN(history,4)); let next=last(history)+(t>0?-2:2); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[48] = function(history){ let m=mode(lastN(history,10)); let next=(m+5)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; }; // Anti-mode
+minds[49] = function(history){ let next = randomInt(1) === 0 ? 9 : 0; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; }; // Panic: extremes
+minds[50] = function(history){ let next=last(history); if(last(history)!==mode(history)){next=(last(history)+2)%10;} return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[51] = function(history){ let same=last(history)===secondLast(history) && last(history)===history[history.length-3]; let next=last(history)+(same?-5:0); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[52] = function(history){ let next = secondLast(history); return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; }; // Predicts middle number of V/W
+minds[53] = function(history){ let next = randomInt(1) === 0 ? 0 : 9; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[54] = function(history){ let next=(last(history)+randomInt(1)*2-1); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[55] = function(history){ let next=randomInt(1) * 2 + 1; return {bigSmall:"Small",color:getColor(next),number:next}; }; // Small odd numbers (1, 3)
+minds[56] = function(history){ let next=randomInt(1) === 0 ? 4 : 6; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; }; // Middle safety zone
+minds[57] = function(history){ let counts={Red:0,Green:0,Violet:0}; history.forEach(n=>getColor(n).split('+').forEach(c=>counts[c]++)); let modeColor=counts.Red>counts.Green?"Red":"Green"; let modeSize=history.filter(isBig).length>10?"Big":"Small"; let next=modeColor.includes("Red")?2:1; if(modeSize==="Big"){next=next+5;} return {bigSmall:modeSize==="Big"?"Small":"Big",color:modeColor,number:next}; };
+minds[58] = function(history){ let m=mode(lastN(history,4)); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[59] = function(history){ let next=Math.round(avg(lastN(history,2)))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[60] = function(history){ let next=0; if(last(history)>secondLast(history) && last(history)>history[history.length-3]){next=1;} return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[61] = function(history){ let same=isBig(last(history))===isBig(secondLast(history))&&isBig(last(history))===isBig(history[history.length-3]); return same?randomGuess():{bigSmall:isBig(last(history))?"Big":"Small",color:getColor(last(history)),number:last(history)}; };
+minds[62] = function(history){ let next=secondLast(history); return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[63] = function(history){ let m=mode(lastN(history,10)); let next=(m+5)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[64] = function(history){ let m=mode(history); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[65] = function(history){ let sizeMode=history.filter(isBig).length>10?"Big":"Small"; let next=sizeMode==="Big"?8:1; return {bigSmall:sizeMode,color:getColor((next+5)%10),number:next}; };
+
+// ----------------------------------------------------
+// MINDS 66–80 (OVER-CONFIDENT PLAYERS) - 15 Types
+// ----------------------------------------------------
+minds[66] = function(history){ return {bigSmall:"Big",color:"Green",number:7}; };
+minds[67] = function(history){ let counts=Array(10).fill(0); history.forEach(n=>counts[n]++); let min=Math.min(...counts); let least=counts.findIndex(c=>c===min); return {bigSmall:isBig(least)?"Big":"Small",color:getColor(least),number:least}; };
+minds[68] = function(history){ let counts=Array(10).fill(0); history.forEach(n=>counts[n]++); let min=Math.min(...counts); let least=counts.findIndex(c=>c===min); return {bigSmall:isBig(least)?"Big":"Small",color:getColor(least),number:least}; }; // Same as 67 for max payout
+minds[69] = function(history){ let arr=lastN(history,3); let next=(arr[0]+arr[1]+arr[2])*2%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[70] = function(history){ let t=trendStrength(lastN(history,4)); let next=last(history)+(t>0?3:-3); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[71] = function(history){ let next=randomInt(1)===0?0:5; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; }; // Violet
+minds[72] = function(history){ let next=(last(history)+5)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[73] = function(history){ let next=history.reduce((a,b)=>a+b,0)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[74] = function(history){ return {bigSmall:"Big",color:"Green",number:9}; };
+minds[75] = function(history){ return {bigSmall:"Small",color:"Red+Violet",number:0}; };
+minds[76] = function(history){ return {bigSmall:"Big",color:"Red",number:8}; };
+minds[77] = function(history){ let m=mode(lastN(history,5)); let next=isBig(m)?m-5:m+5; next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[78] = function(history){ let next=(last(history)*3)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[79] = function(history){ let lastN=last(history); let next= (10-lastN); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[80] = function(history){ return {bigSmall:"Small",color:"Green",number:1}; };
+
+// ----------------------------------------------------
+// MINDS 81–105 (RANDOM PLAYERS) - 25 Types
+// ----------------------------------------------------
+minds[81] = function(history){ return randomGuess(); };
+minds[82] = function(history){ let next=randomInt(1)===0?3:8; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[83] = function(history){ let next=randomInt(1)*2+1; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; }; // Red or Green equivalent
+minds[84] = function(history){ return randomGuess(); }; // Randomness is still random
+minds[85] = function(history){ return randomGuess(); }; // Randomness is still random
+minds[86] = function(history){ let arr=lastN(history,3); let next=arr[randomInt(2)]; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[87] = function(history){ return {bigSmall:"Small",color:"Red",number:2}; };
+minds[88] = function(history){ return {bigSmall:"Big",color:"Red",number:6}; };
+minds[89] = function(history){ let next=randomInt(4)*2+1; return {bigSmall:isBig(next)?"Big":"Small",color:"Green",number:next}; }; // Forces Green, random number
+minds[90] = function(history){ let next=randomInt(4)*2; return {bigSmall:isBig(next)?"Big":"Small",color:"Red",number:next}; }; // Forces Red, random number
+minds[91] = function(history){ let next=randomInt(1)===0?0:5; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[92] = function(history){ let next=randomInt(1)===0?8:9; return {bigSmall:"Big",color:getColor(next),number:next}; };
+minds[93] = function(history){ let next=randomInt(1)===0?0:1; return {bigSmall:"Small",color:getColor(next),number:next}; };
+minds[94] = function(history){ let next=(last(history)+secondLast(history)+randomInt(5))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[95] = function(history){ return {bigSmall:"Small",color:"Green+Violet",number:5}; };
+minds[96] = function(history){ let m=mode(history); let a=Math.round(avg(history)); let next=randomInt(1)===0?m:a; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[97] = function(history){ let next=randomInt(4)*2; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[98] = function(history){ let next=(randomInt(2)*3)+3; next%=10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[99] = function(history){ let next=randomInt(3); return {bigSmall:"Small",color:getColor(next),number:next}; };
+minds[100] = function(history){ let lastC=getColor(last(history)); let lastS=isBig(last(history))?"Big":"Small"; let next=randomInt(9); return {bigSmall:lastS==="Big"?"Small":"Big",color:lastC.includes("Red")?"Green":"Red",number:next}; };
+minds[101] = function(history){ let next=randomInt(1)===0?4:6; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[102] = function(history){ let next=history[history.length-6]; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[103] = function(history){ let extremes=[0,1,8,9]; let next=extremes[randomInt(3)]; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[104] = function(history){ let m=mode(lastN(history,2)); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[105] = function(history){ return {bigSmall:"Small",color:"Green+Violet",number:5}; };
+
+// ----------------------------------------------------
+// MINDS 106–125 (SKIP-BASED PLAYERS) - 20 Types
+// Modeled as delayed or confirmed bets
+// ----------------------------------------------------
+minds[106] = function(history){ let next=history[history.length-5]; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[107] = function(history){ let next=(10-history[history.length-3])%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[108] = function(history){ let next=history[history.length-7]; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[109] = function(history){ let m=mode(history); if(last(history)!==m){return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m};} return randomGuess(); };
+minds[110] = function(history){ let m=mode(history); if(last(history)===m){return randomGuess();} return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[111] = function(history){ let arr=history.slice(history.length-6, history.length-3); let next=(arr[0]+arr[1]+arr[2])%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[112] = function(history){ let m=mode(history.slice(0,10)); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[113] = function(history){ let m=mode(lastN(history,4)); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[114] = function(history){ let next=randomInt(1)===0?2:3; return {bigSmall:"Small",color:getColor(next),number:next}; };
+minds[115] = function(history){ let notLast5 = history.slice(0, history.length-5); if(notLast5.length===0) return randomGuess(); let m=mode(notLast5); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[116] = function(history){ let next=(last(history)+1)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[117] = function(history){ let arr=lastN(history,3); let next=(arr[0]+arr[1]+arr[2])%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[118] = function(history){ let counts=Array(10).fill(0); history.forEach(n=>counts[n]++); let next=counts.findIndex(c=>c===2); if(next===-1) return randomGuess(); return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[119] = function(history){ let t=trendStrength(lastN(history,4)); return Math.abs(t)===4?randomGuess():{bigSmall:isBig(last(history))?"Big":"Small",color:getColor(last(history)),number:last(history)}; };
+minds[120] = function(history){ let arr=lastN(history,3); if(arr[0]===arr[1]-1 && arr[1]===arr[2]-1){let m=mode(arr); let next=(m+5)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next};} return randomGuess(); };
+minds[121] = function(history){ return {bigSmall:"Small",color:"Green+Violet",number:5}; };
+minds[122] = function(history){ let next=randomInt(1)===0?4:6; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[123] = function(history){ let next=last(history); return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[124] = function(history){ let next=history[0]; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[125] = function(history){ let sizeMode=history.filter(isBig).length>10?"Big":"Small"; let next=sizeMode==="Big"?2:7; return {bigSmall:sizeMode==="Big"?"Small":"Big",color:getColor(next),number:next}; };
+
+// ----------------------------------------------------
+// MINDS 126–150 (ANALYSIS-BASED PLAYERS) - 25 Types
+// ----------------------------------------------------
+minds[126] = function(history){ let bigs=history.filter(isBig).length; let next=bigs>10?2:7; return {bigSmall:bigs>10?"Small":"Big",color:getColor(next),number:next}; };
+minds[127] = function(history){ let m=mode(lastN(history,5)); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[128] = function(history){ let t=trendStrength(lastN(history,10)); let next=last(history)+(t>0?3:-3); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[129] = function(history){ let arr=lastN(history,3).sort((a,b)=>a-b); let next=Math.round(avg(arr)); next%=10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[130] = function(history){ let t=trendStrength(history); let next=last(history); if(Math.abs(t)>5){next=(last(history)+5)%10;} return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[131] = function(history){ let a=avg(history); let diff=last(history)-a; let next=last(history)+Math.sign(diff)*2; next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[132] = function(history){ let m=mode(lastN(history,3)); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[133] = function(history){ let t=trendStrength(lastN(history,3)); let next=last(history)+(Math.abs(t)===1?Math.sign(t)*2:0); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[134] = function(history){ let arr=lastN(history,10).sort((a,b)=>a-b); let next=arr[Math.floor(arr.length/2)]; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[135] = function(history){ let m=mode(lastN(history,10)); let next=m; if(isBig(m)){next=(m+5)%10;} return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[136] = function(history){ let m=mode(history); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[137] = function(history){ let m=mode(lastN(history,5)); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[138] = function(history){ let m=mode(lastN(history,10)); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[139] = function(history){ let m=mode(history); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[140] = function(history){ let c=history.map(getColor); let redC=c.filter(x=>x.includes("Red")).length; let greenC=c.filter(x=>x.includes("Green")).length; let targetColor=redC>greenC?"Red":"Green"; let next=targetColor==="Red"?2:1; return {bigSmall:isBig(next)?"Big":"Small",color:targetColor,number:next}; };
+minds[141] = function(history){ let bigC=history.filter(isBig).length; let next=bigC>10?7:2; return {bigSmall:bigC>10?"Big":"Small",color:getColor(next),number:next}; };
+minds[142] = function(history){ let arr=lastN(history,5); let t=trendStrength(arr); let a=avg(arr); let next=Math.round(t>0?Math.ceil(a):Math.floor(a))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[143] = function(history){ let m=mode(lastN(history,3)); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[144] = function(history){ let next=history[history.length-6]; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[145] = function(history){ let next=randomInt(4)+3; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[146] = function(history){ let m5=mode(lastN(history,5)); let m10=mode(lastN(history,10)); let next=Math.round((m5+m10)/2)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[147] = function(history){ let next=Math.round(avg(lastN(history,3)))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[148] = function(history){ let m5=mode(lastN(history,5)); let c=history.map(getColor); let redC=c.filter(x=>x.includes("Red")).length; let greenC=c.filter(x=>x.includes("Green")).length; let leastColor=redC<greenC?"Red":"Green"; let next=m5; if(!getColor(last(history)).includes(leastColor)){next=(m5+5)%10;} return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[149] = function(history){ let arr=lastN(history,5).sort((a,b)=>a-b); let med=arr[2]; let diff=arr[4]-arr[0]; let next=(med+(diff%2))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[150] = function(history){ let m=mode(lastN(history,5)); let next=(m+5)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+
+// ----------------------------------------------------
+// MINDS 151–170 (MANIPULATION-BELIEVER PLAYERS) - 20 Types
+// ----------------------------------------------------
+minds[151] = function(history){ let t=trendStrength(lastN(history,3)); let next=last(history)+(t>0?-3:3); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[152] = function(history){ let next=(10-secondLast(history))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[153] = function(history){ let t=trendStrength(lastN(history,3)); let next=last(history)+(t>0?-1:1); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[154] = function(history){ let m=mode(lastN(history,3)); let next=m; return {bigSmall:isBig(m)?"Small":"Big",color:getColor(m),number:next}; };
+minds[155] = function(history){ let next=randomInt(9); while(next%2===(last(history)%2)){next=randomInt(9);} return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[156] = function(history){ let next=history[history.length-6]; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[157] = function(history){ let counts=Array(10).fill(0); history.forEach(n=>counts[n]++); let max=Math.max(...counts); let modeN=counts.findIndex(c=>c===max); let next=modeN; return {bigSmall:isBig(next)?"Small":"Big",color:getColor(next),number:next}; };
+minds[158] = function(history){ let counts=Array(10).fill(0); history.forEach(n=>counts[n]++); let min=Math.min(...counts); let least=counts.findIndex(c=>c===min); let next=(least+1)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[159] = function(history){ let dir=last(history)<secondLast(history)?-1:0; let next=last(history)+dir*2; next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[160] = function(history){ let next=Math.round(avg(lastN(history,4)))%10; next=(next>4?next-5:next); return {bigSmall:"Small",color:getColor(next),number:next}; };
+minds[161] = function(history){ return {bigSmall:"Small",color:"Red+Violet",number:0}; };
+minds[162] = function(history){ let next=(10-last(history))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[163] = function(history){ let same=isBig(last(history))===isBig(secondLast(history))&&isBig(last(history))===isBig(history[history.length-3]); let next=same?(randomInt(1)===0?0:9):5; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[164] = function(history){ let lastC=getColor(last(history)); let next=randomInt(9); return {bigSmall:isBig(next)?"Big":"Small",color:lastC.includes("Red")?"Green":"Red",number:next}; };
+minds[165] = function(history){ let lastS=isBig(last(history))?"Big":"Small"; let next=randomInt(9); return {bigSmall:lastS==="Big"?"Small":"Big",color:getColor(next),number:next}; };
+minds[166] = function(history){ let next=history[history.length-4]; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[167] = function(history){ let next=lastN(history,5).reduce((a,b)=>a+b,0)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[168] = function(history){ let odds=history.filter(n=>n%2!==0); let m=mode(odds.length>0?odds:[1,3,5,7,9]); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[169] = function(history){ let smalls=history.filter(n=>!isBig(n)); let m=mode(smalls.length>0?smalls:[1,2,3,4,0]); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[170] = function(history){ let arr=lastN(history,5); let next=(Math.max(...arr)-Math.min(...arr))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+
+// ----------------------------------------------------
+// MINDS 171–185 (MONEY-BASED PLAYERS) - 15 Types
+// ----------------------------------------------------
+minds[171] = function(history){ let next=randomInt(1); return {bigSmall:"Small",color:getColor(next),number:next}; };
+minds[172] = function(history){ let next=randomInt(1)+8; return {bigSmall:"Big",color:getColor(next),number:next}; };
+minds[173] = function(history){ return minds[68](history); }; // Same as High-confidence gambler (Max payout)
+minds[174] = function(history){ let diff=last(history)-secondLast(history); let next=last(history)+diff*2; next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[175] = function(history){ return {bigSmall:"Small",color:"Red+Violet",number:0}; };
+minds[176] = function(history){ let lastN=last(history); let next= (10-lastN)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[177] = function(history){ let next=Math.round(avg(lastN(history,10)))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[178] = function(history){ let next=(10-last(history))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[179] = function(history){ let lastC=getColor(last(history)); let next=randomInt(9); return {bigSmall:isBig(next)?"Big":"Small",color:lastC.includes("Red")?"Green":"Red",number:next}; };
+minds[180] = function(history){ let lastC=getColor(last(history)); let next=randomInt(9); return {bigSmall:isBig(next)?"Big":"Small",color:lastC,number:next}; };
+minds[181] = function(history){ let next=randomInt(1)===0?4:6; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[182] = function(history){ return minds[67](history); };
+minds[183] = function(history){ let m=mode(lastN(history,3)); if(m===last(history)&&m===secondLast(history)){return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m};} return {bigSmall:"Big",color:"Green",number:9}; };
+minds[184] = function(history){ let m=mode(lastN(history,5)); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[185] = function(history){ return {bigSmall:"Small",color:"Green+Violet",number:5}; };
+
+// ----------------------------------------------------
+// MINDS 186–210 (EMOTIONAL / BEHAVIORAL TYPES) - 25 Types
+// ----------------------------------------------------
+minds[186] = function(history){ let next=(10-secondLast(history))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[187] = function(history){ let next=randomInt(1)===0?3:7; return {bigSmall:isBig(next)?"Small":"Big",color:getColor(next),number:next}; };
+minds[188] = function(history){ let next=randomInt(1)===0?7:9; return {bigSmall:"Big",color:getColor(next),number:next}; };
+minds[189] = function(history){ let next=(last(history)+randomInt(3)+1)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[190] = function(history){ let m=mode(lastN(history,4)); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[191] = function(history){ let next=randomInt(1)===0?1:9; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[192] = function(history){ let next=randomInt(1)===0?3:7; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[193] = function(history){ let a=avg(lastN(history,5)); let next=Math.round(a+1)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[194] = function(history){ let m1=mode(history.slice(0,10)); let m2=mode(lastN(history,10)); let next=(Math.round(avg(history.slice(0,10)))+m2)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[195] = function(history){ let lastC=getColor(last(history)); let next=randomInt(9); return {bigSmall:isBig(next)?"Big":"Small",color:lastC.includes("Red")?"Green":"Red",number:next}; };
+minds[196] = function(history){ let m=mode(history); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[197] = function(history){ return {bigSmall:"Big",color:"Green",number:9}; };
+minds[198] = function(history){ return {bigSmall:"Small",color:"Red+Violet",number:0}; };
+minds[199] = function(history){ let next=last(history); return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[200] = function(history){ let t=trendStrength(lastN(history,3)); let next=last(history)+(t>0?-1:1); next=((next%10)+10)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[201] = function(history){ let m=mode(lastN(history,2)); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[202] = function(history){ let next=randomInt(9); return {bigSmall:isBig(last(history))?"Small":"Big",color:getColor(next),number:next}; };
+minds[203] = function(history){ let next=randomInt(1); return {bigSmall:"Small",color:getColor(next),number:next}; };
+minds[204] = function(history){ let next=(last(history)+5)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[205] = function(history){ let next=(last(history)+3)%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[206] = function(history){ let next=Math.round(avg(lastN(history,3)))%10; return {bigSmall:isBig(next)?"Big":"Small",color:getColor(next),number:next}; };
+minds[207] = function(history){ let m=mode(history.slice(0,history.length-2)); return {bigSmall:isBig(m)?"Big":"Small",color:getColor(m),number:m}; };
+minds[208] = function(history){ let bigC=history.filter(isBig).length; let next=bigC>10?2:7; return {bigSmall:bigC>10?"Small":"Big",color:getColor(next),number:next}; };
+minds[209] = function(history){ return {bigSmall:"Small",color:"Red+Violet",number:0}; };
+minds[210] = function(history){ return randomGuess(); };
+
+
+// --- FINAL PREDICT FUNCTION ---
+function predict(){
+  let history = [];
+  let validInput = true;
+  for(let i=1;i<=20;i++){
+    let v = parseInt(document.getElementById("r"+i).value);
+    if(isNaN(v) || v < 0 || v > 9){
+      validInput = false;
+      document.getElementById("r"+i).style.borderColor = "red";
+    } else {
+      document.getElementById("r"+i).style.borderColor = "#333";
+      history.push(v);
+    }
+  }
+
+  if(!validInput || history.length !== 20){
+    document.getElementById("output").innerHTML = `<div class="table-box bg-red-900 border-red-700 mt-5"><p class="text-white text-center"><strong>Error:</strong> Please ensure all 20 inputs are valid numbers between 0 and 9.</p></div>`;
+    return;
+  }
+
+  let results = runAllMinds(history);
+
+  let html = `<h2>210 Human Psychology AI Results</h2>`;
+
+  let big=0, small=0;
+  let red=0, green=0, violet=0;
+  let numberCount = Array(10).fill(0);
+
+  results.forEach(r=>{
+    if(r.bigSmall === "Big") big++;
+    else small++;
+    // Count colors based on actual colors, accounting for Violet
+    if(r.color.includes("Red")) red++;
+    if(r.color.includes("Green")) green++;
+    if(r.color.includes("Violet")) violet++;
+    numberCount[r.number]++;
+  });
+
+  // Calculate percentages
+  const totalMinds = results.length;
+  const bigP = ((big/totalMinds)*100).toFixed(1);
+  const smallP = ((small/totalMinds)*100).toFixed(1);
+
+  html += `
+  <div class="table-box">
+    <h3 class="!mt-0 !border-0">Aggregated Summary</h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+        <!-- Size Prediction -->
+        <div class="p-3 bg-gray-800 rounded-lg">
+            <p class="text-xl font-bold mb-1 text-yellow-400">BIG / SMALL</p>
+            <p>Big: <span class="text-green-400 font-bold">${big} (${bigP}%)</span></p>
+            <p>Small: <span class="text-red-400 font-bold">${small} (${smallP}%)</span></p>
+        </div>
+        
+        <!-- Color Prediction -->
+        <div class="p-3 bg-gray-800 rounded-lg">
+            <p class="text-xl font-bold mb-1 text-yellow-400">COLOR COUNTS</p>
+            <p>Red: <span class="text-red-500 font-bold">${red}</span></p>
+            <p>Green: <span class="text-green-500 font-bold">${green}</span></p>
+            <p>Violet: <span class="text-purple-400 font-bold">${violet}</span></p>
+        </div>
+        
+        <!-- Number Breakdown -->
+        <div class="p-3 bg-gray-800 rounded-lg md:col-span-1">
+            <p class="text-xl font-bold mb-1 text-yellow-400">NUMBER PREDICTIONS (0-9)</p>
+            <div class="text-sm flex flex-wrap justify-center">
+                ${numberCount.map((v, i) => `
+                    <span class="w-1/5 p-1">
+                        <span class="font-bold text-lg ${v === Math.max(...numberCount) && v !== 0 ? 'text-green-400' : 'text-gray-300'}">${i}:</span> ${v}
+                    </span>
+                `).join('')}
+            </div>
+        </div>
     </div>
   </div>
-  <script type="module" src="script.js"></script>
+  `;
+
+  html += `<h3 class="!mt-8">Individual Player Predictions (Total: ${totalMinds} Minds)</h3>`;
+  
+  // Create a grid of mind boxes
+  results.forEach(r=>{
+      // Helper for coloring the output text
+      let colorClass = 'text-gray-300';
+      if(r.color.includes("Red")) colorClass = 'text-red-400';
+      else if(r.color.includes("Green")) colorClass = 'text-green-400';
+      else if(r.color.includes("Violet")) colorClass = 'text-purple-400';
+
+      html += `
+        <div class="mind-box">
+          <b class="text-sm text-white">${r.id}. ${r.id <= 20 ? 'TREND' : r.id <= 45 ? 'PATTERN' : r.id <= 65 ? 'FEAR' : r.id <= 80 ? 'OVER-CONF' : r.id <= 105 ? 'RANDOM' : r.id <= 125 ? 'SKIP' : r.id <= 150 ? 'ANALYSIS' : r.id <= 170 ? 'MANIP' : r.id <= 185 ? 'MONEY' : 'EMOTIONAL'}</b><br>
+          <span class="${colorClass} text-base font-bold">${r.bigSmall} | ${r.color} | ${r.number}</span>
+        </div>
+      `;
+  });
+
+  document.getElementById("output").innerHTML = html;
+}
+
+// Ensure the code to run all minds is present
+function runAllMinds(history){
+  let allResults = [];
+  for(let i=1;i<=210;i++){
+    if(typeof minds[i] === "function"){
+      let res = minds[i](history);
+      // Basic validation for the output structure
+      if (typeof res.number !== 'number' || res.number < 0 || res.number > 9) {
+          // Fallback to random guess if logic failed/was complex
+          res = randomGuess();
+      }
+      allResults.push({id:i, bigSmall:res.bigSmall, color:res.color, number:res.number});
+    }
+  }
+  return allResults;
+}
+
+</script>
 </body>
 </html>
+
